@@ -1,0 +1,107 @@
+/* Riffle global styles: design tokens + base element styles.
+   Bootstrap is loaded first (see main.js); anything here overrides it. */
+
+:root {
+  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Brand */
+  --riffle-navy: #0c1e4a;
+  --riffle-navy-soft: #1b2f63;
+  --riffle-ink: #0f1f4b;
+  --riffle-text: #2b3553;
+  --riffle-muted: #6b7694;
+  --riffle-faint: #9aa3bd;
+  --riffle-blue: #2563eb;
+  --riffle-coral: #f0483e;
+  --riffle-coral-soft: #ff6b5e;
+  --riffle-bg: #f6f7fc;
+  --riffle-surface: #ffffff;
+  --riffle-border: #e6e9f4;
+  --riffle-radius: 16px;
+  --riffle-shadow: 0 6px 24px rgba(20, 35, 90, 0.07);
+  --riffle-shadow-sm: 0 2px 10px rgba(20, 35, 90, 0.06);
+
+  /* Genre palette (also used on the map pins and cards) */
+  --genre-indie-rock: #f0452f;
+  --genre-pop: #1f6feb;
+  --genre-mandopop: #f0529c;
+  --genre-electronic: #0f9d8a;
+  --genre-hip-hop: #9b2fd6;
+  --genre-traditional: #f59e0b;
+
+  --navbar-height: 80px;
+
+  /* Bootstrap overrides */
+  --bs-body-font-family: var(--font-sans);
+  --bs-body-color: var(--riffle-text);
+  --bs-body-bg: var(--riffle-bg);
+  --bs-primary: var(--riffle-blue);
+  --bs-primary-rgb: 37, 99, 235;
+  --bs-border-color: var(--riffle-border);
+}
+
+html,
+body {
+  background: var(--riffle-bg);
+  font-family: var(--font-sans);
+  color: var(--riffle-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--riffle-ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--riffle-blue);
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--riffle-blue);
+  outline-offset: 2px;
+}
+
+/* Primary pill button (Apply filters, Next, …) */
+.btn-riffle {
+  background: var(--riffle-navy);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  transition: background 0.15s, transform 0.15s;
+}
+.btn-riffle:hover,
+.btn-riffle:focus-visible {
+  background: var(--riffle-navy-soft);
+  color: #fff;
+}
+.btn-riffle:active {
+  transform: translateY(1px);
+}
+
+/* White card surface used across the events screens */
+.riffle-card {
+  background: var(--riffle-surface);
+  border: 1px solid var(--riffle-border);
+  border-radius: var(--riffle-radius);
+  box-shadow: var(--riffle-shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
