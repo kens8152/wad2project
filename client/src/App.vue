@@ -190,32 +190,49 @@ const getSelectedRecommendation = async () => {
 const fetchTopGenres = async () => {
   try {
     const { data } = await axios.get(
-      'https://api.spotify.com/v1/me/top/artists?time_range=medium_term&limit=10',
+      'https://api.spotify.com/v1/me/top/artists?time_range=medium_term&limit=15',
       { headers: authHeader() }
     )
 
     const artists = data.items
 
     const scores = {}
-    for (const [i, artist] of artists.entries()) {
-      const res = await axios.get('https://ws.audioscrobbler.com/2.0/', {
-        params: {
-          method: 'artist.getTopTags',
-          artist: artist.name,
-          api_key: LASTFM_KEY,
-          format: 'json',
-          autocorrect: 1,
-        },
+    const BATCH = 5
+    const IGNORE = ['seen live', 'favorites', 'favourite', 'favourites', 'female vocalists', 'male vocalists']
+    for (let start = 0; start < artists.length; start += BATCH) {
+      const batch = artists.slice(start, start + BATCH)
+
+      // 5 requests at the same time
+      const results = await Promise.all(
+        batch.map((artist) =>
+          axios
+            .get('https://ws.audioscrobbler.com/2.0/', {
+              params: {
+                method: 'artist.getTopTags',
+                artist: artist.name,
+                api_key: LASTFM_KEY,
+                format: 'json',
+                autocorrect: 1,
+              },
+            })
+            .catch(() => null) // one failed lookup won't break the rest
+        )
+      )
+
+      results.forEach((res, j) => {
+        if (!res) return
+        const weight = artists.length - (start + j)
+        ;(res.data.toptags?.tag || []).slice(0, 5).forEach((t) => {
+          const g = t.name.toLowerCase()
+          if (IGNORE.includes(g)) return
+          scores[g] = (scores[g] || 0) + weight * (Number(t.count) / 100)
+        })
       })
-      const weight = artists.length - i 
-      ;(res.data.toptags?.tag || []).slice(0, 5).forEach((t) => {
-        const g = t.name.toLowerCase()
-        scores[g] = (scores[g] || 0) + weight * (Number(t.count) / 100)
-      })
-      await new Promise((r) => setTimeout(r, 250)) 
+
+      // pause between batches (skipped after the last one)
+      if (start + BATCH < artists.length) await new Promise((r) => setTimeout(r, 1000))
     }
 
-    
     topGenres.value = Object.entries(scores)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
@@ -225,7 +242,6 @@ const fetchTopGenres = async () => {
     error.value = 'Could not load genres: ' + (e.response?.data?.error?.message || e.message)
   }
 }
-
 const loadData = async () => {
   loading.value = true
   error.value = ''
