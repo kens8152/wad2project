@@ -202,7 +202,6 @@ const fetchTopGenres = async () => {
     for (let start = 0; start < artists.length; start += BATCH) {
       const batch = artists.slice(start, start + BATCH)
 
-      // 5 requests at the same time
       const results = await Promise.all(
         batch.map((artist) =>
           axios
@@ -215,7 +214,7 @@ const fetchTopGenres = async () => {
                 autocorrect: 1,
               },
             })
-            .catch(() => null) // one failed lookup won't break the rest
+            .catch(() => null) 
         )
       )
 
@@ -229,7 +228,6 @@ const fetchTopGenres = async () => {
         })
       })
 
-      // pause between batches (skipped after the last one)
       if (start + BATCH < artists.length) await new Promise((r) => setTimeout(r, 1000))
     }
 
