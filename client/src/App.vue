@@ -66,6 +66,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { getTopGenres } from './services/lastFM'
+import { fetchTopArtists } from './services/spotifyApi'
 
 // ---- Config -------------------------------------------------------------
 const CLIENT_ID = 'aa4e949f8a06492bbfaac8ecad2c7e52' // no client secret needed with PKCE
@@ -77,7 +79,6 @@ const TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const PROFILE_URL = 'https://api.spotify.com/v1/me'
 const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
 const SEARCHALBUM_URL = `https://api.spotify.com/v1/search?q=genre%3A+Singapore&type=album&market=SG`
-const LASTFM_KEY = 'f25905dc6b0a401b819f17f72c971095'
 
 // ---- State --------------------------------------------------------------
 const accessToken = ref(null)
@@ -86,6 +87,7 @@ const playlists = ref([])
 const loading = ref(false)
 const error = ref('')
 const topGenres = ref([])
+
 const trackCount = (p) => {
   const total = p.items?.total ?? p.tracks?.total
   return total == null ? '– tracks' : `${total} tracks`
@@ -187,59 +189,16 @@ const getSelectedRecommendation = async () => {
   selectedGenre.value = ''; // Clear the input field after fetching recommendations
 };
 
-const fetchTopGenres = async () => {
-  try {
-    const { data } = await axios.get(
-      'https://api.spotify.com/v1/me/top/artists?time_range=medium_term&limit=15',
-      { headers: authHeader() }
-    )
-
-    const artists = data.items
-
-    const scores = {}
-    const BATCH = 5
-    const IGNORE = ['seen live', 'favorites', 'favourite', 'favourites', 'female vocalists', 'male vocalists']
-    for (let start = 0; start < artists.length; start += BATCH) {
-      const batch = artists.slice(start, start + BATCH)
-
-      const results = await Promise.all(
-        batch.map((artist) =>
-          axios
-            .get('https://ws.audioscrobbler.com/2.0/', {
-              params: {
-                method: 'artist.getTopTags',
-                artist: artist.name,
-                api_key: LASTFM_KEY,
-                format: 'json',
-                autocorrect: 1,
-              },
-            })
-            .catch(() => null) 
-        )
-      )
-
-      results.forEach((res, j) => {
-        if (!res) return
-        const weight = artists.length - (start + j)
-        ;(res.data.toptags?.tag || []).slice(0, 5).forEach((t) => {
-          const g = t.name.toLowerCase()
-          if (IGNORE.includes(g)) return
-          scores[g] = (scores[g] || 0) + weight * (Number(t.count) / 100)
-        })
-      })
-
-      if (start + BATCH < artists.length) await new Promise((r) => setTimeout(r, 1000))
-    }
-
-    topGenres.value = Object.entries(scores)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([genre]) => genre)
-  } catch (e) {
+const loadGenres = async () => {
+  try{
+    const artists = await fetchTopArtists(accessToken.value)
+    topGenres.value = await getTopGenres(artists)
+  } catch(e) {
     console.log(e.response?.status, e.response?.data)
     error.value = 'Could not load genres: ' + (e.response?.data?.error?.message || e.message)
   }
 }
+
 const loadData = async () => {
   loading.value = true
   error.value = ''
@@ -248,7 +207,7 @@ const loadData = async () => {
     await fetchSpotifyProfile()
     await fetchSpotifyPlaylists()
     await getSelectedRecommendation()
-    await fetchTopGenres()
+    loadGenres()
   } catch (e) {
     if (e.response?.status === 401) {
       logout() // expired or invalid token
