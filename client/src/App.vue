@@ -20,6 +20,10 @@
         </div>
       </section>
 
+      <p v-if="topGenres.length">
+        Your top genres: <strong>{{ topGenres.join(', ') }}</strong>
+      </p>
+
       <h2>Your playlists</h2>
       <p v-if="loading">Loading…</p>
       <p v-else-if="!playlists.length">No playlists found.</p>
@@ -48,12 +52,13 @@ import axios from 'axios'
 // ---- Config -------------------------------------------------------------
 const CLIENT_ID = 'aa4e949f8a06492bbfaac8ecad2c7e52' // no client secret needed with PKCE
 const REDIRECT_URI = 'http://127.0.0.1:5173/' // must match the Dashboard EXACTLY
-const SCOPES = 'user-read-private user-read-email playlist-read-private'
+const SCOPES = 'user-read-private user-read-email playlist-read-private user-top-read'
 
 const AUTH_URL = 'https://accounts.spotify.com/authorize'
 const TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const PROFILE_URL = 'https://api.spotify.com/v1/me'
 const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
+const LASTFM_KEY = 'f25905dc6b0a401b819f17f72c971095'
 
 // ---- State --------------------------------------------------------------
 const accessToken = ref(null)
@@ -61,6 +66,7 @@ const profile = ref(null)
 const playlists = ref([])
 const loading = ref(false)
 const error = ref('')
+const topGenres = ref([])
 const trackCount = (p) => {
   const total = p.items?.total ?? p.tracks?.total
   return total == null ? '– tracks' : `${total} tracks`
@@ -133,6 +139,7 @@ const logout = () => {
   accessToken.value = null
   profile.value = null
   playlists.value = []
+  topGenres.value = []
 }
 
 // ---- API calls ----------------------------------------------------------
@@ -148,6 +155,45 @@ const fetchSpotifyPlaylists = async () => {
   playlists.value = data.items
 }
 
+const fetchTopGenres = async () => {
+  try {
+    const { data } = await axios.get(
+      'https://api.spotify.com/v1/me/top/artists?time_range=medium_term&limit=10',
+      { headers: authHeader() }
+    )
+
+    const artists = data.items
+
+    const scores = {}
+    for (const [i, artist] of artists.entries()) {
+      const res = await axios.get('https://ws.audioscrobbler.com/2.0/', {
+        params: {
+          method: 'artist.getTopTags',
+          artist: artist.name,
+          api_key: LASTFM_KEY,
+          format: 'json',
+          autocorrect: 1,
+        },
+      })
+      const weight = artists.length - i 
+      ;(res.data.toptags?.tag || []).slice(0, 5).forEach((t) => {
+        const g = t.name.toLowerCase()
+        scores[g] = (scores[g] || 0) + weight * (Number(t.count) / 100)
+      })
+      await new Promise((r) => setTimeout(r, 250)) 
+    }
+
+    
+    topGenres.value = Object.entries(scores)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([genre]) => genre)
+  } catch (e) {
+    console.log(e.response?.status, e.response?.data)
+    error.value = 'Could not load genres: ' + (e.response?.data?.error?.message || e.message)
+  }
+}
+
 const loadData = async () => {
   loading.value = true
   error.value = ''
@@ -155,6 +201,7 @@ const loadData = async () => {
     // Sequential, as requested: profile first, then playlists
     await fetchSpotifyProfile()
     await fetchSpotifyPlaylists()
+    await fetchTopGenres()
   } catch (e) {
     if (e.response?.status === 401) {
       logout() // expired or invalid token
