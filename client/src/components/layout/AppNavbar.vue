@@ -1,0 +1,289 @@
+<script setup>
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCurrentUser } from '@/composables/useCurrentUser'
+
+const route = useRoute()
+const router = useRouter()
+const { user } = useCurrentUser()
+
+const links = [
+  { label: 'Discover', to: { name: 'discover' }, section: 'discover' },
+  { label: 'Events', to: { name: 'events-map' }, section: 'events' },
+  { label: 'Artists', to: { name: 'artists' }, section: 'artists' },
+  { label: 'Forum', to: { name: 'forum' }, section: 'forum' },
+]
+
+const activeSection = computed(() => route.meta.section)
+
+const menuOpen = ref(false)
+const searchOpen = ref(false)
+const searchTerm = ref('')
+
+watch(() => route.fullPath, () => {
+  menuOpen.value = false
+  searchOpen.value = false
+})
+
+// Global search jumps to the events list with the term pre-filled.
+function submitSearch() {
+  const q = searchTerm.value.trim()
+  if (!q) return
+  router.push({ name: 'events-list', query: { q } })
+  searchTerm.value = ''
+}
+</script>
+
+<template>
+  <header class="riffle-nav">
+    <!-- Decorative waves behind the bar -->
+    <svg class="riffle-nav__waves" viewBox="0 0 1600 80" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="nav-wave-a" x1="0" x2="1">
+          <stop offset="0" stop-color="#fbd1e6" />
+          <stop offset="0.5" stop-color="#d9d3fb" />
+          <stop offset="1" stop-color="#cfe4fb" />
+        </linearGradient>
+        <linearGradient id="nav-wave-b" x1="0" x2="1">
+          <stop offset="0" stop-color="#cfe9fb" />
+          <stop offset="0.6" stop-color="#bff0dc" />
+          <stop offset="1" stop-color="#fde4d3" />
+        </linearGradient>
+      </defs>
+      <path d="M0 80 V40 C80 30 120 6 220 10 C320 14 360 54 460 50 C560 46 560 70 640 80 Z" fill="url(#nav-wave-a)" opacity="0.8" />
+      <path d="M980 80 C1060 70 1100 20 1200 18 C1300 16 1330 52 1420 46 C1500 40 1560 22 1600 30 V80 Z" fill="url(#nav-wave-b)" opacity="0.85" />
+    </svg>
+
+    <div class="riffle-nav__inner container-xxl">
+      <RouterLink :to="{ name: 'events-map' }" class="riffle-nav__brand" aria-label="Riffle home">
+        <i class="bi bi-music-note-beamed riffle-nav__logo"></i>
+        <span>Riffle</span>
+      </RouterLink>
+
+      <button
+        class="riffle-nav__burger d-lg-none"
+        type="button"
+        :aria-expanded="menuOpen"
+        aria-label="Toggle navigation"
+        @click="menuOpen = !menuOpen"
+      >
+        <i class="bi" :class="menuOpen ? 'bi-x-lg' : 'bi-list'"></i>
+      </button>
+
+      <nav class="riffle-nav__links" :class="{ 'is-open': menuOpen }" aria-label="Main">
+        <RouterLink
+          v-for="link in links"
+          :key="link.section"
+          :to="link.to"
+          class="riffle-nav__link"
+          :class="{ 'is-active': activeSection === link.section }"
+        >
+          {{ link.label }}
+        </RouterLink>
+      </nav>
+
+      <div class="riffle-nav__right">
+        <i class="bi bi-music-note-beamed riffle-nav__note d-none d-xl-inline" aria-hidden="true"></i>
+
+        <form v-if="searchOpen" class="riffle-nav__search" role="search" @submit.prevent="submitSearch">
+          <input
+            v-model="searchTerm"
+            type="search"
+            class="form-control form-control-sm"
+            placeholder="Search events…"
+            aria-label="Search events"
+            autofocus
+          />
+        </form>
+        <button class="riffle-nav__icon-btn" type="button" aria-label="Search" @click="searchOpen = !searchOpen">
+          <i class="bi bi-search"></i>
+        </button>
+
+        <button class="riffle-nav__user" type="button" :aria-label="`Signed in as ${user.name}`">
+          <span class="riffle-nav__avatar">{{ user.initials }}</span>
+          <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
+        </button>
+      </div>
+    </div>
+  </header>
+</template>
+
+<style scoped>
+.riffle-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  height: var(--navbar-height);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--riffle-border);
+  overflow: visible;
+}
+
+.riffle-nav__waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.riffle-nav__inner {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.riffle-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--riffle-ink);
+  text-decoration: none;
+}
+
+.riffle-nav__logo {
+  font-size: 1.9rem;
+  background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.riffle-nav__links {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2.25rem;
+}
+
+.riffle-nav__link {
+  position: relative;
+  padding: 0.5rem 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--riffle-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.riffle-nav__link:hover {
+  color: var(--riffle-ink);
+}
+.riffle-nav__link.is-active {
+  color: var(--riffle-ink);
+  font-weight: 700;
+}
+.riffle-nav__link.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--riffle-coral), var(--riffle-coral-soft));
+}
+
+.riffle-nav__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.riffle-nav__note {
+  font-size: 2rem;
+  color: var(--riffle-coral);
+  margin-right: 5rem;
+}
+
+.riffle-nav__icon-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--riffle-ink);
+  font-size: 1.15rem;
+}
+.riffle-nav__icon-btn:hover {
+  background: #eef1fb;
+}
+
+.riffle-nav__search {
+  width: 220px;
+}
+
+.riffle-nav__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-weight: 700;
+  color: var(--riffle-ink);
+}
+
+.riffle-nav__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffc9dc;
+  color: #1b1b3a;
+  font-weight: 800;
+}
+
+.riffle-nav__burger {
+  margin-left: auto;
+  order: 3;
+  border: 0;
+  background: transparent;
+  font-size: 1.6rem;
+  color: var(--riffle-ink);
+}
+
+@media (max-width: 991.98px) {
+  .riffle-nav__right {
+    margin-left: 0;
+  }
+  .riffle-nav__links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    transform: none;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.5rem 1.25rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--riffle-border);
+    box-shadow: var(--riffle-shadow);
+    display: none;
+  }
+  .riffle-nav__links.is-open {
+    display: flex;
+  }
+  .riffle-nav__link {
+    padding: 0.8rem 0;
+  }
+  .riffle-nav__link.is-active::after {
+    bottom: 4px;
+    right: auto;
+    width: 32px;
+  }
+  .riffle-nav__search {
+    width: 140px;
+  }
+}
+</style>
