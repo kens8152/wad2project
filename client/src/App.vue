@@ -37,6 +37,24 @@
           <small>{{ trackCount(p) }}</small>
         </a>
       </div>
+      <h2>Song Recommendation:</h2>
+      <input type="text" v-model="selectedGenre" placeholder="Enter a genre"  style="margin-right: 10px;"/>
+      <button @click="getSelectedRecommendation">Get Recommendation</button>
+      <div class="grid" style="margin-top: 20px;">
+        <a
+          v-for="album in albums"
+          :key="album.id"
+          class="card"
+          :href="album.external_urls?.spotify"
+          target="_blank"
+          rel="noopener"
+        >
+          <img v-if="album.images?.length" :src="album.images[0].url" :alt="album.name" />
+          <strong>{{ album.name }}</strong>
+          <small>{{ album.total_tracks }} tracks</small>
+        </a>
+      </div>
+
     </template>
   </div>
 </template>
@@ -54,6 +72,7 @@ const AUTH_URL = 'https://accounts.spotify.com/authorize'
 const TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const PROFILE_URL = 'https://api.spotify.com/v1/me'
 const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
+const SEARCHALBUM_URL = `https://api.spotify.com/v1/search?q=genre%3A+Singapore&type=album&market=SG`
 
 // ---- State --------------------------------------------------------------
 const accessToken = ref(null)
@@ -65,7 +84,8 @@ const trackCount = (p) => {
   const total = p.items?.total ?? p.tracks?.total
   return total == null ? '– tracks' : `${total} tracks`
 }
-
+const albums = ref([])
+const selectedGenre = ref('')
 // ---- PKCE helpers -------------------------------------------------------
 function generateRandomString(length) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -148,6 +168,18 @@ const fetchSpotifyPlaylists = async () => {
   playlists.value = data.items
 }
 
+// const getRecommendation = async () => {
+//   const { data } = await axios.get(SEARCHALBUM_URL, { headers: authHeader() })
+//   albums.value = data.albums.items;
+// }
+
+const getSelectedRecommendation = async () => {
+  const searchUrl = `https://api.spotify.com/v1/search?q=genre%3A+${encodeURIComponent(selectedGenre.value)}&type=album&market=SG`;
+  const { data } = await axios.get(searchUrl, { headers: authHeader() });
+  albums.value = data.albums.items;
+  selectedGenre.value = ''; // Clear the input field after fetching recommendations
+};
+
 const loadData = async () => {
   loading.value = true
   error.value = ''
@@ -155,6 +187,7 @@ const loadData = async () => {
     // Sequential, as requested: profile first, then playlists
     await fetchSpotifyProfile()
     await fetchSpotifyPlaylists()
+    await getSelectedRecommendation()
   } catch (e) {
     if (e.response?.status === 401) {
       logout() // expired or invalid token
@@ -217,8 +250,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+:global(body) { background-color: #121212; }
+h1, h2,p {color:white}
 .app { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; }
 button { padding: 0.6rem 1.2rem; border: 0; border-radius: 999px; background: #1db954; color: #fff; font-weight: 600; cursor: pointer; }
+button:hover { opacity: 0.9; }
 button.secondary { background: #444; margin-bottom: 1rem; }
 .error { color: #c0392b; }
 .profile { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; }
