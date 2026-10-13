@@ -270,7 +270,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:global(body) { background-color: #121212; }
+:global(body) { background-color: #121212; color: #fff; }
 h1, h2,p {color:white}
 .app { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; }
 button { padding: 0.6rem 1.2rem; border: 0; border-radius: 999px; background: #1db954; color: #fff; font-weight: 600; cursor: pointer; }
@@ -280,6 +280,6 @@ button.secondary { background: #444; margin-bottom: 1rem; }
 .profile { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; }
 .profile img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
-.card { display: flex; flex-direction: column; gap: 0.25rem; text-decoration: none; color: inherit; padding: 0.75rem; border-radius: 8px; background: #f4f4f4; }
+.card { display: flex; flex-direction: column; gap: 0.25rem; text-decoration: none; color: inherit; padding: 0.75rem; border-radius: 8px; background: #212121; }
 .card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; }
 </style>
