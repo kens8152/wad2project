@@ -29,4 +29,13 @@ spotifyApi.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
+
+export async function fetchTopArtists(token, limit = 15) {
+  const {data} = await axios.get(
+    `https://api.spotify.com/v1/me/top/artists?time_range=medium_term&limit=${limit}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  return data.items
+}
+
 export default spotifyApi;
