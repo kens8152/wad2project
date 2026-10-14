@@ -61,16 +61,6 @@ function submitSearch() {
         <span>Riffle</span>
       </RouterLink>
 
-      <button
-        class="riffle-nav__burger d-lg-none"
-        type="button"
-        :aria-expanded="menuOpen"
-        aria-label="Toggle navigation"
-        @click="menuOpen = !menuOpen"
-      >
-        <i class="bi" :class="menuOpen ? 'bi-x-lg' : 'bi-list'"></i>
-      </button>
-
       <nav class="riffle-nav__links" :class="{ 'is-open': menuOpen }" aria-label="Main">
         <RouterLink
           v-for="link in links"
@@ -84,8 +74,6 @@ function submitSearch() {
       </nav>
 
       <div class="riffle-nav__right">
-        <i class="bi bi-music-note-beamed riffle-nav__note d-none d-xl-inline" aria-hidden="true"></i>
-
         <form v-if="searchOpen" class="riffle-nav__search" role="search" @submit.prevent="submitSearch">
           <input
             v-model="searchTerm"
@@ -103,6 +91,16 @@ function submitSearch() {
         <button class="riffle-nav__user" type="button" :aria-label="`Signed in as ${user.name}`">
           <span class="riffle-nav__avatar">{{ user.initials }}</span>
           <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
+        </button>
+
+        <button
+          class="riffle-nav__burger d-lg-none"
+          type="button"
+          :aria-expanded="menuOpen"
+          aria-label="Toggle navigation"
+          @click="menuOpen = !menuOpen"
+        >
+          <i class="bi" :class="menuOpen ? 'bi-x-lg' : 'bi-list'"></i>
         </button>
       </div>
     </div>
@@ -198,12 +196,6 @@ function submitSearch() {
   gap: 0.9rem;
 }
 
-.riffle-nav__note {
-  font-size: 2rem;
-  color: var(--riffle-coral);
-  margin-right: 5rem;
-}
-
 .riffle-nav__icon-btn {
   width: 40px;
   height: 40px;
@@ -246,8 +238,6 @@ function submitSearch() {
 }
 
 .riffle-nav__burger {
-  margin-left: auto;
-  order: 3;
   border: 0;
   background: transparent;
   font-size: 1.6rem;
@@ -256,7 +246,7 @@ function submitSearch() {
 
 @media (max-width: 991.98px) {
   .riffle-nav__right {
-    margin-left: 0;
+    gap: 0.25rem;
   }
   .riffle-nav__links {
     position: absolute;
@@ -285,6 +275,24 @@ function submitSearch() {
   }
   .riffle-nav__search {
     width: 140px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .riffle-nav__inner {
+    gap: 0.5rem;
+  }
+  .riffle-nav__brand {
+    font-size: 1.5rem;
+  }
+  .riffle-nav__search {
+    width: 100px;
+    min-width: 0;
+  }
+  .riffle-nav__icon-btn,
+  .riffle-nav__avatar {
+    width: 36px;
+    height: 36px;
   }
 }
 </style>
