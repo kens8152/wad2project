@@ -22,6 +22,7 @@ const menuOpen = ref(false)
 const searchOpen = ref(false)
 const searchTerm = ref('')
 
+// Whenever the page changes, close the menu and the search box
 watch(() => route.fullPath, () => {
   menuOpen.value = false
   searchOpen.value = false
@@ -124,7 +125,7 @@ function submitSearch() {
 .riffle-nav__logo {
   font-size: 1.9rem;
   background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
-  -webkit-background-clip: text;
+  -webkit-background-clip: text;  /* cuts that background to the shape of the text (here, the icon glyph) */
   background-clip: text;
   color: transparent;
 }
