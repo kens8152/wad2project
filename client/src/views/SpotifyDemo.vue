@@ -68,17 +68,11 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { getTopGenres } from '@/services/lastFM'
 import { fetchTopArtists } from '@/services/spotifyApi'
+import { loginWithSpotify, exchangeCodeForToken, logout as clearSession } from '@/services/spotifyAuth'
 
 // ---- Config -------------------------------------------------------------
-const CLIENT_ID = 'aa4e949f8a06492bbfaac8ecad2c7e52' // no client secret needed with PKCE
-const REDIRECT_URI = 'http://127.0.0.1:5173/' // must match the Dashboard EXACTLY
-const SCOPES = 'user-read-private user-read-email playlist-read-private user-top-read'
-
-const AUTH_URL = 'https://accounts.spotify.com/authorize'
-const TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const PROFILE_URL = 'https://api.spotify.com/v1/me'
 const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
-const SEARCHALBUM_URL = `https://api.spotify.com/v1/search?q=genre%3A+Singapore&type=album&market=SG`
 
 // ---- State --------------------------------------------------------------
 const accessToken = ref(null)
@@ -87,82 +81,8 @@ const playlists = ref([])
 const loading = ref(false)
 const error = ref('')
 const topGenres = ref([])
-
-const trackCount = (p) => {
-  const total = p.items?.total ?? p.tracks?.total
-  return total == null ? '– tracks' : `${total} tracks`
-}
 const albums = ref([])
 const selectedGenre = ref('')
-// ---- PKCE helpers -------------------------------------------------------
-function generateRandomString(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  const values = crypto.getRandomValues(new Uint8Array(length))
-  return Array.from(values, (v) => chars[v % chars.length]).join('')
-}
-
-async function sha256(plain) {
-  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain))
-}
-
-function base64encode(buffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-}
-
-// ---- Auth flow ----------------------------------------------------------
-const loginWithSpotify = async () => {
-  const verifier = generateRandomString(64)
-  const challenge = base64encode(await sha256(verifier))
-  const state = generateRandomString(16)
-
-  localStorage.setItem('pkce_verifier', verifier)
-  localStorage.setItem('pkce_state', state)
-
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    redirect_uri: REDIRECT_URI,
-    code_challenge_method: 'S256',
-    code_challenge: challenge,
-    state,
-  })
-
-  window.location.href = `${AUTH_URL}?${params.toString()}`
-}
-
-const exchangeCodeForToken = async (code) => {
-  const verifier = localStorage.getItem('pkce_verifier')
-  if (!verifier) throw new Error('Missing PKCE verifier. Please log in again.')
-
-  const response = await axios.post(
-    TOKEN_URL,
-    new URLSearchParams({
-      client_id: CLIENT_ID,
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: REDIRECT_URI,
-      code_verifier: verifier,
-    }),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-  )
-
-  localStorage.removeItem('pkce_verifier')
-  localStorage.removeItem('pkce_state')
-  return response.data.access_token
-}
-
-const logout = () => {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('token_expires_at')
-  accessToken.value = null
-  profile.value = null
-  playlists.value = []
-  topGenres.value = []
-}
 
 // ---- API calls ----------------------------------------------------------
 const authHeader = () => ({ Authorization: `Bearer ${accessToken.value}` })
@@ -177,16 +97,11 @@ const fetchSpotifyPlaylists = async () => {
   playlists.value = data.items
 }
 
-// const getRecommendation = async () => {
-//   const { data } = await axios.get(SEARCHALBUM_URL, { headers: authHeader() })
-//   albums.value = data.albums.items;
-// }
-
 const getSelectedRecommendation = async () => {
   const searchUrl = `https://api.spotify.com/v1/search?q=genre%3A+${encodeURIComponent(selectedGenre.value)}&type=album&market=SG`;
   const { data } = await axios.get(searchUrl, { headers: authHeader() });
   albums.value = data.albums.items;
-  selectedGenre.value = ''; // Clear the input field after fetching recommendations
+  selectedGenre.value = ''; 
 };
 
 const loadGenres = async () => {
@@ -206,7 +121,6 @@ const loadData = async () => {
     // Sequential, as requested: profile first, then playlists
     await fetchSpotifyProfile()
     await fetchSpotifyPlaylists()
-    await getSelectedRecommendation()
     loadGenres()
   } catch (e) {
     if (e.response?.status === 401) {
@@ -220,6 +134,21 @@ const loadData = async () => {
   }
 }
 
+const logout = () => {
+  clearSession() // clears localStorage
+  accessToken.value = null
+  profile.value = null
+  playlists.value = []
+  topGenres.value = []
+  albums.value = []
+  selectedGenre.value = ''
+  error.value = ''
+}
+
+const trackCount = (p) => {
+  const total = p.items?.total ?? p.tracks?.total
+  return total == null ? '– tracks' : `${total} tracks`
+}
 // ---- Lifecycle ----------------------------------------------------------
 // The dark Spotify look only applies while this page is open (not app-wide).
 onBeforeUnmount(() => document.body.classList.remove('spotify-dark'))
