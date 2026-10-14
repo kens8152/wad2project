@@ -53,13 +53,19 @@ export const useEventsStore = defineStore('events', () => {
         const date = new Date()
         date.setDate(date.getDate() + e.dayOffset)
 
+        const headliner = eventArtists[0]
         list.push({
           id: e.id,
+          image: e.image,
           genre: genre,
           venue: venue,
           artists: eventArtists,
-          headliner: eventArtists[0],
-          title: eventArtists[0].name,
+          headliner: headliner,
+          title: headliner.name + ' at ' + venue.area,
+          tag: headliner.tag,
+          dow: DAYS[date.getDay()].toUpperCase(),
+          dayNumber: date.getDate(),
+          month: MONTHS[date.getMonth()].toUpperCase(),
           dayOffset: e.dayOffset,
           time: e.time,
           timeLabel: formatTime(e.time),
