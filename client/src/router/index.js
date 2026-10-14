@@ -9,7 +9,7 @@ const routes = [
   {
     path: '/events',
     name: 'events-map',
-    component: Placeholder,
+    component: () => import('@/views/EventsListView.vue'),
     meta: { title: 'Events', section: 'events' },
   },
   {
