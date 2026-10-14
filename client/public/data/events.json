@@ -1,0 +1,390 @@
+{
+  "genres": [
+    {
+      "id": "indie-rock",
+      "name": "Indie Rock",
+      "color": "#f0452f"
+    },
+    {
+      "id": "pop",
+      "name": "Pop Music",
+      "color": "#1f6feb"
+    },
+    {
+      "id": "mandopop",
+      "name": "Contemporary Mandopop",
+      "color": "#f0529c"
+    },
+    {
+      "id": "electronic",
+      "name": "Electronic",
+      "color": "#0f9d8a"
+    },
+    {
+      "id": "hip-hop",
+      "name": "Hip-Hop",
+      "color": "#9b2fd6"
+    },
+    {
+      "id": "traditional",
+      "name": "Traditional Ethnic Music",
+      "color": "#f59e0b"
+    }
+  ],
+  "artists": [
+    {
+      "id": "fallingislands",
+      "name": "FallingIslands",
+      "genreId": "electronic"
+    },
+    {
+      "id": "evanturetime",
+      "name": "Evanturetime",
+      "genreId": "electronic"
+    },
+    {
+      "id": "sherman-zhuo",
+      "name": "Sherman Zhuo",
+      "genreId": "mandopop"
+    },
+    {
+      "id": "cloudy-yan",
+      "name": "Cloudy Yan",
+      "genreId": "mandopop"
+    },
+    {
+      "id": "krunkle",
+      "name": "Krunkle",
+      "genreId": "indie-rock"
+    },
+    {
+      "id": "forest-bloom",
+      "name": "Forest Bloom",
+      "genreId": "indie-rock"
+    },
+    {
+      "id": "moon-carrot",
+      "name": "Moon Carrot",
+      "genreId": "indie-rock"
+    },
+    {
+      "id": "lullaboy",
+      "name": "Lullaboy",
+      "genreId": "pop"
+    },
+    {
+      "id": "aiyna",
+      "name": "ai.yna",
+      "genreId": "pop"
+    },
+    {
+      "id": "kin-leonn",
+      "name": "Kin Leonn",
+      "genreId": "hip-hop"
+    },
+    {
+      "id": "riot-in-magenta",
+      "name": "Riot In Magenta",
+      "genreId": "electronic"
+    },
+    {
+      "id": "mindosphere",
+      "name": "Mindosphere",
+      "genreId": "electronic"
+    },
+    {
+      "id": "intrgnt",
+      "name": "INTRGNT",
+      "genreId": "electronic"
+    },
+    {
+      "id": "loka-nada",
+      "name": "Loka Nada",
+      "genreId": "traditional"
+    },
+    {
+      "id": "kancing-rasa",
+      "name": "Kancing Rasa",
+      "genreId": "traditional"
+    }
+  ],
+  "venues": [
+    {
+      "id": "tinbox",
+      "name": "TinBox @ Bras Basah",
+      "address": "231 Bain Street, Singapore 180231",
+      "lat": 1.2985,
+      "lng": 103.8508
+    },
+    {
+      "id": "battlebox",
+      "name": "Battlebox @ Fort Canning",
+      "address": "2 Cox Terrace, Singapore 179622",
+      "lat": 1.2928,
+      "lng": 103.8465
+    },
+    {
+      "id": "kilo",
+      "name": "Kilo Lounge",
+      "address": "5 Stadium Walk, Singapore 397693",
+      "lat": 1.303,
+      "lng": 103.869
+    },
+    {
+      "id": "esplanade",
+      "name": "Esplanade Annexe Studio",
+      "address": "8 Raffles Avenue, Singapore 039802",
+      "lat": 1.2897,
+      "lng": 103.8553
+    },
+    {
+      "id": "projector",
+      "name": "The Projector @ Golden Mile",
+      "address": "6001 Beach Road, Singapore 199589",
+      "lat": 1.3029,
+      "lng": 103.8638
+    },
+    {
+      "id": "haji-lane",
+      "name": "Haji Lane Social Club",
+      "address": "28 Haji Lane, Singapore 189232",
+      "lat": 1.3006,
+      "lng": 103.8587
+    },
+    {
+      "id": "clarke-quay",
+      "name": "Clarke Quay Central Stage",
+      "address": "6 Eu Tong Sen Street, Singapore 059817",
+      "lat": 1.2886,
+      "lng": 103.8466
+    },
+    {
+      "id": "tekka",
+      "name": "Tekka Courtyard",
+      "address": "665 Buffalo Road, Singapore 210665",
+      "lat": 1.3066,
+      "lng": 103.8508
+    },
+    {
+      "id": "mount-emily",
+      "name": "Mount Emily Bandstand",
+      "address": "Upper Wilkie Road, Singapore 228092",
+      "lat": 1.3016,
+      "lng": 103.8493
+    },
+    {
+      "id": "bay-east",
+      "name": "Bay East Garden Lawn",
+      "address": "18 Marina Gardens Drive, Singapore 018953",
+      "lat": 1.2816,
+      "lng": 103.861
+    }
+  ],
+  "events": [
+    {
+      "id": "fallingislands-tinbox",
+      "genreId": "electronic",
+      "artistIds": [
+        "fallingislands"
+      ],
+      "venueId": "tinbox",
+      "dayOffset": 0,
+      "time": "21:00",
+      "price": 25,
+      "going": 118,
+      "about": "FallingIslands turn TinBox into a neon-lit synth lab for one night only."
+    },
+    {
+      "id": "fallingislands-battlebox",
+      "genreId": "electronic",
+      "artistIds": [
+        "fallingislands",
+        "lullaboy",
+        "kin-leonn",
+        "riot-in-magenta"
+      ],
+      "venueId": "battlebox",
+      "dayOffset": 3,
+      "time": "20:00",
+      "price": 32,
+      "going": 76,
+      "about": "A late-night synthwave bill in the BattleBox bunker, playing the new EP end to end."
+    },
+    {
+      "id": "fallingislands-kilo",
+      "genreId": "electronic",
+      "artistIds": [
+        "fallingislands"
+      ],
+      "venueId": "kilo",
+      "dayOffset": 6,
+      "time": "19:30",
+      "price": 20,
+      "going": 54,
+      "about": "An intimate early-evening set at Kilo Lounge with a live-looped synth show."
+    },
+    {
+      "id": "evanturetime-clarke-quay",
+      "genreId": "electronic",
+      "artistIds": [
+        "evanturetime"
+      ],
+      "venueId": "clarke-quay",
+      "dayOffset": 1,
+      "time": "22:00",
+      "price": 28,
+      "going": 92,
+      "about": "Two hours of progressive EDM with a full lighting rig."
+    },
+    {
+      "id": "sherman-zhuo-esplanade",
+      "genreId": "mandopop",
+      "artistIds": [
+        "sherman-zhuo",
+        "cloudy-yan"
+      ],
+      "venueId": "esplanade",
+      "dayOffset": 2,
+      "time": "19:30",
+      "price": 48,
+      "going": 210,
+      "about": "Sherman Zhuo performs his debut album live, with Cloudy Yan opening."
+    },
+    {
+      "id": "krunkle-haji-lane",
+      "genreId": "indie-rock",
+      "artistIds": [
+        "krunkle",
+        "forest-bloom"
+      ],
+      "venueId": "haji-lane",
+      "dayOffset": 1,
+      "time": "20:30",
+      "price": 18,
+      "going": 64,
+      "about": "Funk-drenched indie rock, loud and sweaty."
+    },
+    {
+      "id": "lullaboy-projector",
+      "genreId": "pop",
+      "artistIds": [
+        "lullaboy",
+        "aiyna"
+      ],
+      "venueId": "projector",
+      "dayOffset": 4,
+      "time": "20:00",
+      "price": 30,
+      "going": 130,
+      "about": "Lullaboy celebrates a new R&B-leaning pop EP."
+    },
+    {
+      "id": "loka-nada-bay-east",
+      "genreId": "traditional",
+      "artistIds": [
+        "loka-nada",
+        "kancing-rasa"
+      ],
+      "venueId": "bay-east",
+      "dayOffset": 5,
+      "time": "17:00",
+      "price": 15,
+      "going": 88,
+      "about": "An open-air evening of contemporary gamelan and keroncong. Bring a mat."
+    },
+    {
+      "id": "kin-leonn-tekka",
+      "genreId": "hip-hop",
+      "artistIds": [
+        "kin-leonn"
+      ],
+      "venueId": "tekka",
+      "dayOffset": 2,
+      "time": "21:00",
+      "price": 22,
+      "going": 71,
+      "about": "Kin Leonn debuts the full live-band version of his new record."
+    },
+    {
+      "id": "cloudy-yan-mount-emily",
+      "genreId": "mandopop",
+      "artistIds": [
+        "cloudy-yan"
+      ],
+      "venueId": "mount-emily",
+      "dayOffset": 5,
+      "time": "19:00",
+      "price": 0,
+      "going": 160,
+      "about": "A free open-air acoustic set. Come early for a spot on the grass."
+    },
+    {
+      "id": "mindosphere-tinbox",
+      "genreId": "electronic",
+      "artistIds": [
+        "mindosphere",
+        "riot-in-magenta"
+      ],
+      "venueId": "tinbox",
+      "dayOffset": 3,
+      "time": "22:30",
+      "price": 26,
+      "going": 80,
+      "about": "Deep, hypnotic house with synthpop openers."
+    },
+    {
+      "id": "moon-carrot-haji-lane",
+      "genreId": "indie-rock",
+      "artistIds": [
+        "moon-carrot"
+      ],
+      "venueId": "haji-lane",
+      "dayOffset": 0,
+      "time": "20:00",
+      "price": 15,
+      "going": 40,
+      "about": "Lo-fi bedroom indie, played loud."
+    },
+    {
+      "id": "aiyna-esplanade",
+      "genreId": "pop",
+      "artistIds": [
+        "aiyna",
+        "lullaboy"
+      ],
+      "venueId": "esplanade",
+      "dayOffset": 6,
+      "time": "20:00",
+      "price": 35,
+      "going": 99,
+      "about": "A shimmering alt-pop set with a surprise guest."
+    },
+    {
+      "id": "forest-bloom-tekka",
+      "genreId": "indie-rock",
+      "artistIds": [
+        "forest-bloom"
+      ],
+      "venueId": "tekka",
+      "dayOffset": 4,
+      "time": "19:00",
+      "price": 12,
+      "going": 38,
+      "about": "A hushed, candle-lit dream-pop show."
+    },
+    {
+      "id": "evanturetime-projector",
+      "genreId": "electronic",
+      "artistIds": [
+        "evanturetime",
+        "mindosphere"
+      ],
+      "venueId": "projector",
+      "dayOffset": 6,
+      "time": "23:00",
+      "price": 30,
+      "going": 140,
+      "about": "A late-night rooftop club takeover."
+    }
+  ]
+}
