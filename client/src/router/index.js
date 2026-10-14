@@ -59,6 +59,20 @@ const routes = [
     meta: { title: 'Spotify demo', section: 'spotify' },
   },
 
+  // Onboarding and profile (Kenson)
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('@/views/OnboardingView.vue'),
+    meta: {title: 'Profile', section: 'profile', owner: 'Kenson'},
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: {title: 'Profile', section: 'profile', owner: 'Kenson'},
+  },
+
   { path: '/:pathMatch(.*)*', redirect: { name: 'events-map' } },
 ]
 
