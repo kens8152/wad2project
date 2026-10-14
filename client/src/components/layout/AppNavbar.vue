@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCurrentUser } from '@/composables/useCurrentUser'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
-const { user } = useCurrentUser()
+const userStore = useUserStore()
+const user = userStore.user
 
 const links = [
   { label: 'Discover', to: { name: 'discover' }, section: 'discover' },
