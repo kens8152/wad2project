@@ -37,24 +37,6 @@ function submitSearch() {
 
 <template>
   <header class="riffle-nav">
-    <!-- Decorative waves behind the bar -->
-    <svg class="riffle-nav__waves" viewBox="0 0 1600 80" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="nav-wave-a" x1="0" x2="1">
-          <stop offset="0" stop-color="#fbd1e6" />
-          <stop offset="0.5" stop-color="#d9d3fb" />
-          <stop offset="1" stop-color="#cfe4fb" />
-        </linearGradient>
-        <linearGradient id="nav-wave-b" x1="0" x2="1">
-          <stop offset="0" stop-color="#cfe9fb" />
-          <stop offset="0.6" stop-color="#bff0dc" />
-          <stop offset="1" stop-color="#fde4d3" />
-        </linearGradient>
-      </defs>
-      <path d="M0 80 V40 C80 30 120 6 220 10 C320 14 360 54 460 50 C560 46 560 70 640 80 Z" fill="url(#nav-wave-a)" opacity="0.8" />
-      <path d="M980 80 C1060 70 1100 20 1200 18 C1300 16 1330 52 1420 46 C1500 40 1560 22 1600 30 V80 Z" fill="url(#nav-wave-b)" opacity="0.85" />
-    </svg>
-
     <div class="riffle-nav__inner container-xxl">
       <RouterLink :to="{ name: 'events-map' }" class="riffle-nav__brand" aria-label="Riffle home">
         <i class="bi bi-music-note-beamed riffle-nav__logo"></i>
@@ -117,14 +99,6 @@ function submitSearch() {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--riffle-border);
   overflow: visible;
-}
-
-.riffle-nav__waves {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
 }
 
 .riffle-nav__inner {
