@@ -35,77 +35,92 @@
     {
       "id": "fallingislands",
       "name": "FallingIslands",
-      "genreId": "electronic"
+      "genreId": "electronic",
+      "tag": "synthwave"
     },
     {
       "id": "evanturetime",
       "name": "Evanturetime",
-      "genreId": "electronic"
+      "genreId": "electronic",
+      "tag": "edm"
     },
     {
       "id": "sherman-zhuo",
       "name": "Sherman Zhuo",
-      "genreId": "mandopop"
+      "genreId": "mandopop",
+      "tag": "mandopop"
     },
     {
       "id": "cloudy-yan",
       "name": "Cloudy Yan",
-      "genreId": "mandopop"
+      "genreId": "mandopop",
+      "tag": "ballad"
     },
     {
       "id": "krunkle",
       "name": "Krunkle",
-      "genreId": "indie-rock"
+      "genreId": "indie-rock",
+      "tag": "funk"
     },
     {
       "id": "forest-bloom",
       "name": "Forest Bloom",
-      "genreId": "indie-rock"
+      "genreId": "indie-rock",
+      "tag": "dream-pop"
     },
     {
       "id": "moon-carrot",
       "name": "Moon Carrot",
-      "genreId": "indie-rock"
+      "genreId": "indie-rock",
+      "tag": "lo-fi"
     },
     {
       "id": "lullaboy",
       "name": "Lullaboy",
-      "genreId": "pop"
+      "genreId": "pop",
+      "tag": "r&b"
     },
     {
       "id": "aiyna",
       "name": "ai.yna",
-      "genreId": "pop"
+      "genreId": "pop",
+      "tag": "alt-pop"
     },
     {
       "id": "kin-leonn",
       "name": "Kin Leonn",
-      "genreId": "hip-hop"
+      "genreId": "hip-hop",
+      "tag": "hip-hop"
     },
     {
       "id": "riot-in-magenta",
       "name": "Riot In Magenta",
-      "genreId": "electronic"
+      "genreId": "electronic",
+      "tag": "synthpop"
     },
     {
       "id": "mindosphere",
       "name": "Mindosphere",
-      "genreId": "electronic"
+      "genreId": "electronic",
+      "tag": "house"
     },
     {
       "id": "intrgnt",
       "name": "INTRGNT",
-      "genreId": "electronic"
+      "genreId": "electronic",
+      "tag": "techno"
     },
     {
       "id": "loka-nada",
       "name": "Loka Nada",
-      "genreId": "traditional"
+      "genreId": "traditional",
+      "tag": "gamelan"
     },
     {
       "id": "kancing-rasa",
       "name": "Kancing Rasa",
-      "genreId": "traditional"
+      "genreId": "traditional",
+      "tag": "keroncong"
     }
   ],
   "venues": [
@@ -114,70 +129,80 @@
       "name": "TinBox @ Bras Basah",
       "address": "231 Bain Street, Singapore 180231",
       "lat": 1.2985,
-      "lng": 103.8508
+      "lng": 103.8508,
+      "area": "Bras Basah"
     },
     {
       "id": "battlebox",
       "name": "Battlebox @ Fort Canning",
       "address": "2 Cox Terrace, Singapore 179622",
       "lat": 1.2928,
-      "lng": 103.8465
+      "lng": 103.8465,
+      "area": "BattleBox"
     },
     {
       "id": "kilo",
       "name": "Kilo Lounge",
       "address": "5 Stadium Walk, Singapore 397693",
       "lat": 1.303,
-      "lng": 103.869
+      "lng": 103.869,
+      "area": "Kallang Wave Mall"
     },
     {
       "id": "esplanade",
       "name": "Esplanade Annexe Studio",
       "address": "8 Raffles Avenue, Singapore 039802",
       "lat": 1.2897,
-      "lng": 103.8553
+      "lng": 103.8553,
+      "area": "Esplanade"
     },
     {
       "id": "projector",
       "name": "The Projector @ Golden Mile",
       "address": "6001 Beach Road, Singapore 199589",
       "lat": 1.3029,
-      "lng": 103.8638
+      "lng": 103.8638,
+      "area": "Golden Mile Tower"
     },
     {
       "id": "haji-lane",
       "name": "Haji Lane Social Club",
       "address": "28 Haji Lane, Singapore 189232",
       "lat": 1.3006,
-      "lng": 103.8587
+      "lng": 103.8587,
+      "area": "Haji Lane"
     },
     {
       "id": "clarke-quay",
       "name": "Clarke Quay Central Stage",
       "address": "6 Eu Tong Sen Street, Singapore 059817",
       "lat": 1.2886,
-      "lng": 103.8466
+      "lng": 103.8466,
+      "area": "Clarke Quay"
     },
     {
       "id": "tekka",
       "name": "Tekka Courtyard",
       "address": "665 Buffalo Road, Singapore 210665",
       "lat": 1.3066,
-      "lng": 103.8508
+      "lng": 103.8508,
+      "area": "Little India"
     },
     {
       "id": "mount-emily",
       "name": "Mount Emily Bandstand",
       "address": "Upper Wilkie Road, Singapore 228092",
       "lat": 1.3016,
-      "lng": 103.8493
+      "lng": 103.8493,
+      "area": "Mount Emily Park"
     },
     {
       "id": "bay-east",
       "name": "Bay East Garden Lawn",
       "address": "18 Marina Gardens Drive, Singapore 018953",
       "lat": 1.2816,
-      "lng": 103.861
+      "lng": 103.861,
+      "area": "Bay East Garden"
     }
   ],
   "events": [
@@ -192,7 +217,8 @@
       "time": "21:00",
       "price": 25,
       "going": 118,
-      "about": "FallingIslands turn TinBox into a neon-lit synth lab for one night only."
+      "about": "FallingIslands turn TinBox into a neon-lit synth lab for one night only.",
+      "image": "/images/events/fallingislands-tinbox.svg"
     },
     {
       "id": "fallingislands-battlebox",
@@ -208,7 +234,8 @@
       "time": "20:00",
       "price": 32,
       "going": 76,
-      "about": "A late-night synthwave bill in the BattleBox bunker, playing the new EP end to end."
+      "about": "A late-night synthwave bill in the BattleBox bunker, playing the new EP end to end.",
+      "image": "/images/events/fallingislands-battlebox.svg"
     },
     {
       "id": "fallingislands-kilo",
@@ -221,7 +248,8 @@
       "time": "19:30",
       "price": 20,
       "going": 54,
-      "about": "An intimate early-evening set at Kilo Lounge with a live-looped synth show."
+      "about": "An intimate early-evening set at Kilo Lounge with a live-looped synth show.",
+      "image": "/images/events/fallingislands-kilo.svg"
     },
     {
       "id": "evanturetime-clarke-quay",
@@ -234,7 +262,8 @@
       "time": "22:00",
       "price": 28,
       "going": 92,
-      "about": "Two hours of progressive EDM with a full lighting rig."
+      "about": "Two hours of progressive EDM with a full lighting rig.",
+      "image": "/images/events/evanturetime-clarke-quay.svg"
     },
     {
       "id": "sherman-zhuo-esplanade",
@@ -248,7 +277,8 @@
       "time": "19:30",
       "price": 48,
       "going": 210,
-      "about": "Sherman Zhuo performs his debut album live, with Cloudy Yan opening."
+      "about": "Sherman Zhuo performs his debut album live, with Cloudy Yan opening.",
+      "image": "/images/events/sherman-zhuo-esplanade.svg"
     },
     {
       "id": "krunkle-haji-lane",
@@ -262,7 +292,8 @@
       "time": "20:30",
       "price": 18,
       "going": 64,
-      "about": "Funk-drenched indie rock, loud and sweaty."
+      "about": "Funk-drenched indie rock, loud and sweaty.",
+      "image": "/images/events/krunkle-haji-lane.svg"
     },
     {
       "id": "lullaboy-projector",
@@ -276,7 +307,8 @@
       "time": "20:00",
       "price": 30,
       "going": 130,
-      "about": "Lullaboy celebrates a new R&B-leaning pop EP."
+      "about": "Lullaboy celebrates a new R&B-leaning pop EP.",
+      "image": "/images/events/lullaboy-projector.svg"
     },
     {
       "id": "loka-nada-bay-east",
@@ -290,7 +322,8 @@
       "time": "17:00",
       "price": 15,
       "going": 88,
-      "about": "An open-air evening of contemporary gamelan and keroncong. Bring a mat."
+      "about": "An open-air evening of contemporary gamelan and keroncong. Bring a mat.",
+      "image": "/images/events/loka-nada-bay-east.svg"
     },
     {
       "id": "kin-leonn-tekka",
@@ -303,7 +336,8 @@
       "time": "21:00",
       "price": 22,
       "going": 71,
-      "about": "Kin Leonn debuts the full live-band version of his new record."
+      "about": "Kin Leonn debuts the full live-band version of his new record.",
+      "image": "/images/events/kin-leonn-tekka.svg"
     },
     {
       "id": "cloudy-yan-mount-emily",
@@ -316,7 +350,8 @@
       "time": "19:00",
       "price": 0,
       "going": 160,
-      "about": "A free open-air acoustic set. Come early for a spot on the grass."
+      "about": "A free open-air acoustic set. Come early for a spot on the grass.",
+      "image": "/images/events/cloudy-yan-mount-emily.svg"
     },
     {
       "id": "mindosphere-tinbox",
@@ -330,7 +365,8 @@
       "time": "22:30",
       "price": 26,
       "going": 80,
-      "about": "Deep, hypnotic house with synthpop openers."
+      "about": "Deep, hypnotic house with synthpop openers.",
+      "image": "/images/events/mindosphere-tinbox.svg"
     },
     {
       "id": "moon-carrot-haji-lane",
@@ -343,7 +379,8 @@
       "time": "20:00",
       "price": 15,
       "going": 40,
-      "about": "Lo-fi bedroom indie, played loud."
+      "about": "Lo-fi bedroom indie, played loud.",
+      "image": "/images/events/moon-carrot-haji-lane.svg"
     },
     {
       "id": "aiyna-esplanade",
@@ -357,7 +394,8 @@
       "time": "20:00",
       "price": 35,
       "going": 99,
-      "about": "A shimmering alt-pop set with a surprise guest."
+      "about": "A shimmering alt-pop set with a surprise guest.",
+      "image": "/images/events/aiyna-esplanade.svg"
     },
     {
       "id": "forest-bloom-tekka",
@@ -370,7 +408,8 @@
       "time": "19:00",
       "price": 12,
       "going": 38,
-      "about": "A hushed, candle-lit dream-pop show."
+      "about": "A hushed, candle-lit dream-pop show.",
+      "image": "/images/events/forest-bloom-tekka.svg"
     },
     {
       "id": "evanturetime-projector",
@@ -384,7 +423,8 @@
       "time": "23:00",
       "price": 30,
       "going": 140,
-      "about": "A late-night rooftop club takeover."
+      "about": "A late-night rooftop club takeover.",
+      "image": "/images/events/evanturetime-projector.svg"
     }
   ]
 }
