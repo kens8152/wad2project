@@ -13,6 +13,7 @@ const links = [
   { label: 'Events', to: { name: 'events-map' }, section: 'events' },
   { label: 'Artists', to: { name: 'artists' }, section: 'artists' },
   { label: 'Forum', to: { name: 'forum' }, section: 'forum' },
+  { label: 'Spotify Demo', to: { name: 'spotify-demo' }, section: 'spotify' },
 ]
 
 const activeSection = computed(() => route.meta.section)
