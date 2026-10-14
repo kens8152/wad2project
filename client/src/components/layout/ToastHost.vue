@@ -1,12 +1,12 @@
 <script setup>
-import { useToast } from '@/composables/useToast'
+import { useToastStore } from '@/stores/toast'
 
-const { message } = useToast()
+const toastStore = useToastStore()
 </script>
 
 <template>
   <Transition name="toast">
-    <div v-if="message" class="riffle-toast" role="status" aria-live="polite">{{ message }}</div>
+    <div v-if="toastStore.message" class="riffle-toast" role="status" aria-live="polite">{{ toastStore.message }}</div>
   </Transition>
 </template>
 
