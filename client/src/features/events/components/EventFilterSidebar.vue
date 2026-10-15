@@ -62,6 +62,24 @@ function toggleVoice() {
 }
 onBeforeUnmount(() => recognition?.abort())
 
+// a short burst of music notes from the heart when preferences are saved
+const heartBurst = ref(false)
+let burstTimer = null
+
+function onHeartClick() {
+  if (filters.canSavePreferences.value) {
+    filters.savePreferences()
+    toast('Preferences saved')
+    heartBurst.value = true
+    clearTimeout(burstTimer)
+    burstTimer = setTimeout(() => (heartBurst.value = false), 1900)
+  } else if (filters.preferencesOn.value) {
+    toast('These are already your saved preferences')
+  } else {
+    toast('Choose some filters first, then tap the heart to save them')
+  }
+}
+
 function apply() {
   filters.apply()
   emit('applied')
@@ -105,10 +123,31 @@ function apply() {
 
     <!-- Preferences -->
     <div class="filters__row filters__prefs">
-      <label class="d-flex align-items-center gap-2 mb-0" for="pref-toggle">
-        <i class="bi bi-heart-fill text-danger"></i>
-        <span>Your Preferences</span>
-      </label>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="filters__heart"
+          :class="{
+            'is-saved': filters.preferencesOn.value,
+            'can-save': filters.canSavePreferences.value,
+            'is-beating': heartBurst,
+          }"
+          aria-label="Save these filters as my preferences"
+          title="Save these filters as your preferences"
+          @click="onHeartClick"
+        >
+          <i class="bi" :class="filters.preferencesOn.value ? 'bi-heart-fill' : 'bi-heart'"></i>
+          <template v-if="heartBurst">
+            <i class="bi bi-music-note-beamed filters__note filters__note--1" aria-hidden="true"></i>
+            <i class="bi bi-music-note filters__note filters__note--2" aria-hidden="true"></i>
+            <i class="bi bi-music-note-beamed filters__note filters__note--3" aria-hidden="true"></i>
+            <i class="bi bi-music-note filters__note filters__note--4" aria-hidden="true"></i>
+            <i class="bi bi-music-note-beamed filters__note filters__note--5" aria-hidden="true"></i>
+            <span class="filters__ring" aria-hidden="true"></span>
+          </template>
+        </button>
+        <span class="filters__prefs-label">Your Preferences</span>
+      </div>
       <div class="form-check form-switch m-0">
         <input
           id="pref-toggle"
@@ -116,6 +155,9 @@ function apply() {
           class="form-check-input"
           type="checkbox"
           role="switch"
+          aria-label="Use my saved preferences"
+          :disabled="!filters.hasPreferences.value"
+          :title="filters.hasPreferences.value ? '' : 'Choose some filters and tap the heart to save them first'"
         />
       </div>
     </div>
@@ -284,6 +326,11 @@ function apply() {
   align-items: center;
   justify-content: space-between;
 }
+.filters__prefs-label {
+  font-weight: 700;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
 .filters__prefs {
   margin: 0.45rem 0 0.05rem;
   padding: 0.35rem 0;
@@ -293,9 +340,167 @@ function apply() {
   color: var(--riffle-ink);
 }
 .filters__prefs .form-check-input {
-  width: 3em;
-  height: 1.55em;
+  width: 3.1em;
+  height: 1.65em;
+  margin: 0;
   cursor: pointer;
+  border: 2px solid #8f9ab8;
+  background-color: #e9edf8;
+  /* a dark knob so the switch is easy to see when it is off */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236b7694'/%3e%3c/svg%3e");
+  transition: background-color 0.2s, border-color 0.2s, background-position 0.2s;
+}
+.filters__prefs .form-check-input:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+.filters__prefs .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+.filters__prefs .form-check-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* the heart: grey when there is nothing to save, red outline when the current
+   filters can be saved, filled red when they are the saved preferences */
+.filters__heart {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  margin-left: -0.3rem;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--riffle-faint);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.filters__heart:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.filters__heart.can-save {
+  color: #dc2626;
+  cursor: pointer;
+}
+.filters__heart.can-save:hover {
+  background: #fee2e2;
+}
+.filters__heart.is-saved {
+  color: #dc2626;
+}
+
+/* on save: the heart gives a strong beat, a ring spreads out, and music notes float up from it */
+.filters__heart.is-beating > .bi:first-child {
+  animation: heart-beat 0.7s ease-out;
+}
+@keyframes heart-beat {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.8);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.filters__ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: heart-ring 0.9s ease-out;
+}
+@keyframes heart-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+.filters__note {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -0.6rem 0 0 -0.45rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+  animation: note-fall 1.5s cubic-bezier(0.3, 0.1, 0.5, 1) forwards;
+  animation-delay: var(--delay, 0s);
+}
+/* each note: --dx how far it drifts sideways, --up how high it pops out of the heart, --spin its tilt */
+.filters__note--1 {
+  color: #ff4d8d;
+  --dx: -20px;
+  --up: -26px;
+  --spin: -40deg;
+}
+.filters__note--2 {
+  color: #7c4dff;
+  --dx: 30px;
+  --up: -34px;
+  --spin: 35deg;
+  --delay: 0.07s;
+}
+.filters__note--3 {
+  color: #ef4444;
+  --dx: -14px;
+  --up: -38px;
+  --spin: 25deg;
+  --delay: 0.14s;
+}
+.filters__note--4 {
+  color: #2563eb;
+  --dx: 52px;
+  --up: -22px;
+  --spin: 60deg;
+  --delay: 0.21s;
+}
+.filters__note--5 {
+  color: #ff4d8d;
+  --dx: 10px;
+  --up: -30px;
+  --spin: -30deg;
+  --delay: 0.28s;
+}
+/* the note pops out of the heart, arcs up and sideways, then falls away with a spin */
+@keyframes note-fall {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.3), calc(var(--up) * 0.8)) scale(1.2) rotate(calc(var(--spin) * 0.3));
+  }
+  35% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.6), var(--up)) scale(1.1) rotate(calc(var(--spin) * 0.6));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), 70px) scale(0.8) rotate(var(--spin));
+  }
 }
 
 .filters__group {

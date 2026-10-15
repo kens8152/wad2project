@@ -1,15 +1,13 @@
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useToastStore } from '@/stores/toast'
 
-// Tiny app-wide toast. Render <ToastHost /> once (App.vue), call toast('…') anywhere.
-const message = ref('')
-let timer = null
-
-export function toast(text, ms = 2600) {
-  message.value = text
-  clearTimeout(timer)
-  timer = setTimeout(() => (message.value = ''), ms)
+// The events pages call toast('…'). The message itself is kept in the app's toast
+// store, which is what <ToastHost /> in App.vue displays.
+export function toast(text) {
+  useToastStore().show(text)
 }
 
 export function useToast() {
-  return { message, toast }
+  const store = useToastStore()
+  return { message: computed(() => store.message), toast }
 }

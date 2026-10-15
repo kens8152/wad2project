@@ -250,6 +250,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   .events-shell__sidebar > :deep(.filters) {
     max-height: calc(100vh - var(--navbar-height) - 32px);
     overflow-y: auto;
+    overflow-x: hidden; /* the heart's falling notes must not make a sideways scrollbar */
     direction: rtl; /* puts the scrollbar on the left ... */
   }
   .events-shell__sidebar > :deep(.filters) > * {
