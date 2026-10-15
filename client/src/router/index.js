@@ -9,19 +9,20 @@ const routes = [
   {
     path: '/events',
     name: 'events-map',
-    component: () => import('@/views/EventsListView.vue'),
+    component: () => import('@/features/events/views/EventsMapView.vue'),
     meta: { title: 'Events', section: 'events' },
   },
   {
     path: '/events/list',
     name: 'events-list',
-    component: Placeholder,
+    component: () => import('@/features/events/views/EventsListView.vue'),
     meta: { title: 'Events', section: 'events' },
   },
   {
     path: '/events/:id',
     name: 'event-detail',
-    component: Placeholder,
+    component: () => import('@/features/events/views/EventDetailView.vue'),
+    props: true,
     meta: { title: 'Event', section: 'events' },
   },
 
@@ -38,12 +39,12 @@ const routes = [
     component: Placeholder,
     meta: { title: 'Artists', section: 'artists', owner: 'Powell' },
   },
-  {
-    path: '/artist-matchmaking',
-    name: 'artist-matchmaking',
-    component: () => import('@/views/ArtistMatchmaking.vue'),
-    meta: { title: 'Discover Artists', section: 'artists' },
-  },
+  // {
+  //   path: '/artist-matchmaking',
+  //   name: 'artist-matchmaking',
+  //   component: () => import('@/views/ArtistMatchmaking.vue'),
+  //   meta: { title: 'Discover Artists', section: 'artists' },
+  // },
   {
     path: '/artists/:slug',
     name: 'artist-detail',
