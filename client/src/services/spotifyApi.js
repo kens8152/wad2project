@@ -2,7 +2,7 @@ import axios from 'axios';
 import { refreshAccessToken } from './spotifyAuth';
 
 const spotifyApi = axios.create({
-  baseURL: 'https://spotify.com',
+baseURL: 'https://api.spotify.com/v1',
 });
 
 // Axios Request Interceptor to catch expired tokens before making a request
@@ -16,8 +16,11 @@ spotifyApi.interceptors.request.use(async (config) => {
       token = await refreshAccessToken();
     } catch (err) {
       console.error('Failed to refresh token, forcing re-login', err);
-      window.localStorage.clear();
-      window.location.href = '/'; // send back to login page
+      window.localStorage.removeItem('spotify_access_token');
+      window.localStorage.removeItem('spotify_token_expiry');
+
+      window.location.href = '/'; // Return to home route
+      throw err;
     }
   }
 
@@ -38,4 +41,16 @@ export async function fetchTopArtists(token, limit = 15) {
   return data.items
 }
 
+// Search Spotify for songs
+export async function searchSongs(query) {
+  const response = await spotifyApi.get('/search', {
+    params: {
+      q: query,
+      type: 'track',
+      limit: 5
+    }
+  })
+
+  return response.data.tracks.items
+}
 export default spotifyApi;
