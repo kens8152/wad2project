@@ -75,67 +75,102 @@ function savePreferences() {
 
 
 <template>
-  <section class="onboarding-page">
+  <main class="onboarding-page">
+
     <header class="page-heading">
       <h1>Let’s build your taste profile</h1>
-      <p>Choose your favourite genres and songs to get started.</p>
+      <p>Pick your favourite genres and tell us which songs you enjoy.</p>
+
     </header>
+
+
+    <div class="row">
+      <div class="col-12 col-md-6 mb-3">
+        <div class="connection-box spotify-box">
+          <div>
+            <h2>Connect Spotify</h2>
+            <p>Use your music preferences to build your profile.</p>
+          </div>
+
+          <button class="connect-button" type="button" disabled>
+            Coming soon
+          </button>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 mb-3">
+        <div class="connection-box apple-box">
+          <div>
+            <h2>Connect Apple Music</h2>
+            <p>Bring your favourite music into Riffle.</p>
+          </div>
+
+          <button class="connect-button" type="button" disabled>
+            Coming soon
+          </button>
+        </div>
+      </div>
+    </div>
 
     <form @submit.prevent="savePreferences">
 
       <div class="name-section">
-        <label for="onboarding-name">Display name</label>
+        <label for="display-name">Display name</label>
 
-        <input id="onboarding-name" v-model.trim="displayName" class="text-input" type="text" placeholder="What should we call you?" maxlength="50" required>
+        <input id="display-name" v-model.trim="displayName" class="text-input" type="text" placeholder="What should we call you?" maxlength="50" required>
       </div>
 
+      <div class="row">
+          <div class="col-12 col-md-6 mb-3">
+          <section class="preference-box">
+            <h2>Pick your genres</h2>
+            <p>Choose at least one genre you enjoy.</p>
 
-      <div class="preferences-layout">
-        <fieldset class="preference-section">
-          <legend>Pick your genres</legend>
-          <p>Select at least one genre you enjoy.</p>
+            <div class="genre-options">
+              <label v-for="genre in genres" :key="genre" class="genre-option" :class="{selected: selectedGenres.includes(genre)}">
+                <input v-model="selectedGenres" type="checkbox" :value="genre">
+                <span>{{ genre }}</span>
+              </label>
+            </div>
 
-          <div class="genre-grid">
-            <label v-for="genre in genres" :key="genre" class="genre-option" :class="{ selected: selectedGenres.includes(genre) }">
-            
-              <input v-model="selectedGenres" type="checkbox":value="genre">
-              
+            <p class="selection-count">
+              {{ selectedGenres.length }} selected
+            </p>
+          </section>
+        </div>
 
-              <span>{{ genre }}</span>
+
+        <div class="col-12 col-md-6 mb-3">
+          <section class="preference-box">
+            <h2>Pick your songs</h2>
+            <p>Tell us a few favourites. This is optional.</p>
+
+            <label for="favourite-songs">
+              Song titles and artists
             </label>
-          </div>
 
-          <p class="selection-count">
-            {{ selectedGenres.length }} selected
-          </p>
-        </fieldset>
-
-
-        <section class="preference-section">
-          <h2>Favourite songs</h2>
-          <p>Tell us a few favourites. This section is optional.</p>
-
-          <label for="onboarding-songs">
-            Song titles and artists
-          </label>
-
-          <textarea id="onboarding-songs" v-model.trim="favouriteSongs" class="text-input" rows="6" maxlength="500" placeholder="Enter one song per line."></textarea>
-        </section>
+            <textarea id="favourite-songs" v-model.trim="favouriteSongs" class="text-input" rows="6" maxlength="500" placeholder="Enter one song per line." ></textarea>
+            
+          </section>
+        </div>
       </div>
 
 
       <section class="taste-summary">
-        <h2>Your selected genres</h2>
+        <div>
+          <h2>Your taste profile</h2>
+          <p>Updates as you pick your genres.</p>
+        </div>
 
         <p v-if="selectedGenres.length === 0">
-          Your choices will appear here.
+          No genres selected yet.
         </p>
 
-        <ul v-else class="genre-tags">
-          <li v-for="genre in selectedGenres" :key="genre">
+        <div v-else class="selected-genres">
+          <span v-for="genre in selectedGenres" :key="genre" class="genre-tag">
             {{ genre }}
-          </li>
-        </ul>
+          </span>
+        </div>
       </section>
 
       <p v-if="errorMessage" class="error-message" role="alert">
@@ -144,20 +179,21 @@ function savePreferences() {
 
 
       <div class="actions">
-        <button class="primary-button" type="submit">
-          Save and view profile
+        <button class="next-button" type="submit">
+          Next →
         </button>
       </div>
     </form>
-  </section>
+  </main>
 </template>
 
 <style scoped>
 
 .onboarding-page {
   width: 90%;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 30px 0;
+  padding: 35px 0;
   color: #14234b;
   font-size: 16px;
 }
@@ -165,12 +201,13 @@ function savePreferences() {
 
 .page-heading {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .page-heading h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 8px;
 }
 
 .page-heading p {
@@ -178,92 +215,102 @@ function savePreferences() {
 }
 
 
-.name-section {
-  margin-bottom: 25px;
+.connection-box {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 20px;
+  border: 1px solid #e0e5f0;
+  border-radius: 15px;
+}
+
+.spotify-box {
+  background-color: #edfaf5;
+}
+
+.apple-box {
+  background-color: #fff0f7;
+}
+
+.connection-box h2 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.connection-box p {
+  font-size: 13px;
+  margin: 0;
+  color: #64708a;
+}
+
+.connect-button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 25px;
+  background-color: #14234b;
+  color: white;
+  font-size: 13px;
+}
+
+.connect-button:disabled {
+  opacity: 0.6;
 }
 
 
-.name-section label,
-.preference-section label {
-  display: block;
+.name-section {
+  margin: 10px 0 20px;
+}
+
+.name-section label {
   font-weight: bold;
 }
 
-.text-input {
-  box-sizing: border-box;
-  width: 100%;
-  margin-top: 8px;
-  padding: 12px;
-  border: 1px solid #c4ccdc;
-  border-radius: 8px;
-  font-size: 16px;
-  font-family: inherit;
-  color: #14234b;
-  background-color: white;
-}
 
-
-.preferences-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-
-.preference-section {
-  box-sizing: border-box;
-  flex: 1;
-  min-width: 250px;
-  margin: 0;
+.preference-box {
+  height: 100%;
   padding: 20px;
-  border: 1px solid #c4ccdc;
+  border: 1px solid #e0e5f0;
   border-radius: 15px;
   background-color: white;
 }
 
-
-.preference-section legend {
-  float: none;
-  width: auto;
-  padding: 0 5px;
-}
-
-.preference-section legend,
-.preference-section h2,
-.taste-summary h2 {
-  font-size: 22px;
+.preference-box h2 {
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
-.preference-section > p {
+.preference-box p {
   color: #64708a;
+  font-size: 14px;
 }
 
 
-.genre-grid {
+.genre-options {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-
 .genre-option {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  border: 1px solid #c4ccdc;
-  border-radius: 10px;
+  padding: 9px 14px;
+  border: 1px solid #d8deeb;
+  border-radius: 25px;
   background-color: white;
+  font-size: 14px;
   cursor: pointer;
 }
-
 
 .genre-option:hover {
   background-color: #f5f0ff;
 }
-
 
 .genre-option.selected {
   background-color: #eee7ff;
@@ -272,40 +319,72 @@ function savePreferences() {
 }
 
 .selection-count {
-  margin-top: 15px;
-  font-size: 14px;
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+.text-input {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #d8deeb;
+  border-radius: 10px;
+  background-color: #f8f9fc;
+  color: #14234b;
+  font-size: 15px;
+  font-family: inherit;
 }
 
 
 .taste-summary {
-  margin-top: 25px;
-  padding: 20px;
-  border-radius: 15px;
-  background-color: #f2edff;
-}
-
-.genre-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 0;
-  margin: 0;
-  list-style-type: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-top: 5px;
+  padding: 20px;
+  border: 1px solid #e0e5f0;
+  border-radius: 15px;
+  background-color: #f3efff;
 }
 
-.genre-tags li {
-  padding: 8px 14px;
-  border-radius: 20px;
-  background-color: white;
+.taste-summary h2 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
 }
+
+.taste-summary p {
+  font-size: 13px;
+  margin: 0;
+  color: #64708a;
+}
+
+.selected-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.genre-tag {
+  padding: 8px 12px;
+  border: 1px solid #e0e5f0;
+  border-radius: 25px;
+  background-color: white;
+  font-size: 13px;
+}
+
 
 .actions {
-  margin-top: 25px;
   text-align: center;
+  margin-top: 25px;
 }
 
-.primary-button {
-  padding: 12px 25px;
+.next-button {
+  padding: 12px 40px;
   border: none;
   border-radius: 25px;
   background-color: #14234b;
@@ -314,10 +393,9 @@ function savePreferences() {
   cursor: pointer;
 }
 
-.primary-button:hover {
+.next-button:hover {
   background-color: #304779;
 }
-
 
 .error-message {
   margin-top: 15px;
