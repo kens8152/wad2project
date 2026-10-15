@@ -15,7 +15,7 @@ server.use(express.urlencoded({ extended: true }));
 
 const ARTISTS_DATA = path.join(__dirname, "stores", "artists.json");
 
-server.get("/artists", async (req, res) => {
+server.get("/artists-matchmaking", async (req, res) => {
     const returnCount = 5;
 
     try {
