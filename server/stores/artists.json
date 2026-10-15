@@ -1,0 +1,222 @@
+[
+  {
+    "id": "fallingislands",
+    "name": "FallingIslands",
+    "verified": true,
+    "role": "Singer-Songwriter",
+    "genres": ["Indie Folk", "Acoustic", "Alternative", "Indie Pop"],
+    "bio": "Dreamy indie-folk tunes about everyday moments and quiet places.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/fallingislands/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "evanturetime",
+    "name": "Evanturetime",
+    "verified": true,
+    "role": "Producer",
+    "genres": ["Electronic", "EDM", "Dance"],
+    "bio": "High-energy electronic sets built for late nights and big rooms.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/evanturetime/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "sherman-zhuo",
+    "name": "Sherman Zhuo",
+    "verified": true,
+    "role": "Singer-Songwriter",
+    "genres": ["Mandopop", "Ballad", "Pop"],
+    "bio": "Heartfelt Mandopop ballads with warm vocals and piano-led arrangements.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/sherman-zhuo/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "cloudy-yan",
+    "name": "Cloudy Yan",
+    "verified": false,
+    "role": "Vocalist",
+    "genres": ["Mandopop", "Ballad"],
+    "bio": "Soft, cinematic ballads for rainy evenings.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/cloudy-yan/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "krunkle",
+    "name": "Krunkle",
+    "verified": false,
+    "role": "Band",
+    "genres": ["Indie Rock", "Funk"],
+    "bio": "Groovy, riff-heavy funk rock that is impossible to stand still to.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/krunkle/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "forest-bloom",
+    "name": "Forest Bloom",
+    "verified": false,
+    "role": "Band",
+    "genres": ["Indie Rock", "Dream Pop", "Shoegaze"],
+    "bio": "Hazy guitars and floating vocals that sound like a long summer afternoon.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/forest-bloom/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "moon-carrot",
+    "name": "Moon Carrot",
+    "verified": false,
+    "role": "Producer",
+    "genres": ["Lo-fi", "Indie Rock", "Chill"],
+    "bio": "Lo-fi bedroom recordings for studying, drifting and daydreaming.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/moon-carrot/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "lullaboy",
+    "name": "Lullaboy",
+    "verified": true,
+    "role": "Singer-Songwriter",
+    "genres": ["Pop", "R&B"],
+    "bio": "Smooth pop and R&B with honest, conversational lyrics.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/lullaboy/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "aiyna",
+    "name": "ai.yna",
+    "verified": true,
+    "role": "Singer-Songwriter",
+    "genres": ["Alt-Pop", "Pop", "Electronic"],
+    "bio": "Moody alt-pop with glossy production and sharp hooks.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/aiyna/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "kin-leonn",
+    "name": "Kin Leonn",
+    "verified": false,
+    "role": "Producer",
+    "genres": ["Hip-Hop", "Ambient", "Experimental"],
+    "bio": "Atmospheric beats that blur the line between hip-hop and ambient.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/kin-leonn/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "riot-in-magenta",
+    "name": "Riot In Magenta",
+    "verified": false,
+    "role": "Band",
+    "genres": ["Synthpop", "Electronic", "Pop"],
+    "bio": "Bright synths and big choruses with a retro edge.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/riot-in-magenta/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "mindosphere",
+    "name": "Mindosphere",
+    "verified": false,
+    "role": "DJ",
+    "genres": ["House", "Electronic"],
+    "bio": "Deep, rolling house grooves for the dancefloor.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/mindosphere/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "intrgnt",
+    "name": "INTRGNT",
+    "verified": false,
+    "role": "Producer",
+    "genres": ["Techno", "Electronic"],
+    "bio": "Dark, driving techno with industrial textures.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/intrgnt/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "loka-nada",
+    "name": "Loka Nada",
+    "verified": false,
+    "role": "Ensemble",
+    "genres": ["Traditional", "Gamelan", "World"],
+    "bio": "Contemporary takes on gamelan, bridging heritage and modern sound.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/loka-nada/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "kancing-rasa",
+    "name": "Kancing Rasa",
+    "verified": false,
+    "role": "Ensemble",
+    "genres": ["Traditional", "Keroncong"],
+    "bio": "Nostalgic keroncong melodies with a fresh, playful twist.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/kancing-rasa/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "the-northbound",
+    "name": "The Northbound",
+    "verified": false,
+    "role": "Band",
+    "genres": ["Indie Rock", "Post-Rock"],
+    "bio": "Sweeping guitar anthems that build slowly and hit hard.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/the-northbound/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "echo-harbour",
+    "name": "Echo Harbour",
+    "verified": false,
+    "role": "Duo",
+    "genres": ["Electronic", "Chillwave"],
+    "bio": "Neon-lit chillwave inspired by city lights and sea breeze.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/echo-harbour/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "zuo",
+    "name": "Zuo",
+    "verified": false,
+    "role": "Singer-Songwriter",
+    "genres": ["Mandopop", "Indie Pop"],
+    "bio": "Gentle Mandopop with indie sensibilities and bilingual lyrics.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/zuo/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "paper-lanterns",
+    "name": "Paper Lanterns",
+    "verified": false,
+    "role": "Band",
+    "genres": ["Folk", "Acoustic", "Indie Folk"],
+    "bio": "Warm acoustic folk with three-part harmonies.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/paper-lanterns/480/640",
+    "spotifyId": null
+  },
+  {
+    "id": "velvet-tide",
+    "name": "Velvet Tide",
+    "verified": false,
+    "role": "Vocalist",
+    "genres": ["R&B", "Neo-Soul", "Jazz"],
+    "bio": "Silky neo-soul and late-night jazz-tinged R&B.",
+    "location": "Singapore",
+    "image": "https://picsum.photos/seed/velvet-tide/480/640",
+    "spotifyId": null
+  }
+]
