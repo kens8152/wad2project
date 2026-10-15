@@ -192,8 +192,8 @@ const pins = computed(() =>
     label: `${e.headliner.name} - ${e.dowLabel} ${e.timeCompact}`,
   })),
 )
-const showAllLabels = computed(() => props.events.length <= 6)
-const activeId = computed(() => props.hoverId || props.selectedId)
+const pinHoverId = ref(null) // the pin the mouse is over
+const activeId = computed(() => props.hoverId || pinHoverId.value || props.selectedId)
 
 const inverse = computed(() => 1 / scale.value)
 
@@ -253,10 +253,12 @@ watch(
           :style="{ '--pin': pin.color }"
           :aria-label="pin.label"
           @pointerdown.stop
+          @pointerenter="pinHoverId = pin.id"
+          @pointerleave="pinHoverId = null"
           @click.stop="emit('select', pin.id)"
           @dblclick.stop="emit('open', pin.id)"
         ></button>
-        <span v-if="showAllLabels || activeId === pin.id" class="event-map__label">{{ pin.label }}</span>
+        <span v-if="activeId === pin.id" class="event-map__label">{{ pin.label }}</span>
       </div>
     </div>
 

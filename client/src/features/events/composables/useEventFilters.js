@@ -48,10 +48,25 @@ const first = (v) => (Array.isArray(v) ? v[0] : v) || ''
 
 let searchTimer = null
 
+// The user's saved preferences: the genres, artists, distance and date range they
+// chose to keep. Remembered in the browser so they are still there next time.
+const PREFERENCES_KEY = 'riffle.preferences'
+
+function loadPreferences() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREFERENCES_KEY))
+    if (saved && Array.isArray(saved.genres) && Array.isArray(saved.artists)) return saved
+  } catch {
+    /* nothing saved yet */
+  }
+  return null
+}
+
+const savedPreferences = ref(loadPreferences())
+
 export function useEventFilters() {
   const data = useEventsData()
   const { events, artists, genres, venues, user } = data
-  const preferred = computed(() => user.value.preferredGenreIds)
 
   // ---- lifecycle ---------------------------------------------------------
 
@@ -59,7 +74,7 @@ export function useEventFilters() {
   async function init(query = {}) {
     await data.load()
     if (!ready.value) {
-      Object.assign(draft, blank(), { genres: [...preferred.value] })
+      Object.assign(draft, blank())
       Object.assign(applied, clone(draft))
       ready.value = true
     }
@@ -98,13 +113,65 @@ export function useEventFilters() {
   const toggleGenre = (id) => toggleIn(draft.genres, id)
   const toggleArtist = (id) => toggleIn(draft.artists, id)
 
-  /** "Your Preferences" is just a shortcut for "genres = the user's genres". */
+  // ---- preferences -------------------------------------------------------
+
+  const hasPreferences = computed(() => savedPreferences.value !== null)
+
+  /** Do the sidebar's current choices equal the saved preferences? */
+  const draftMatchesPreferences = computed(() => {
+    const p = savedPreferences.value
+    return (
+      p !== null &&
+      sameSet(draft.genres, p.genres) &&
+      sameSet(draft.artists, p.artists) &&
+      draft.distance === p.distance &&
+      draft.day === p.day
+    )
+  })
+
+  /** Is anything chosen that is not the default (so there is something worth saving)? */
+  const hasCustomChoices = computed(
+    () =>
+      draft.genres.length > 0 ||
+      draft.artists.length > 0 ||
+      draft.distance !== DEFAULT_DISTANCE_KM ||
+      draft.day !== DEFAULT_DAY,
+  )
+
+  /** The heart glows when the choices differ from what is saved. */
+  const canSavePreferences = computed(() => hasCustomChoices.value && !draftMatchesPreferences.value)
+
+  /** The switch is on when the choices are exactly the saved preferences. */
   const preferencesOn = computed({
-    get: () => draft.genres.length > 0 && sameSet(draft.genres, preferred.value),
+    get: () => draftMatchesPreferences.value,
     set: (on) => {
-      draft.genres = on ? [...preferred.value] : []
+      if (on) {
+        const p = savedPreferences.value
+        if (!p) return
+        draft.genres = [...p.genres]
+        draft.artists = [...p.artists]
+        draft.distance = p.distance
+        draft.day = p.day
+      } else {
+        Object.assign(draft, blank(), { q: draft.q, venue: draft.venue })
+      }
+      commit() // using or leaving your preferences takes effect straight away
     },
   })
+
+  function savePreferences() {
+    savedPreferences.value = {
+      genres: [...draft.genres],
+      artists: [...draft.artists],
+      distance: draft.distance,
+      day: draft.day,
+    }
+    try {
+      localStorage.setItem(PREFERENCES_KEY, JSON.stringify(savedPreferences.value))
+    } catch {
+      /* private mode: keep them for this visit only */
+    }
+  }
 
   /** Search applies as you type (debounced) rather than waiting for Apply. */
   function setQuery(text) {
@@ -119,7 +186,7 @@ export function useEventFilters() {
   }
 
   function reset() {
-    Object.assign(draft, blank(), { genres: [...preferred.value] })
+    Object.assign(draft, blank())
     commit()
   }
 
@@ -210,6 +277,9 @@ export function useEventFilters() {
     days,
     isDirty,
     preferencesOn,
+    hasPreferences,
+    canSavePreferences,
+    savePreferences,
     artistSummary,
     venueName,
     activeCount,

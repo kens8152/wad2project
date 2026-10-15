@@ -71,9 +71,14 @@ function onHeart() {
 <style scoped>
 .list-card {
   position: relative;
+  overflow: hidden; /* keeps the shine inside the card */
   padding: 0.7rem;
-  transition: transform 0.15s, box-shadow 0.15s;
-  animation: card-in 0.35s ease both;
+  /* springy pop on hover, same feel as the cards on the map page */
+  transition:
+    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s,
+    background 0.3s;
+  animation: card-in 0.35s ease backwards;
 }
 @keyframes card-in {
   from {
@@ -85,9 +90,43 @@ function onHeart() {
     transform: translateY(0);
   }
 }
-.list-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--riffle-shadow);
+
+/* hover (or keyboard focus): the card lifts, takes its genre colour and glows */
+.list-card:hover,
+.list-card:focus-within {
+  transform: translateY(-6px) scale(1.02);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  box-shadow:
+    0 0 0 2px var(--genre),
+    0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);
+}
+
+/* a light sweep across the card, repeating while it is hovered */
+.list-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+.list-card:hover::after,
+.list-card:focus-within::after {
+  opacity: 1;
+  animation: list-card-shine 1.9s ease-in-out infinite;
+}
+@keyframes list-card-shine {
+  0% {
+    left: -60%;
+  }
+  80%,
+  100% {
+    left: 130%;
+  }
 }
 
 .list-card__media {
