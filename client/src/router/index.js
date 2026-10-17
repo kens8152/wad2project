@@ -36,7 +36,7 @@ const routes = [
   {
     path: '/artists',
     name: 'artists',
-    component: () => import('@/features/events/views/ArtistView.vue'),
+    component: () => import('@/features/artists/views/ArtistView.vue'),
     meta: { title: 'Artists', section: 'artists', owner: 'Powell' },
   },
   // {

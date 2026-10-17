@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 // the card receives one artist from the parent page
 const props = defineProps({
   artist: { type: Object, required: true },
@@ -7,6 +8,7 @@ const props = defineProps({
 
 // tell the parent page when the card or the heart is clicked
 const emit = defineEmits(['select', 'toggle-favourite'])
+const imageFailed = ref(false)
 
 function handleClick() {
   emit('select', props.artist)
@@ -22,12 +24,17 @@ function handleHeartClick() {
   <article
     class="artist-card riffle-card"
     tabindex="0"
-    :style="{ '--genre': artist.genre.color }"
+    :style="{ '--genre': artist.genre.color || '#2563eb' }"
     @click="handleClick"
     @keyup.enter="handleClick"
   >
-    <div class="artist-card__media">
-      <img :src="'/images/Artists/' + artist.id + '.svg'" :alt="artist.name" class="artist-card__img" />
+  <div class="artist-card__media">
+      <img v-if="artist.image && !imageFailed" :src="artist.image" :alt="artist.name" class="artist-card__img"
+        @error="imageFailed = true" />
+      <!-- shown when there is no picture -->
+      <div v-else class="artist-card__fallback" aria-hidden="true">
+        <i class="bi bi-music-note-beamed"></i>
+      </div>
 
       <span class="artist-card__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
 
@@ -134,6 +141,16 @@ function handleHeartClick() {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.artist-card__fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--genre), color-mix(in srgb, var(--genre) 45%, #7c4dff));
 }
 
 .artist-card__genre {
