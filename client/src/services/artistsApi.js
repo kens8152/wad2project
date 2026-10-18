@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-// Artist data comes from the Express server (server/server.js -> /artists).
+// Artist data comes from the Express server (server/server.js -> /artists-matchmaking).
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export async function getArtists() {
-  const response = await axios.get(`${API_BASE_URL}/artists`)
+  const response = await axios.get(`${API_BASE_URL}/artists-matchmaking`)
   return response.data
 }

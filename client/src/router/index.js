@@ -39,12 +39,12 @@ const routes = [
     component: () => import('@/features/artists/views/ArtistView.vue'),
     meta: { title: 'Artists', section: 'artists', owner: 'Powell' },
   },
-  // {
-  //   path: '/artist-matchmaking',
-  //   name: 'artist-matchmaking',
-  //   component: () => import('@/views/ArtistMatchmaking.vue'),
-  //   meta: { title: 'Discover Artists', section: 'artists' },
-  // },
+  {
+    path: '/artist-matchmaking',
+    name: 'artist-matchmaking',
+    component: () => import('@/views/ArtistMatchmaking.vue'),
+    meta: { title: 'Discover Artists', section: 'artists' },
+  },
   {
     path: '/artists/:slug',
     name: 'artist-detail',

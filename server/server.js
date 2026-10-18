@@ -16,7 +16,7 @@ server.use(express.urlencoded({ extended: true }));
 const ARTISTS_DATA = path.join(__dirname, "stores", "artists.json");
 
 server.get("/artists-matchmaking", async (req, res) => {
-    const returnCount = 5;
+    const returnCount = 7;
 
     try {
         let data = await fs.readFile(ARTISTS_DATA, "utf-8");
