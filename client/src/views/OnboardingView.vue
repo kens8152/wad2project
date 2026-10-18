@@ -4,6 +4,10 @@ import {ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchSongs } from '@/services/spotifyApi'
 
+import { useUserStore } from '@/stores/user.js'
+
+const userStore = useUserStore()
+
 const displayName = ref('')
 
 
@@ -33,6 +37,9 @@ onMounted(() => {
         const saved = JSON.parse(localStorage.getItem(storageKey))
         
         if (!saved) return 
+
+        if (typeof saved.displayName === 'string') {
+            userStore.updateDisplayName(saved.displayName)}
 
         displayName.value = 
             typeof saved.displayName === 'string' ? saved.displayName : ''
@@ -122,10 +129,12 @@ function savePreferences() {
 
   try {
     localStorage.setItem(storageKey, JSON.stringify(profile))
-  } catch {
-    errorMessage.value = 'Your browser could not save these preferences.'
-    return
-  }
+    userStore.updateDisplayName(profile.displayName)
+ } catch (error) {
+  console.error('Could not save onboarding preferences:', error)
+  errorMessage.value = 'Your preferences could not be saved: ' + error.message
+  return
+}
 
   router.push('/profile')
 }

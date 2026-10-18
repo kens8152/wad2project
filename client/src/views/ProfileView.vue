@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
+import { useUserStore } from '@/stores/user.js'
+
+const userStore = useUserStore()
+
 const storageKey = 'riffle-preferences-demo-v1'
 
 const genres = [
@@ -26,6 +30,9 @@ onMounted(() => {
     const saved = JSON.parse(localStorage.getItem(storageKey))
 
     if (!saved) return
+
+    if (typeof saved.displayName === 'string') {
+      userStore.updateDisplayName(saved.displayName)}
 
     profile.value = {
       displayName: typeof saved.displayName === 'string' ? saved.displayName : '',
@@ -77,6 +84,7 @@ function saveProfile() {
 
   try {
     localStorage.setItem(storageKey, JSON.stringify(updatedProfile))
+    userStore.updateDisplayName(updatedProfile.displayName)
     profile.value = updatedProfile
     isEditing.value = false
     successMessage.value = 'Your profile has been updated.'

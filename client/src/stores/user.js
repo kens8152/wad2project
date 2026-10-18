@@ -11,6 +11,15 @@ export const useUserStore = defineStore('user', () => {
     preferredGenreIds: ['pop', 'mandopop', 'electronic'],
     location: { lat: 1.295, lng: 103.849, label: 'Bras Basah' },
   })
+//after onboarding or updating, cause navbar name to be changed
+  function updateDisplayName(name) {
+    const cleanName = name.trim()
 
-  return { user }
+    if (!cleanName) return
+
+    user.value.name = cleanName
+    user.value.initials = cleanName.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()
+  }
+
+  return { user, updateDisplayName }
 })
