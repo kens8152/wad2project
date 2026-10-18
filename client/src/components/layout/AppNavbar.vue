@@ -90,7 +90,7 @@ function submitSearch() {
           <i class="bi bi-search"></i>
         </button>
 
-        <button class="riffle-nav__user" type="button" :aria-label="`Signed in as ${user.name}`">
+        <button class="riffle-nav__user" type="button" aria-label="Open your profile" @click="router.push('/profile')">
           <span class="riffle-nav__avatar">{{ user.initials }}</span>
           <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
         </button>
