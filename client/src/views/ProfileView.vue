@@ -85,3 +85,93 @@ function saveProfile() {
   }
 }
 </script>
+
+<template>
+  <main class="profile-page">
+    <header class="page-heading">
+      <h1>My profile</h1>
+      <p>View and update your music preferences.</p>
+    </header>
+
+    <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
+    <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
+
+    <!-- No saved onboarding preferences -->
+    <section v-if="!profile" class="profile-box text-center">
+      <h2>Build your taste profile</h2>
+      <p>Choose your favourite genres and songs to get started.</p>
+      <RouterLink to="/onboarding" class="profile-button">Start onboarding</RouterLink>
+    </section>
+
+    <template v-else>
+      <!-- View saved profile -->
+      <section v-if="!isEditing" class="profile-box">
+        <div class="profile-heading">
+          <div>
+            <h2>{{ profile.displayName }}</h2>
+            <p>Your Riffle taste profile</p>
+          </div>
+          <button class="profile-button" type="button" @click="startEditing">Edit profile</button>
+        </div>
+
+        <hr>
+
+        <div class="row">
+          <section class="col-12 col-md-6 mb-3">
+            <h3>Favourite genres</h3>
+            <div class="genre-tags">
+              <span v-for="genre in profile.genres" :key="genre" class="genre-tag">{{ genre }}</span>
+            </div>
+          </section>
+
+          <section class="col-12 col-md-6 mb-3">
+            <h3>Favourite songs</h3>
+            <ul v-if="profile.favouriteSongs" class="song-list">
+              <li v-for="(song, index) in profile.favouriteSongs.split('\n')" :key="index">{{ song }}</li>
+            </ul>
+            <p v-else>No favourite songs added yet.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Edit preferences -->
+      <form v-else class="profile-box" @submit.prevent="saveProfile">
+        <h2>Edit your profile</h2>
+
+        <div class="mb-4">
+          <label for="profile-name">Display name</label>
+          <input id="profile-name" v-model.trim="displayName" class="text-input" type="text" maxlength="50" required>
+        </div>
+
+        <div class="row">
+          <section class="col-12 col-md-6 mb-3">
+            <h3>Favourite genres</h3>
+            <p>Select at least one genre.</p>
+            <div class="genre-options">
+              <label v-for="genre in genres" :key="genre" class="genre-option" :class="{ selected: selectedGenres.includes(genre) }">
+                <input v-model="selectedGenres" type="checkbox" :value="genre">
+                <span>{{ genre }}</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="col-12 col-md-6 mb-3">
+            <h3>Favourite songs</h3>
+            <label for="profile-songs">Enter one song per line.</label>
+            <textarea id="profile-songs" v-model.trim="favouriteSongs" class="text-input" rows="6"></textarea>
+          </section>
+        </div>
+
+        <div class="actions">
+          <button class="profile-button" type="submit">Save changes</button>
+          <button class="cancel-button" type="button" @click="cancelEditing">Cancel</button>
+        </div>
+      </form>
+
+      <div class="page-links">
+        <RouterLink to="/discover">Explore artists</RouterLink>
+        <RouterLink to="/onboarding">Return to onboarding</RouterLink>
+      </div>
+    </template>
+  </main>
+</template>
