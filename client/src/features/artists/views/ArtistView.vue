@@ -32,8 +32,7 @@ onMounted(() => {
 })
 
 function openArtist(artist) {
-  // go to the events list and search for this artist
-  router.push({ name: 'events-list', query: { q: artist.name } })
+  router.push({ name: 'artist-detail', params: { id: artist.id } })
 }
 </script>
 
@@ -92,7 +91,7 @@ function openArtist(artist) {
         </div>
 
         <!-- Artist grid -->
-        <div v-else class="artists-grid">
+        <div v-else class="artists-grid" :key="visibleArtists.map(a => a.id).join(',')">
           <ArtistCard
             v-for="artist in visibleArtists"
             :key="artist.id"
