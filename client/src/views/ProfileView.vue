@@ -175,3 +175,156 @@ function saveProfile() {
     </template>
   </main>
 </template>
+
+
+<style scoped>
+.profile-page {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 35px 0;
+  color: #14234b;
+  font-size: 16px;
+}
+
+.page-heading {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.page-heading h1 {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.page-heading p {
+  color: #64708a;
+}
+
+.profile-box {
+  padding: 25px;
+  border: 1px solid #e0e5f0;
+  border-radius: 15px;
+  background-color: white;
+}
+
+.profile-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-box h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.profile-box h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.profile-box p {
+  color: #64708a;
+}
+
+.text-input {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #d8deeb;
+  border-radius: 10px;
+  background-color: #f8f9fc;
+  color: #14234b;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.genre-tags,
+.genre-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.genre-tag {
+  padding: 8px 14px;
+  border-radius: 25px;
+  background-color: #eee7ff;
+  color: #513ba0;
+}
+
+.genre-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid #d8deeb;
+  border-radius: 25px;
+  cursor: pointer;
+}
+
+.genre-option.selected {
+  background-color: #eee7ff;
+  border-color: #7054dc;
+  color: #513ba0;
+}
+
+.song-list {
+  padding-left: 20px;
+}
+
+.song-list li {
+  margin-bottom: 10px;
+}
+
+.profile-button {
+  display: inline-block;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 25px;
+  background-color: #14234b;
+  color: white;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-button:hover {
+  background-color: #304779;
+}
+
+.cancel-button {
+  padding: 10px 22px;
+  border: 1px solid #14234b;
+  border-radius: 25px;
+  background-color: white;
+  color: #14234b;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.actions,
+.page-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.page-links {
+  justify-content: center;
+}
+
+.error-message {
+  color: #b42318;
+}
+
+.success-message {
+  color: #18754a;
+}
+</style>
