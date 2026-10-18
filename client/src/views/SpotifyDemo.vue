@@ -9,6 +9,8 @@
 
     <!-- Logged in -->
     <template v-else>
+      <RouterLink to="/onboarding" class="return-link">Continue to onboarding →</RouterLink>
+
       <button class="secondary" @click="logout">Log out</button>
 
       <section v-if="profile" class="profile">
@@ -215,4 +217,5 @@ button.secondary { background: #444; margin-bottom: 1rem; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 .card { display: flex; flex-direction: column; gap: 0.25rem; text-decoration: none; color: inherit; padding: 0.75rem; border-radius: 8px; background: #212121; }
 .card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; }
+.return-link {  display: block;  margin-bottom: 20px;  color: white;  text-decoration: underline;}
 </style>

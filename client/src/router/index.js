@@ -46,15 +46,15 @@ const routes = [
     meta: { title: 'Discover Artists', section: 'artists' },
   },
   {
-    path: '/artists/:slug',
+    path: '/artists/:id',
     name: 'artist-detail',
-    component: Placeholder,
+    component: () => import('@/features/artists/views/Artistprofileview.vue'),
     meta: { title: 'Artist', section: 'artists', owner: 'Powell' },
   },
   {
     path: '/forum',
     name: 'forum',
-    component: Placeholder,
+    component: () => import('@/features/forum/views/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
   },
 

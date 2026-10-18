@@ -2,6 +2,7 @@
 
 import {ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { searchSongs } from '@/services/spotifyApi'
 
 const displayName = ref('')
 
@@ -17,6 +18,10 @@ const genres = [
 
 const selectedGenres = ref([])
 const favouriteSongs = ref('')
+const songQuery = ref('')
+const songResults = ref([])
+const songLoading = ref(false)
+const songError = ref('')
 
 const errorMessage = ref('')
 
@@ -40,6 +45,60 @@ onMounted(() => {
         errorMessage.value = 'Previous preferences could not be loaded. Please enter them again.'
     }
 })
+
+async function searchForSongs() {
+  songError.value = ''
+  songResults.value = []
+
+  if (!songQuery.value.trim()) {
+    songError.value = 'Please enter a song or artist.'
+    return
+  }
+
+  if (!localStorage.getItem('access_token')) {
+    songError.value = 'Please connect Spotify first.'
+    return
+  }
+
+  songLoading.value = true
+
+  try {
+    songResults.value = await searchSongs(songQuery.value.trim())
+
+    if (songResults.value.length === 0) {
+      songError.value = 'No songs found. Try another search.'
+    }
+  } catch {
+    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
+  } finally {
+    songLoading.value = false
+  }
+}
+
+function getSongText(song) {
+  return song.name + ' — ' + song.artists.map(artist => artist.name).join(', ')
+}
+
+function isSongAdded(song) {
+  return favouriteSongs.value.split('\n').includes(getSongText(song))
+}
+
+function addSong(song) {
+  if (isSongAdded(song)) return
+
+  const songText = getSongText(song)
+
+  if (favouriteSongs.value.trim()) {
+    favouriteSongs.value = favouriteSongs.value.trim() + '\n' + songText
+  } else {
+    favouriteSongs.value = songText
+  }
+}
+
+function removeSong(song) {
+  const songs = favouriteSongs.value.split('\n')
+  favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
+}
 
 function savePreferences() {
 
@@ -92,9 +151,7 @@ function savePreferences() {
             <p>Use your music preferences to build your profile.</p>
           </div>
 
-          <button class="connect-button" type="button" disabled>
-            Coming soon
-          </button>
+          <button class="connect-button" type="button" @click="router.push('/spotify-demo')">Connect</button>
         </div>
       </div>
 
@@ -144,6 +201,32 @@ function savePreferences() {
           <section class="preference-box">
             <h2>Pick your songs</h2>
             <p>Tell us a few favourites. This is optional.</p>
+            <!-- Search for songs -->
+            <label for="song-search">Search Spotify</label>
+
+            <input id="song-search" v-model="songQuery" class="text-input" type="text"placeholder="Enter a song or artist"@keydown.enter.prevent="searchForSongs">
+
+            <button class="connect-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">
+            {{ songLoading ? 'Searching…' : 'Search' }}
+            </button>
+
+            <p v-if="songError" role="alert">
+              {{ songError }}
+            </p>
+
+            <!-- Search results -->
+            <ul class="list-unstyled mt-3">
+              <li v-for="song in songResults" :key="song.id" class="mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                  <div>
+                    <strong>{{ song.name }}</strong>
+                    <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
+                  </div>
+                  <button v-if="!isSongAdded(song)" class="connect-button" type="button" @click="addSong(song)">+ Add</button>
+                  <button v-else class="connect-button" type="button" @click="removeSong(song)">Remove</button>
+                </div>
+              </li>
+            </ul>
 
             <label for="favourite-songs">
               Song titles and artists

@@ -7,8 +7,8 @@ baseURL: 'https://api.spotify.com/v1',
 
 // Axios Request Interceptor to catch expired tokens before making a request
 spotifyApi.interceptors.request.use(async (config) => {
-  let token = window.localStorage.getItem('spotify_access_token');
-  const expiry = window.localStorage.getItem('spotify_token_expiry');
+  let token = window.localStorage.getItem('access_token');
+  const expiry = window.localStorage.getItem('token_expires_at');
 
   // Check if token is expired (or expires within next 10 seconds)
   if (token && expiry && new Date().getTime() > Number(expiry) - 10000) {
@@ -16,8 +16,8 @@ spotifyApi.interceptors.request.use(async (config) => {
       token = await refreshAccessToken();
     } catch (err) {
       console.error('Failed to refresh token, forcing re-login', err);
-      window.localStorage.removeItem('spotify_access_token');
-      window.localStorage.removeItem('spotify_token_expiry');
+      window.localStorage.removeItem('access_token');
+      window.localStorage.removeItem('token_expires_at');
 
       window.location.href = '/'; // Return to home route
       throw err;
