@@ -54,7 +54,7 @@ const routes = [
   {
     path: '/forum',
     name: 'forum',
-    component: Placeholder,
+    component: () => import('@/features/forum/views/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
   },
 
