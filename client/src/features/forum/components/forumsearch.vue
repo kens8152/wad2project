@@ -29,7 +29,9 @@ function onKeydown(e) {
   if (e.key === 'Escape') close()
 }
 
-// Close on Esc and stop the page behind the popup from scrolling
+
+
+
 watch(open, (isOpen) => {
   document.body.classList.toggle('overflow-hidden', isOpen)
   if (isOpen) window.addEventListener('keydown', onKeydown)
@@ -100,8 +102,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .forum-search {
   position: sticky;
-  top: var(--navbar-height, 0px);   /* stops right under the main navbar */
-  z-index: 1020;                    /* below the navbar (1030), above page content */
+  top: var(--navbar-height, 0px);   
+  z-index: 1020;                    
   height: var(--forum-search-height, 3.5rem);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);

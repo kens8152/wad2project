@@ -1,22 +1,31 @@
 <script setup>
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const emit = defineEmits(['select'])
+const route = useRoute()
+const router = useRouter()
+const emit = defineEmits(['select','reset'])
 
 const feeds = [
-  { key: 'explore', label: 'Explore', icon: 'bi-compass' },
+  { key: 'explore', label: 'Explore', icon: 'bi-compass', to: '/forum' },
   { key: 'popular', label: 'Popular', icon: 'bi-graph-up-arrow' },
   { key: 'tag', label: 'Tags', icon: 'bi-hash' },
   { key: 'lfg', label: 'Look for group', icon: 'bi-people' },
 ]
 
-const active = ref('home')
+const active = ref('explore')
 
 const collapsed = ref(window.innerWidth < 992)
 
-function select(key) {
-  active.value = key
-  emit('select', key)
+function select(item) {
+  active.value = item.key
+  emit('select', item.key)
+  if (route.path === item.to) {
+    emit('reset')
+    window.scrollTo({top:0,behavior:'smooth'})
+  } else {
+    router.push(item.to)
+  }
 }
 </script>
 
@@ -55,7 +64,7 @@ function select(key) {
           ]"
           :aria-current="active === item.key ? 'page' : null"
           :title="collapsed ? item.label : null"
-          @click="select(item.key)"
+          @click="select(item)"
         >
           <i class="bi fs-5" :class="[item.icon, collapsed ? 'me-3 me-lg-0' : 'me-3']"></i>
           <span :class="{ 'd-none': collapsed }">{{ item.label }}</span>
