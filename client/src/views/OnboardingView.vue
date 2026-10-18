@@ -92,9 +92,7 @@ function savePreferences() {
             <p>Use your music preferences to build your profile.</p>
           </div>
 
-          <button class="connect-button" type="button" disabled>
-            Coming soon
-          </button>
+          <button class="connect-button" type="button" @click="router.push('/spotify-demo')">Connect</button>
         </div>
       </div>
 
