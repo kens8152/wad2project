@@ -174,7 +174,8 @@ const emptyMessage = computed(() => {
           <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
 
           <div class="profile-meta">
-            <span class="meta-chip"><i class="bi bi-calendar-event"></i>{{ artist.events.length }} events</span>
+            <span v-if="upcomingEvents.length > 1" class="meta-chip"><i class="bi bi-calendar-event"></i>{{ upcomingEvents.length }} events</span>
+            <span v-else-if="upcomingEvents.length === 1" class="meta-chip"><i class="bi bi-clock-history"></i>{{ upcomingEvents.length }} event</span>
             <span v-if="profile.formed" class="meta-chip"><i class="bi bi-clock-history"></i>Since {{ profile.formed }}</span>
             <span v-if="artist.tag" class="meta-chip">#{{ artist.tag }}</span>
           </div>
