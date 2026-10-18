@@ -95,6 +95,11 @@ function addSong(song) {
   }
 }
 
+function removeSong(song) {
+  const songs = favouriteSongs.value.split('\n')
+  favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
+}
+
 function savePreferences() {
 
   errorMessage.value = ''
@@ -217,7 +222,8 @@ function savePreferences() {
                     <strong>{{ song.name }}</strong>
                     <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
                   </div>
-                  <button class="connect-button" type="button" :disabled="isSongAdded(song)" @click="addSong(song)">{{ isSongAdded(song) ? 'Added ✓' : '+ Add' }}</button>
+                  <button v-if="!isSongAdded(song)" class="connect-button" type="button" @click="addSong(song)">+ Add</button>
+                  <button v-else class="connect-button" type="button" @click="removeSong(song)">Remove</button>
                 </div>
               </li>
             </ul>
