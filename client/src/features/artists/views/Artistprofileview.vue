@@ -217,9 +217,9 @@ const emptyMessage = computed(() => {
             </button>
           </div>
 
-          <p v-if="shownEvents.length === 0" class="profile-empty" :key="activeTab">{{ emptyMessage }}</p>
+          <p v-if="shownEvents.length === 0" class="profile-empty" :key="activeTab + '-empty'">{{ emptyMessage }}</p>
 
-            <div v-else class="profile-grid" :key="activeTab">
+            <div v-else class="profile-grid" :key="activeTab + '-grid'">
                 <ProfileEventCard v-for="event in shownEvents" :key="event.id" :event="event" />
             </div>
         </section>
