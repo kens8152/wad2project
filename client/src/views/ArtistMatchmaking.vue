@@ -1,12 +1,20 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { getArtists } from '@/services/artistsApi'
+import { getArtists, setArtistAction, saveArtist, refreshArtists } from '@/services/matchmakingApi';
 
 const DISPLAY_COUNT = 5;
 
 // List of artists returned by the server
 const artists = ref([]);
 const current = ref(0);
+
+// Variables for controlling animation states and flow
+// 4 Different duration variations for cards when they render out all cards have been swiped.
+const FLY_UP_DURATIONS = [0.5, 0.3, 0.7, 0.4, 0.6];
+const hasSwipedCards = ref(false);
+const artistsFinished = ref(false); // True after users has swiped all cards
+const showFinishedMessage = ref(false);
+
 
 const displayedArtists = computed(() => {
   const half = Math.floor(DISPLAY_COUNT / 2);
@@ -21,14 +29,6 @@ const displayedArtists = computed(() => {
   return slots;
 });
 
-
-const hasSwipedCards = ref(false);
-const artistsFinished = ref(false); // True after users has swiped all cards
-const showFinishedMessage = ref(false);
-
-// Different duration variations for cards when they render out all cards have been swiped.
-const FLY_UP_DURATIONS = [0.5, 0.3, 0.7, 0.4, 0.6];
-
 // Move every card one slot to the left and bring in the next artist
 function nextArtist() {
   if (artistsFinished.value || !artists.value.length) return;
@@ -40,6 +40,7 @@ function nextArtist() {
   }
 
   hasSwipedCards.value = true;
+  saveFlash.value = 0;  // so the next card's Save button doesn't flash when it appears
   current.value++;
 }
 
@@ -51,10 +52,41 @@ function finishSwiping() {
 }
 
 function skip() {
+  setArtistAction(artists.value[current.value], "<userid>", 'skip');
   nextArtist();
 }
 function follow() {
+  setArtistAction(artists.value[current.value], "<userid>", 'follow');
   nextArtist();
+}
+
+// Goes up by 1 on every Save click. The Save button uses it in its key, so the
+// button is re-created and its flash animation plays again on every click.
+const saveFlash = ref(0);
+
+async function toggleSave() {
+  const artist = artists.value[current.value];
+  if (!artist) return;
+
+  artist.saved = !artist.saved;  // update the button straight away
+  saveFlash.value++;             // play the flash
+
+  try {
+    await saveArtist(artist.id, "<userid>");
+    await refreshArtistList();
+  } catch (err) {
+    artist.saved = !artist.saved;  // server failed: put the button back
+    console.error('Could not save artist', err);
+  }
+}
+
+// Same artists, same ids, so Vue reuses the cards and no animation replays
+async function refreshArtistList() {
+  try {
+    artists.value = await refreshArtists(artists.value);
+  } catch (err) {
+    console.error('Could not refresh artists', err);
+  }
 }
 
 onMounted(async () => {
@@ -120,13 +152,19 @@ onMounted(async () => {
 
             <!-- Text sits on top of the image, pushed to the bottom of the card -->
             <div class="card-img-overlay d-flex flex-column justify-content-end p-0">
-              <!-- Save button on the main card -->
+              <!-- Save button on the main card.
+                   Unsaved: white button, outline bookmark. Saved: blue button, filled bookmark.
+                   saved plays a quick pop + ring each time it is clicked. -->
               <button
                 v-if="slot.offset === 0"
-                class="btn btn-light shadow rounded-circle position-absolute top-0 start-0 m-3"
-                aria-label="Save"
+                :key="'save-' + saveFlash"
+                class="btn shadow rounded-circle position-absolute top-0 start-0 m-3"
+                :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 }]"
+                :aria-pressed="!!slot.artist.saved"
+                :aria-label="slot.artist.saved ? 'Unsave' : 'Save'"
+                @click="toggleSave()"
               >
-                <i class="bi bi-bookmark text-primary"></i>
+                <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
               </button>
 
               <!-- Counter on the main card -->
@@ -310,9 +348,7 @@ onMounted(async () => {
   animation: drop-in 0.4s ease-out both;
 }
 
-/* After the last card: the reverse of drop-in. Solid to see-through while moving up.
-   It comes after .drop-in so it wins when an element has both classes.
-   Each card/button sets its own animation-duration in the template, so they fly at different paces. */
+/* Fade away and upwards animation for cards after all swipes are complete. */
 @keyframes fly-up {
   from {
     opacity: 1;
@@ -325,6 +361,22 @@ onMounted(async () => {
 }
 .fly-up {
   animation: fly-up 0.8s ease-in both;
+}
+
+
+@keyframes saved {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.25;
+  }
+  100% {
+    scale: 1;
+  }
+}
+.saved {
+  animation: saved 0.2s ease-out;
 }
 
 /* Dark see-through box behind the text so it is readable on any image */

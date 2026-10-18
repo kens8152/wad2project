@@ -12,10 +12,11 @@ const server = express();
 // Allow the Vite dev server to call this API
 server.use(cors({ origin: ["http://127.0.0.1:5173", "http://localhost:5173"] }));
 server.use(express.urlencoded({ extended: true }));
+server.use(express.json());
 
 const ARTISTS_DATA = path.join(__dirname, "stores", "artists.json");
 
-server.get("/artists-matchmaking", async (req, res) => {
+server.get("/matchmaking", async (req, res) => {
     const returnCount = 7;
 
     try {
@@ -31,6 +32,37 @@ server.get("/artists-matchmaking", async (req, res) => {
     } catch (err) {
         console.error("Failed to read artists.json", err);
         return res.status(500).json({ error: "Could not load artists" });
+    }
+});
+
+server.post("/matchmaking", async (req, res) => {
+
+});
+
+server.post("/matchmaking/save", async (req, res) => {
+
+});
+
+server.post("/matchmaking/refresh", async (req, res) => {
+    const { artists } = req.body;
+
+    if (!Array.isArray(artists)) {
+        return res.status(400).json({ error: "artists must be an array" });
+    }
+
+    try {
+        let data = await fs.readFile(ARTISTS_DATA, "utf-8");
+        data = JSON.parse(data);
+
+        const updatedArtists = artists.map(artist => {
+            const latest = data.find(a => a.id === artist.id);
+            return latest ? { ...artist, ...latest } : artist;
+        });
+
+        return res.json(updatedArtists);
+    } catch (err) {
+        console.error("Failed to refresh artists", err);
+        return res.status(500).json({ error: "Could not refresh artists" });
     }
 });
 
