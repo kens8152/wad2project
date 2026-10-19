@@ -15,7 +15,7 @@ onBeforeUnmount(() => {
 <template>
   <template v-if="userStore.authReady">
     <AppNavbar />
-    <main class="app-main">
+    <main class="app-main d-flex flex-column">
       <RouterView :key="userStore.user.id" />
     </main>
     <ToastHost />
@@ -25,6 +25,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .app-main {
-  min-height: calc(100vh - var(--navbar-height));
+  height: calc(100vh - var(--navbar-height));
 }
 </style>

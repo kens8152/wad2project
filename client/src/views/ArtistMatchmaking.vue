@@ -41,6 +41,7 @@ function nextArtist() {
 
   hasSwipedCards.value = true;
   saveFlash.value = 0;  // so the next card's Save button doesn't flash when it appears
+  openSong.value = 0;
   current.value++;
 }
 
@@ -89,6 +90,18 @@ async function refreshArtistList() {
   }
 }
 
+// Songs panel
+const PLACEHOLDER_TRACKS = [
+  { id: 'track-1', title: 'Song 1' },
+  { id: 'track-2', title: 'Song 2' },
+  { id: 'track-3', title: 'Song 3' },
+];
+const openSong = ref(0);
+
+function tracksFor(artist) {
+  return artist.tracks?.length ? artist.tracks.slice(0, 3) : PLACEHOLDER_TRACKS;
+}
+
 onMounted(async () => {
   try {
     artists.value = await getArtists();
@@ -99,7 +112,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container">
+  <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-5">
     <!-- Header -->
     <div class="text-center mb-2 pt-3">
       <h1 class="fw-bold mb-2">Discover Local Artists</h1>
@@ -108,15 +121,10 @@ onMounted(async () => {
       </p>
     </div>
 
-    <!-- Skip button, artist cards, Follow button.
-         On phones the buttons wrap onto a second line below the card. -->
-    <div
-      v-if="!showFinishedMessage"
-      class="d-flex flex-wrap flex-sm-nowrap justify-content-center align-items-center py-4"
-    >
+    <div v-if="!showFinishedMessage" class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-4">
       <!-- Skip Btn -->
       <div
-        class="action skip-action text-center mt-3 mt-sm-0"
+        class="action skip-action text-center mt-3 mt-sm-5"
         :class="{ 'fly-up': artistsFinished }"
         :style="{ animationDuration: '0.55s' }"
       >
@@ -130,7 +138,7 @@ onMounted(async () => {
       </div>
 
       <!-- Artist Cards -->
-      <div class="card-stage flex-shrink-0 order-first order-sm-0">
+      <div class="card-stage flex-shrink-0">
         <div
           v-for="slot in displayedArtists.filter(slot => slot.artist)"
           :key="slot.artist.id"
@@ -139,9 +147,9 @@ onMounted(async () => {
             ? { animationDuration: FLY_UP_DURATIONS[slot.offset + 2] + 's', animationDelay: '0s' }
             : { animationDelay: hasSwipedCards ? '0.2s' : (slot.offset + 2) * 0.15 + 's' }"
           :class="{
-            'main-card': slot.offset === 0,
+            'main-card h-100': slot.offset === 0,
             'side-card d-none d-lg-block': Math.abs(slot.offset) === 1,
-            'far-card d-none d-xl-block': Math.abs(slot.offset) === 2,
+            'far-card h-75 d-none d-xl-block': Math.abs(slot.offset) === 2,
             'left-side': slot.offset < 0,
             'right-side': slot.offset > 0,
             'fly-up': artistsFinished,
@@ -151,14 +159,12 @@ onMounted(async () => {
             <img :src="slot.artist.image" :alt="slot.artist.name" class="w-100 h-100 object-fit-cover" />
 
             <!-- Text sits on top of the image, pushed to the bottom of the card -->
-            <div class="card-img-overlay d-flex flex-column justify-content-end p-0">
-              <!-- Save button on the main card.
-                   Unsaved: white button, outline bookmark. Saved: blue button, filled bookmark.
-                   saved plays a quick pop + ring each time it is clicked. -->
+            <div class="card-img-overlay d-flex flex-column justify-content-end px-0 pb-0 pt-5">
+              <!-- Save button -->
               <button
                 v-if="slot.offset === 0"
                 :key="'save-' + saveFlash"
-                class="btn shadow rounded-circle position-absolute top-0 start-0 m-3"
+                class="btn shadow rounded-circle position-absolute top-0 start-0 m-2"
                 :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 }]"
                 :aria-pressed="!!slot.artist.saved"
                 :aria-label="slot.artist.saved ? 'Unsave' : 'Save'"
@@ -167,36 +173,64 @@ onMounted(async () => {
                 <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
               </button>
 
-              <!-- Counter on the main card -->
+              <!-- Card position / total -->
               <span
                 v-if="slot.offset === 0"
-                class="badge rounded-pill bg-dark bg-opacity-50 position-absolute top-0 end-0 m-3"
+                class="badge rounded-pill bg-dark bg-opacity-50 position-absolute top-0 end-0 m-2"
               >
                 {{ slot.index + 1 }} / {{ artists.length }}
               </span>
 
-              <div class="card-info p-3">
+              <div class="card-info p-2 p-sm-3 overflow-auto">
                 <!-- Main card: full details -->
                 <template v-if="slot.offset === 0">
-                  <h3 class="card-title fw-bold mb-0">
-                    {{ slot.artist.name }}
-                    <i v-if="slot.artist.verified" class="bi bi-patch-check-fill text-primary fs-5"></i>
-                  </h3>
-                  <p class="mb-2">{{ slot.artist.role }}</p>
-
-                  <!-- Genres -->
-                  <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span
-                      v-for="genre in slot.artist.genres"
-                      :key="genre"
-                      class="badge rounded-pill border border-light fw-normal"
-                    >
-                      {{ genre }}
-                    </span>
+                  <!-- Collapse arrow -->
+                  <div
+                    class="collapse-arrow collapsed text-center lh-1"
+                    role="button"
+                    aria-label="Show fewer songs"
+                    data-bs-toggle="collapse"
+                    :data-bs-target="'#songs-' + slot.artist.id"
+                    aria-expanded="false"
+                  >
+                    <i class="bi bi-chevron-compact-down fs-4"></i>
                   </div>
 
+                  <!-- Pull-up area -->
+                  <div
+                    class="pull-area collapsed"
+                    data-bs-toggle="collapse"
+                    :data-bs-target="'#songs-' + slot.artist.id"
+                    aria-expanded="false"
+                    @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
+                  >
+                    <h3 class="card-title fw-bold mb-0">
+                      {{ slot.artist.name }}
+                      <i v-if="slot.artist.verified" class="bi bi-patch-check-fill text-primary fs-5"></i>
+                    </h3>
+                    <p class="mb-2">{{ slot.artist.role }}</p>
+
+                    <!-- Genres -->
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                      <span
+                        v-for="genre in slot.artist.genres"
+                        :key="genre"
+                        class="badge rounded-pill border border-light fw-normal"
+                      >
+                        {{ genre }}
+                      </span>
+                    </div>
+
+                    <p class="small mb-2 d-none d-sm-block">{{ slot.artist.bio }}</p>
+                  </div>
+
+                  <!-- First song -->
+                  <button class="btn btn-sm w-100 text-start text-white text-truncate mt-1" @click="openSong = 0">
+                    {{ tracksFor(slot.artist)[0].title }}
+                  </button>
+
                   <!-- Preview player -->
-                  <div class="d-flex align-items-center gap-2 mb-3">
+                  <div v-if="openSong === 0" class="player-drop d-flex align-items-center gap-2 px-2 pb-2">
                     <button class="btn btn-light btn-sm rounded-circle">
                       <i class="bi bi-play-fill"></i>
                     </button>
@@ -205,7 +239,47 @@ onMounted(async () => {
                     <i class="bi bi-volume-up-fill"></i>
                   </div>
 
-                  <p class="small mb-0">{{ slot.artist.bio }}</p>
+                  <div
+                    class="pull-area songs-hint collapsed small d-flex align-items-center gap-1"
+                    data-bs-toggle="collapse"
+                    :data-bs-target="'#songs-' + slot.artist.id"
+                    aria-expanded="false"
+                    @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
+                  >
+                    <i class="bi bi-music-note-beamed"></i> &nbsp;
+                    Checkout {{ tracksFor(slot.artist).length - 1 }} more samples
+                    <i class="bi bi-chevron-up ms-auto"></i>
+                  </div>
+
+                  <!-- More songs -->
+                  <div
+                    class="collapse"
+                    :id="'songs-' + slot.artist.id"
+                    v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
+                  >
+                    <div v-for="(track, i) in tracksFor(slot.artist).slice(1)" :key="track.id">
+                      <button class="btn btn-sm w-100 text-start text-white text-truncate" @click="openSong = i + 1">
+                        {{ track.title }}
+                      </button>
+
+                      <!-- Preview player -->
+                      <div v-if="openSong === i + 1" class="player-drop d-flex align-items-center gap-2 px-2 pb-2">
+                        <button class="btn btn-light btn-sm rounded-circle">
+                          <i class="bi bi-play-fill"></i>
+                        </button>
+                        <input type="range" class="form-range" min="0" max="30" value="0" />
+                        <span class="small text-nowrap">0:00 / 0:30</span>
+                        <i class="bi bi-volume-up-fill"></i>
+                      </div>
+                    </div>
+
+                    <RouterLink
+                      :to="{ name: 'artist-detail', params: { id: slot.artist.id } }"
+                      class="btn btn-light btn-sm w-100 mt-2"
+                    >
+                      View artist <i class="bi bi-arrow-right"></i>
+                    </RouterLink>
+                  </div>
                 </template>
 
                 <!-- Side cards: name and genres only -->
@@ -221,7 +295,7 @@ onMounted(async () => {
 
       <!-- Follow Btn -->
       <div
-        class="action follow-action text-center mt-3 mt-sm-0"
+        class="action follow-action text-center mt-3 mt-sm-5"
         :class="{ 'fly-up': artistsFinished }"
         :style="{ animationDuration: '0.75s' }"
       >
@@ -245,39 +319,56 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* Page */
+.matchmaking-page {
+  overflow-y: clip;
+}
+
+/* Phone layout (grid): card on top, Skip and Follow below */
+.card-row {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+}
+.card-row .card-stage {
+  grid-column: 1 / 3;
+  justify-self: center;
+}
+.card-row .skip-action {
+  grid-row: 2;
+  justify-self: end;
+}
+.card-row .follow-action {
+  grid-row: 2;
+  justify-self: start;
+}
+
 .card-stage {
   position: relative;
-  width: 320px;
-  height: 460px;
+  height: 100%;
+  aspect-ratio: 320 / 460;
 }
 
 .card {
   position: absolute;
+  aspect-ratio: 320 / 460;
   transition: left 0.4s ease, top 0.4s ease, transform 0.4s ease;
 }
 
 /* Big card in the middle */
 .main-card {
-  width: 320px;
-  height: 460px;
-  left: 0px;
-  top: 0px;
+  left: 0%;
+  top: 0%;
   z-index: 3;
 }
-
-/* Cards right next to the middle card */
+/* Cards right behind the middle card */
 .side-card {
-  width: 220px;
-  height: 420px;
-  top: 28px;
+  height: 87.5%;
+  top: 8%;
   z-index: 2;
 }
-
 /* Cards at the far left and right */
 .far-card {
-  width: 170px;
-  height: 380px;
-  top: 64px;
+  top: 16%;
   z-index: 1;
 }
 
@@ -295,41 +386,41 @@ onMounted(async () => {
   transform: rotate(9deg);
 }
 
-/* 3 cards showing (from 992px, matches d-lg-block) */
+
+/* lg display */
 @media (min-width: 992px) {
   .card-stage {
-    width: 460px;
+    aspect-ratio: 1 / 1;
   }
   .side-card.left-side {
-    left: 0px;
+    left: 0%;
   }
   .main-card {
-    left: 70px;
+    left: 15.22%;
   }
   .side-card.right-side {
-    left: 240px;
+    left: 39.13%;
   }
 }
-
-/* 5 cards showing (from 1200px, matches d-xl-block) */
+/* xl-display */
 @media (min-width: 1200px) {
   .card-stage {
-    width: 600px;
+    aspect-ratio: 600 / 460;
   }
   .far-card.left-side {
-    left: 0px;
+    left: 0%;
   }
   .side-card.left-side {
-    left: 70px;
+    left: 11.67%;
   }
   .main-card {
-    left: 140px;
+    left: 23.33%;
   }
   .side-card.right-side {
-    left: 310px;
+    left: 41.67%;
   }
   .far-card.right-side {
-    left: 430px;
+    left: 60%;
   }
 }
 
@@ -363,7 +454,6 @@ onMounted(async () => {
   animation: fly-up 0.8s ease-in both;
 }
 
-
 @keyframes saved {
   0% {
     scale: 1;
@@ -384,6 +474,37 @@ onMounted(async () => {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+/* Pull-up area */
+.pull-area {
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* Collapse arrow */
+.collapse-arrow.collapsed {
+  display: none;
+}
+
+/* Songs hint */
+.songs-hint:not(.collapsed) {
+  display: none !important;
+}
+
+/* Player drop-down */
+@keyframes player-drop {
+  from {
+    opacity: 0;
+    translate: 0px -6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0px 0px;
+  }
+}
+.player-drop {
+  animation: player-drop 0.25s ease-out;
+}
+
 /* Skip and follow buttons */
 .action-btn {
   width: 64px;
@@ -391,13 +512,8 @@ onMounted(async () => {
   font-size: 24px;
 }
 
-/* The Skip / Follow buttons animation */
-.action {
-  position: relative;
-  top: 24px;
-}
-/* Space between the buttons and the cards.
-   The tilted outer cards stick out more on bigger screens, so the gap grows. */
+
+/* Skip and follow button */
 .skip-action {
   margin-right: 16px;
 }
@@ -406,18 +522,18 @@ onMounted(async () => {
 }
 @media (min-width: 992px) {
   .skip-action {
-    margin-right: 46px;
+    margin-right: 6vh;
   }
   .follow-action {
-    margin-left: 46px;
+    margin-left: 6vh;
   }
 }
 @media (min-width: 1200px) {
   .skip-action {
-    margin-right: 66px;
+    margin-right: 8vh;
   }
   .follow-action {
-    margin-left: 66px;
+    margin-left: 8vh;
   }
 }
 </style>
