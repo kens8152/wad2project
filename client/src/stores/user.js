@@ -21,6 +21,14 @@ export const useUserStore = defineStore('user', () => {
     user.value.name = cleanName
     user.value.initials = cleanName.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()
   }
+  try {
+  const saved = JSON.parse(localStorage.getItem('riffle-preferences-demo-v1'))
 
+  if (saved && typeof saved.displayName === 'string') {
+    updateDisplayName(saved.displayName)
+  }
+  } catch (error) {
+    console.error('Could not load the saved display name:', error)
+  }
   return { user, updateDisplayName }
 })
