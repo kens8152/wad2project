@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 
 import { useUserStore } from '@/stores/user.js'
 
+import { searchSongs } from '@/services/spotifyApi'
+
 const userStore = useUserStore()
 
 const storageKey = 'riffle-preferences-demo-v1'
@@ -21,6 +23,12 @@ const isEditing = ref(false)
 const displayName = ref('')
 const selectedGenres = ref([])
 const favouriteSongs = ref('')
+
+const songQuery = ref('')
+const songResults = ref([])
+const songLoading = ref(false)
+const songError = ref('')
+
 const errorMessage = ref('')
 const successMessage = ref('')
 
@@ -52,6 +60,11 @@ function startEditing() {
 
   errorMessage.value = ''
   successMessage.value = ''
+
+  songQuery.value = ''
+  songResults.value = []
+  songError.value = ''
+
   isEditing.value = true
 }
 
@@ -61,6 +74,59 @@ function cancelEditing() {
   errorMessage.value = ''
 }
 
+//search songs
+async function searchForSongs() {
+  songError.value = ''
+  songResults.value = []
+
+  if (!songQuery.value.trim()) {
+    songError.value = 'Please enter a song or artist.'
+    return
+  }
+
+  if (!localStorage.getItem('access_token')) {
+    songError.value = 'Please connect Spotify through onboarding first.'
+    return
+  }
+
+  songLoading.value = true
+
+  try {
+    songResults.value = await searchSongs(songQuery.value.trim())
+
+    if (songResults.value.length === 0) {
+      songError.value = 'No songs found. Try another search.'
+    }
+  } catch {
+    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
+  } finally {
+    songLoading.value = false
+  }
+}
+
+function getSongText(song) {
+  return song.name + ' — ' + song.artists.map(artist => artist.name).join(', ')
+}
+
+function isSongAdded(song) {
+  return favouriteSongs.value.split('\n').includes(getSongText(song))
+}
+
+function addSong(song) {
+  if (isSongAdded(song)) return
+
+  const songText = getSongText(song)
+
+  if (favouriteSongs.value.trim()) {
+    favouriteSongs.value = favouriteSongs.value.trim() + '\n' + songText
+  } else {
+    favouriteSongs.value = songText
+  }
+}
+
+function removeSong(song) {
+  favouriteSongs.value = favouriteSongs.value.split('\n').filter(text => text !== getSongText(song)).join('\n')
+}
 // Validate and save changes
 function saveProfile() {
   errorMessage.value = ''
@@ -165,7 +231,28 @@ function saveProfile() {
 
           <section class="col-12 col-md-6 mb-3">
             <h3>Favourite songs</h3>
-            <label for="profile-songs">Enter one song per line.</label>
+
+            <label for="profile-song-search">Search Spotify</label>
+            <input id="profile-song-search" v-model="songQuery" class="text-input" type="text" placeholder="Enter a song or artist" @keydown.enter.prevent="searchForSongs">
+
+            <button class="profile-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">{{ songLoading ? 'Searching…' : 'Search' }}</button>
+
+            <p v-if="songError" class="error-message" role="alert">{{ songError }}</p>
+
+            <ul class="list-unstyled mt-3">
+              <li v-for="song in songResults" :key="song.id" class="mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <div>
+                    <strong>{{ song.name }}</strong>
+                    <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
+                  </div>
+                  <button v-if="!isSongAdded(song)" class="profile-button" type="button" @click="addSong(song)">+ Add</button>
+                  <button v-else class="cancel-button" type="button" @click="removeSong(song)">Remove</button>
+                </div>
+              </li>
+            </ul>
+
+            <label for="profile-songs">Selected songs — one per line</label>
             <textarea id="profile-songs" v-model.trim="favouriteSongs" class="text-input" rows="6"></textarea>
           </section>
         </div>

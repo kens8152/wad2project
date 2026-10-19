@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+
 // Logged-in user. Mock data for now; will come from the backend later.
 export const useUserStore = defineStore('user', () => {
   // state
