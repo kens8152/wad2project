@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -8,17 +8,21 @@ const emit = defineEmits(['select','reset'])
 
 const feeds = [
   { key: 'explore', label: 'Explore', icon: 'bi-compass', to: '/forum' },
-  { key: 'popular', label: 'Popular', icon: 'bi-graph-up-arrow' },
-  { key: 'tag', label: 'Tags', icon: 'bi-hash' },
-  { key: 'lfg', label: 'Look for group', icon: 'bi-people' },
+  { key: 'trend', label: 'Trend', icon: 'bi-fire' , to:'/forumtrend'},
+  { key: 'tag', label: 'Tags', icon: 'bi-hash' , to: '/forumtags'},
+  { key: 'lfg', label: 'Look for group', icon: 'bi-people', to: '/forumlfg' },
+  { key: 'saved', label: 'Saved Post', icon: 'bi-bookmark' },
+  { key: 'mypost', label: 'My Post', icon: 'bi-person' },
 ]
 
-const active = ref('explore')
+const activeKey = computed(() =>
+  feeds.find(f => f.to === route.path)?.key ?? 'explore'
+)
 
 const collapsed = ref(window.innerWidth < 992)
 
 function select(item) {
-  active.value = item.key
+  
   emit('select', item.key)
   if (route.path === item.to) {
     emit('reset')
@@ -59,10 +63,10 @@ function select(item) {
           type="button"
           class="forumnav__item nav-link d-flex align-items-center w-100 text-start rounded-3 link-body-emphasis"
           :class="[
-            { 'is-active': active === item.key },
+            { 'is-active': activeKey === item.key },
             { 'justify-content-lg-center': collapsed },
           ]"
-          :aria-current="active === item.key ? 'page' : null"
+          :aria-current="activeKey === item.key ? 'page' : null"
           :title="collapsed ? item.label : null"
           @click="select(item)"
         >

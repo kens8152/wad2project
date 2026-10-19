@@ -57,6 +57,24 @@ const routes = [
     component: () => import('@/features/forum/views/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
   },
+  {
+    path: '/forumtags',
+    name: 'forum-tags',
+    component: () => import('@/features/forum/views/Forumtag.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
+  {
+    path: '/forumlfg',
+    name: 'forum-lfg',
+    component: () => import('@/features/forum/views/Forumlfg.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
+  {
+    path: '/forumtrend',
+    name: 'forum-trend',
+    component: () => import('@/features/forum/views/Forumtrend.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
 
   // Existing Spotify OAuth demo (kept intact, moved out of App.vue)
   {
