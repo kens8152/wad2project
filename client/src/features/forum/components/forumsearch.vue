@@ -105,8 +105,5 @@ onBeforeUnmount(() => {
   top: var(--navbar-height, 0px);   
   z-index: 1020;                    
   height: var(--forum-search-height, 3.5rem);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--riffle-border);
 }
 </style>

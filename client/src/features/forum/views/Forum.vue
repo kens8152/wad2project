@@ -27,13 +27,14 @@ function onReset() {
 </script>
 
 <template>
-    <div style="--forum-search-height: 3.5rem">
-    <Forumsearch @search="searchTerm = $event" />
+    <div>
         <div class="d-flex flex-column flex-lg-row">
             <Forumnav @select="feed = $event" @reset="onReset" />
-            
+        
             <main class="d-flex p-3 justify-content-center flex-grow-1" style="min-width: 0">
+                
                 <div class="vstack gap-3">
+                <Forumsearch @search="searchTerm = $event" />
                 <Postcard v-for="r in results" :key="r.id" :post="r" />
                 </div>
             </main>
