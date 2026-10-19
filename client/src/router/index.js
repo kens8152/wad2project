@@ -80,6 +80,13 @@ const routes = [
     meta: {title: 'Profile', section: 'profile', owner: 'Kenson'},
   },
 
+  {
+    path: '/signup',
+    name: 'signup',
+    component: () => import('@/views/SignupView.vue'),
+    meta: { title: 'Sign up', section: 'signup', owner: 'Kenson' },
+  },
+
   { path: '/:pathMatch(.*)*', redirect: { name: 'events-map' } },
 ]
 
