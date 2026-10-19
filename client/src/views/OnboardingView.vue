@@ -4,6 +4,15 @@ import {ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchSongs } from '@/services/spotifyApi'
 
+import { useUserStore } from '@/stores/user.js'
+
+import { supabase } from '@/services/supabase.js'
+
+const userStore = useUserStore()
+
+const saving = ref(false)
+
+
 const displayName = ref('')
 
 
@@ -26,24 +35,27 @@ const songError = ref('')
 const errorMessage = ref('')
 
 const router = useRouter()
-const storageKey = 'riffle-preferences-demo-v1'
+const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 
-onMounted(() => {
-    try {
-        const saved = JSON.parse(localStorage.getItem(storageKey))
-        
-        if (!saved) return 
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return
 
-        displayName.value = 
-            typeof saved.displayName === 'string' ? saved.displayName : ''
-        
-        favouriteSongs.value = 
-            typeof saved.favouriteSongs === 'string' ? saved.favouriteSongs : ''
+  try {
+    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs').eq('id', userStore.user.id).maybeSingle()
 
-        selectedGenres.value = Array.isArray(saved.genres) ? genres.filter(genre => saved.genres.includes(genre)) : []
-    } catch {
-        errorMessage.value = 'Previous preferences could not be loaded. Please enter them again.'
-    }
+    if (error) throw error
+
+    // A new account may not have a profile yet
+    if (!data) return
+
+    displayName.value = data.display_name
+    selectedGenres.value = genres.filter(genre => data.genres.includes(genre))
+    favouriteSongs.value = data.favourite_songs
+
+    userStore.updateDisplayName(data.display_name)
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be loaded: ' + error.message
+  }
 })
 
 async function searchForSongs() {
@@ -100,7 +112,8 @@ function removeSong(song) {
   favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
 }
 
-function savePreferences() {
+async function savePreferences() {
+  if (!userStore.isLoggedIn || saving.value) return
 
   errorMessage.value = ''
 
@@ -114,27 +127,47 @@ function savePreferences() {
     return
   }
 
-  const profile = {
-    displayName: displayName.value.trim(),
-    genres: [...selectedGenres.value],
-    favouriteSongs: favouriteSongs.value.trim()
-  }
+  saving.value = true
 
   try {
-    localStorage.setItem(storageKey, JSON.stringify(profile))
-  } catch {
-    errorMessage.value = 'Your browser could not save these preferences.'
-    return
-  }
+    const { error } = await supabase.from('profiles').upsert({
+      id: userStore.user.id,
+      display_name: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favourite_songs: favouriteSongs.value.trim(),
+      onboarding_completed: true
+    }, { onConflict: 'id' })
 
-  router.push('/profile')
+    if (error) throw error
+
+    userStore.updateDisplayName(displayName.value.trim())
+
+    // Keep the existing profile page working during migration
+    const profile = {
+      displayName: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value.trim()
+    }
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(profile))
+    } catch (cacheError) {
+      console.warn('Profile saved online, but local copy could not be updated:', cacheError)
+    }
+
+    await router.push('/profile')
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be saved: ' + error.message
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
 
 
 <template>
-  <main class="onboarding-page">
+  <main v-if="userStore.isLoggedIn" class="onboarding-page">
 
     <header class="page-heading">
       <h1>Let’s build your taste profile</h1>
@@ -261,13 +294,12 @@ function savePreferences() {
       </p>
 
 
-      <div class="actions">
-        <button class="next-button" type="submit">
-          Next →
-        </button>
-      </div>
+    <div class="actions">
+      <button class="next-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Next →' }}</button>
+    </div>
     </form>
   </main>
+  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
 </template>
 
 <style scoped>
