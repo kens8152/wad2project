@@ -37,25 +37,25 @@ const errorMessage = ref('')
 const router = useRouter()
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 
-onMounted(() => {
-    try {
-        const saved = JSON.parse(localStorage.getItem(storageKey))
-        
-        if (!saved) return 
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return
 
-        if (typeof saved.displayName === 'string') {
-            userStore.updateDisplayName(saved.displayName)}
+  try {
+    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs').eq('id', userStore.user.id).maybeSingle()
 
-        displayName.value = 
-            typeof saved.displayName === 'string' ? saved.displayName : ''
-        
-        favouriteSongs.value = 
-            typeof saved.favouriteSongs === 'string' ? saved.favouriteSongs : ''
+    if (error) throw error
 
-        selectedGenres.value = Array.isArray(saved.genres) ? genres.filter(genre => saved.genres.includes(genre)) : []
-    } catch {
-        errorMessage.value = 'Previous preferences could not be loaded. Please enter them again.'
-    }
+    // A new account may not have a profile yet
+    if (!data) return
+
+    displayName.value = data.display_name
+    selectedGenres.value = genres.filter(genre => data.genres.includes(genre))
+    favouriteSongs.value = data.favourite_songs
+
+    userStore.updateDisplayName(data.display_name)
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be loaded: ' + error.message
+  }
 })
 
 async function searchForSongs() {

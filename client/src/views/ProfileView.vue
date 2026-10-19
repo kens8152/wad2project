@@ -5,6 +5,8 @@ import { useUserStore } from '@/stores/user.js'
 
 import { searchSongs } from '@/services/spotifyApi'
 
+import { supabase } from '@/services/supabase.js'
+
 const userStore = useUserStore()
 
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
@@ -32,23 +34,28 @@ const songError = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
+const saving = ref(false)
+
 // Load preferences saved during onboarding
-onMounted(() => {
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return
+
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey))
+    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs').eq('id', userStore.user.id).maybeSingle()
 
-    if (!saved) return
+    if (error) throw error
 
-    if (typeof saved.displayName === 'string') {
-      userStore.updateDisplayName(saved.displayName)}
+    if (!data) return
 
     profile.value = {
-      displayName: typeof saved.displayName === 'string' ? saved.displayName : '',
-      genres: Array.isArray(saved.genres) ? genres.filter(genre => saved.genres.includes(genre)) : [],
-      favouriteSongs: typeof saved.favouriteSongs === 'string' ? saved.favouriteSongs : ''
+      displayName: data.display_name,
+      genres: genres.filter(genre => data.genres.includes(genre)),
+      favouriteSongs: data.favourite_songs
     }
-  } catch {
-    errorMessage.value = 'Your preferences could not be loaded.'
+
+    userStore.updateDisplayName(data.display_name)
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be loaded: ' + error.message
   }
 })
 
@@ -128,7 +135,9 @@ function removeSong(song) {
   favouriteSongs.value = favouriteSongs.value.split('\n').filter(text => text !== getSongText(song)).join('\n')
 }
 // Validate and save changes
-function saveProfile() {
+async function saveProfile() {
+  if (!userStore.isLoggedIn || saving.value) return
+
   errorMessage.value = ''
   successMessage.value = ''
 
@@ -142,6 +151,8 @@ function saveProfile() {
     return
   }
 
+  saving.value = true
+
   const updatedProfile = {
     displayName: displayName.value.trim(),
     genres: [...selectedGenres.value],
@@ -149,13 +160,31 @@ function saveProfile() {
   }
 
   try {
-    localStorage.setItem(storageKey, JSON.stringify(updatedProfile))
+    const { error } = await supabase.from('profiles').upsert({
+      id: userStore.user.id,
+      display_name: updatedProfile.displayName,
+      genres: updatedProfile.genres,
+      favourite_songs: updatedProfile.favouriteSongs,
+      onboarding_completed: true
+    }, { onConflict: 'id' })
+
+    if (error) throw error
+
     userStore.updateDisplayName(updatedProfile.displayName)
     profile.value = updatedProfile
     isEditing.value = false
     successMessage.value = 'Your profile has been updated.'
-  } catch {
-    errorMessage.value = 'Your changes could not be saved. Please try again.'
+
+    // Keep the navbar's current local copy in sync during migration
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updatedProfile))
+    } catch (cacheError) {
+      console.warn('Profile saved online, but local copy could not be updated:', cacheError)
+    }
+  } catch (error) {
+    errorMessage.value = 'Your changes could not be saved: ' + error.message
+  } finally {
+    saving.value = false
   }
 }
 </script>
@@ -258,8 +287,8 @@ function saveProfile() {
         </div>
 
         <div class="actions">
-          <button class="profile-button" type="submit">Save changes</button>
-          <button class="cancel-button" type="button" @click="cancelEditing">Cancel</button>
+          <button class="profile-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save changes' }}</button>
+          <button class="cancel-button" type="button" :disabled="saving" @click="cancelEditing">Cancel</button>
         </div>
       </form>
 
