@@ -112,7 +112,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-5">
+  <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-4 pb-xl-5">
     <!-- Header -->
     <div class="text-center mb-2 pt-3">
       <h1 class="fw-bold mb-2">Discover Local Artists</h1>
@@ -121,7 +121,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <div v-if="!showFinishedMessage" class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-4">
+    <div v-if="!showFinishedMessage" class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-4">
       <!-- Skip Btn -->
       <div
         class="action skip-action text-center mt-3 mt-sm-5"
@@ -129,7 +129,7 @@ onMounted(async () => {
         :style="{ animationDuration: '0.55s' }"
       >
         <button 
-          class="btn btn-light rounded-circle shadow action-btn" aria-label="Skip"
+          class="btn btn-light rounded-circle shadow action-btn fs-2" aria-label="Skip"
           @click="skip()"
         >
           <i class="bi bi-x-lg text-secondary"></i>
@@ -211,7 +211,7 @@ onMounted(async () => {
                     <p class="mb-2">{{ slot.artist.role }}</p>
 
                     <!-- Genres -->
-                    <div class="d-flex flex-wrap gap-2 mb-2">
+                    <div class="d-flex flex-wrap gap-2 mb-sm-2">
                       <span
                         v-for="genre in slot.artist.genres"
                         :key="genre"
@@ -221,7 +221,7 @@ onMounted(async () => {
                       </span>
                     </div>
 
-                    <p class="small mb-2 d-none d-sm-block">{{ slot.artist.bio }}</p>
+                    <p class="small mb-0 d-none d-sm-block">{{ slot.artist.bio }}</p>
                   </div>
 
                   <!-- First song -->
@@ -472,6 +472,15 @@ onMounted(async () => {
 /* Dark see-through box behind the text so it is readable on any image */
 .card-info {
   background-color: rgba(0, 0, 0, 0.5);
+  font-size: 0.875rem;
+}
+
+/* Info text sizes */
+.card-info h3 {
+  font-size: 1.75em;
+}
+.card-info .btn-sm {
+  font-size: 0.875em;
 }
 
 /* Pull-up area */
@@ -510,6 +519,21 @@ onMounted(async () => {
   width: 64px;
   height: 64px;
   font-size: 24px;
+}
+
+/* Phones: smaller buttons and info text */
+@media (max-width: 575px) {
+  .action-btn {
+    width: 7.5vh;
+    height: 7.5vh;
+    font-size: 3vh;
+  }
+  .card-info {
+    font-size: 1.7vh;
+  }
+  .card-info h3 {
+    font-size: 1.5em;
+  }
 }
 
 
