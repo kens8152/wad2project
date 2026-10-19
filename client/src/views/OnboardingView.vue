@@ -6,7 +6,11 @@ import { searchSongs } from '@/services/spotifyApi'
 
 import { useUserStore } from '@/stores/user.js'
 
+import { supabase } from '@/services/supabase.js'
+
 const userStore = useUserStore()
+
+const saving = ref(false)
 
 
 const displayName = ref('')
@@ -108,7 +112,8 @@ function removeSong(song) {
   favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
 }
 
-function savePreferences() {
+async function savePreferences() {
+  if (!userStore.isLoggedIn || saving.value) return
 
   errorMessage.value = ''
 
@@ -122,22 +127,40 @@ function savePreferences() {
     return
   }
 
-  const profile = {
-    displayName: displayName.value.trim(),
-    genres: [...selectedGenres.value],
-    favouriteSongs: favouriteSongs.value.trim()
-  }
+  saving.value = true
 
   try {
-    localStorage.setItem(storageKey, JSON.stringify(profile))
-    userStore.updateDisplayName(profile.displayName)
- } catch (error) {
-  console.error('Could not save onboarding preferences:', error)
-  errorMessage.value = 'Your preferences could not be saved: ' + error.message
-  return
-}
+    const { error } = await supabase.from('profiles').upsert({
+      id: userStore.user.id,
+      display_name: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favourite_songs: favouriteSongs.value.trim(),
+      onboarding_completed: true
+    }, { onConflict: 'id' })
 
-  router.push('/profile')
+    if (error) throw error
+
+    userStore.updateDisplayName(displayName.value.trim())
+
+    // Keep the existing profile page working during migration
+    const profile = {
+      displayName: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value.trim()
+    }
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(profile))
+    } catch (cacheError) {
+      console.warn('Profile saved online, but local copy could not be updated:', cacheError)
+    }
+
+    await router.push('/profile')
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be saved: ' + error.message
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -271,11 +294,9 @@ function savePreferences() {
       </p>
 
 
-      <div class="actions">
-        <button class="next-button" type="submit">
-          Next →
-        </button>
-      </div>
+    <div class="actions">
+      <button class="next-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Next →' }}</button>
+    </div>
     </form>
   </main>
   <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
