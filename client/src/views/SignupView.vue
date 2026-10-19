@@ -46,3 +46,35 @@ async function createAccount() {
 }
 </script>
 
+<template>
+  <main class="signup-page">
+    <section class="signup-box">
+      <h1>Join Riffle</h1>
+      <p>Discover local music and build your taste profile.</p>
+
+      <form @submit.prevent="createAccount">
+        <div class="mb-3">
+          <label for="signup-email">Email</label>
+          <input id="signup-email" v-model.trim="email" class="form-control mtmail" autocomplete="email" placeholder="you@example.com-2" type="e" required :disabled="loading">
+        </div>
+
+        <div class="mb-3">
+          <label for="signup-password">Password</label>
+          <input id="signup-password" v-model="password" class="form-control mt-2" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required :disabled="loading">
+        </div>
+
+        <div class="mb-3">
+          <label for="signup-confirm-password">Confirm password</label>
+          <input id="signup-confirm-password" v-model="confirmPassword" class="form-control mt-2" type="password" autocomplete="new-password" minlength="8" placeholder="Repeat your password" required :disabled="loading">
+        </div>
+
+        <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
+
+        <button class="signup-button" type="submit" :disabled="loading">{{ loading ? 'Creating account…' : 'Create account' }}</button>
+      </form>
+
+      <RouterLink to="/discover" class="back-link">Continue browsing</RouterLink>
+    </section>
+  </main>
+</template>
