@@ -31,7 +31,7 @@ const songError = ref('')
 const errorMessage = ref('')
 
 const router = useRouter()
-const storageKey = 'riffle-preferences-demo-v1'
+const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 
 onMounted(() => {
     try {
@@ -144,7 +144,7 @@ function savePreferences() {
 
 
 <template>
-  <main class="onboarding-page">
+  <main v-if="userStore.isLoggedIn" class="onboarding-page">
 
     <header class="page-heading">
       <h1>Let’s build your taste profile</h1>
@@ -278,6 +278,7 @@ function savePreferences() {
       </div>
     </form>
   </main>
+  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
 </template>
 
 <style scoped>

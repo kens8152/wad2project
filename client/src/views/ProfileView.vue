@@ -7,7 +7,7 @@ import { searchSongs } from '@/services/spotifyApi'
 
 const userStore = useUserStore()
 
-const storageKey = 'riffle-preferences-demo-v1'
+const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 
 const genres = [
   'Indie Rock',
@@ -161,7 +161,7 @@ function saveProfile() {
 </script>
 
 <template>
-  <main class="profile-page">
+  <main v-if="userStore.isLoggedIn" class="profile-page">
     <header class="page-heading">
       <h1>My profile</h1>
       <p>View and update your music preferences.</p>
@@ -269,6 +269,7 @@ function saveProfile() {
       </div>
     </template>
   </main>
+  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
 </template>
 
 
