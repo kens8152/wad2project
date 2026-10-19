@@ -77,6 +77,8 @@ async function createAccount() {
         <button class="signup-button" type="submit" :disabled="loading">{{ loading ? 'Creating account…' : 'Create account' }}</button>
       </form>
 
+      <p class="text-center mt-3">Already have an account? <RouterLink to="/login">Log in</RouterLink></p>
+
       <RouterLink to="/discover" class="back-link">Continue browsing</RouterLink>
     </section>
   </main>
