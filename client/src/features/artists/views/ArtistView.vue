@@ -65,7 +65,10 @@ function openArtist(artist) {
     <div class="artists-shell__body">
       <!-- Filter sidebar -->
       <div class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
-        <ArtistFilterSidebar :filters="filters" @applied="filtersOpen = false" />
+        <ArtistFilterSidebar :search-text="filters.searchText" :draft-genres="filters.draftGenres"
+          :draft-venues="filters.draftVenues" :genre-options="filters.genreOptions"
+          :venue-options="filters.venueOptions" :is-dirty="filters.isDirty" @apply="filters.applyFilters"
+          @reset="filters.resetFilters" @clear-search="filters.clearSearch" @applied="filtersOpen = false" />
       </div>
 
       <!-- Results -->
