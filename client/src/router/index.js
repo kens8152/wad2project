@@ -39,12 +39,12 @@ const routes = [
     component: () => import('@/features/artists/views/ArtistView.vue'),
     meta: { title: 'Artists', section: 'artists', owner: 'Powell' },
   },
-  // {
-  //   path: '/artist-matchmaking',
-  //   name: 'artist-matchmaking',
-  //   component: () => import('@/views/ArtistMatchmaking.vue'),
-  //   meta: { title: 'Discover Artists', section: 'artists' },
-  // },
+  {
+    path: '/matchmaking',
+    name: 'matchmaking',
+    component: () => import('@/views/ArtistMatchmaking.vue'),
+    meta: { title: 'Discover Artists', section: 'artists' },
+  },
   {
     path: '/artists/:id',
     name: 'artist-detail',
@@ -54,7 +54,25 @@ const routes = [
   {
     path: '/forum',
     name: 'forum',
-    component: Placeholder,
+    component: () => import('@/features/forum/views/Forum.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
+  {
+    path: '/forumtags',
+    name: 'forum-tags',
+    component: () => import('@/features/forum/views/Forumtag.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
+  {
+    path: '/forumlfg',
+    name: 'forum-lfg',
+    component: () => import('@/features/forum/views/Forumlfg.vue'),
+    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  },
+  {
+    path: '/forumtrend',
+    name: 'forum-trend',
+    component: () => import('@/features/forum/views/Forumtrend.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
   },
 
@@ -78,6 +96,20 @@ const routes = [
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),
     meta: {title: 'Profile', section: 'profile', owner: 'Kenson'},
+  },
+
+  {
+    path: '/signup',
+    name: 'signup',
+    component: () => import('@/views/SignupView.vue'),
+    meta: { title: 'Sign up', section: 'signup', owner: 'Kenson' },
+  },
+  
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { title: 'Log in', section: 'login', owner: 'Kenson' },
   },
 
   { path: '/:pathMatch(.*)*', redirect: { name: 'events-map' } },

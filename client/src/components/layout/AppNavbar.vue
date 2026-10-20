@@ -6,7 +6,9 @@ import { useUserStore } from '@/stores/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const user = userStore.user
+
+const user = computed(() => userStore.user)
+const logoutError = ref('')
 
 const links = [
   { label: 'Discover', to: { name: 'discover' }, section: 'discover' },
@@ -34,6 +36,17 @@ function submitSearch() {
   if (!q) return
   router.push({ name: 'events-list', query: { q } })
   searchTerm.value = ''
+}
+
+async function logoutUser() {
+  logoutError.value = ''
+
+  try {
+    await userStore.logout()
+    await router.push('/login')
+  } catch (error) {
+    logoutError.value = 'Could not log out: ' + error.message
+  }
 }
 </script>
 
@@ -90,10 +103,20 @@ function submitSearch() {
           <i class="bi bi-search"></i>
         </button>
 
-        <button class="riffle-nav__user" type="button" :aria-label="`Signed in as ${user.name}`">
-          <span class="riffle-nav__avatar">{{ user.initials }}</span>
-          <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
-        </button>
+        <template v-if="userStore.isLoggedIn">
+          <button class="riffle-nav__user" type="button" aria-label="Open your profile" @click="router.push('/profile')">
+            <span class="riffle-nav__avatar">{{ user.initials }}</span>
+            <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" @click="logoutUser">Log out</button>
+        </template>
+
+        <template v-else>
+          <RouterLink to="/login" class="btn btn-sm btn-outline-secondary">Log in</RouterLink>
+          <RouterLink to="/signup" class="btn btn-sm btn-primary">Sign up</RouterLink>
+        </template>
+
+        <span v-if="logoutError" role="alert">{{ logoutError }}</span>
 
         <button
           class="riffle-nav__burger d-xl-none"

@@ -2,6 +2,16 @@
 
 import {ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { searchSongs } from '@/services/spotifyApi'
+
+import { useUserStore } from '@/stores/user.js'
+
+import { supabase } from '@/services/supabase.js'
+
+const userStore = useUserStore()
+
+const saving = ref(false)
+
 
 const displayName = ref('')
 
@@ -17,31 +27,93 @@ const genres = [
 
 const selectedGenres = ref([])
 const favouriteSongs = ref('')
+const songQuery = ref('')
+const songResults = ref([])
+const songLoading = ref(false)
+const songError = ref('')
 
 const errorMessage = ref('')
 
 const router = useRouter()
-const storageKey = 'riffle-preferences-demo-v1'
+const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 
-onMounted(() => {
-    try {
-        const saved = JSON.parse(localStorage.getItem(storageKey))
-        
-        if (!saved) return 
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return
 
-        displayName.value = 
-            typeof saved.displayName === 'string' ? saved.displayName : ''
-        
-        favouriteSongs.value = 
-            typeof saved.favouriteSongs === 'string' ? saved.favouriteSongs : ''
+  try {
+    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs').eq('id', userStore.user.id).maybeSingle()
 
-        selectedGenres.value = Array.isArray(saved.genres) ? genres.filter(genre => saved.genres.includes(genre)) : []
-    } catch {
-        errorMessage.value = 'Previous preferences could not be loaded. Please enter them again.'
-    }
+    if (error) throw error
+
+    // A new account may not have a profile yet
+    if (!data) return
+
+    displayName.value = data.display_name
+    selectedGenres.value = genres.filter(genre => data.genres.includes(genre))
+    favouriteSongs.value = data.favourite_songs
+
+    userStore.updateDisplayName(data.display_name)
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be loaded: ' + error.message
+  }
 })
 
-function savePreferences() {
+async function searchForSongs() {
+  songError.value = ''
+  songResults.value = []
+
+  if (!songQuery.value.trim()) {
+    songError.value = 'Please enter a song or artist.'
+    return
+  }
+
+  if (!localStorage.getItem('access_token')) {
+    songError.value = 'Please connect Spotify first.'
+    return
+  }
+
+  songLoading.value = true
+
+  try {
+    songResults.value = await searchSongs(songQuery.value.trim())
+
+    if (songResults.value.length === 0) {
+      songError.value = 'No songs found. Try another search.'
+    }
+  } catch {
+    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
+  } finally {
+    songLoading.value = false
+  }
+}
+
+function getSongText(song) {
+  return song.name + ' — ' + song.artists.map(artist => artist.name).join(', ')
+}
+
+function isSongAdded(song) {
+  return favouriteSongs.value.split('\n').includes(getSongText(song))
+}
+
+function addSong(song) {
+  if (isSongAdded(song)) return
+
+  const songText = getSongText(song)
+
+  if (favouriteSongs.value.trim()) {
+    favouriteSongs.value = favouriteSongs.value.trim() + '\n' + songText
+  } else {
+    favouriteSongs.value = songText
+  }
+}
+
+function removeSong(song) {
+  const songs = favouriteSongs.value.split('\n')
+  favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
+}
+
+async function savePreferences() {
+  if (!userStore.isLoggedIn || saving.value) return
 
   errorMessage.value = ''
 
@@ -55,27 +127,47 @@ function savePreferences() {
     return
   }
 
-  const profile = {
-    displayName: displayName.value.trim(),
-    genres: [...selectedGenres.value],
-    favouriteSongs: favouriteSongs.value.trim()
-  }
+  saving.value = true
 
   try {
-    localStorage.setItem(storageKey, JSON.stringify(profile))
-  } catch {
-    errorMessage.value = 'Your browser could not save these preferences.'
-    return
-  }
+    const { error } = await supabase.from('profiles').upsert({
+      id: userStore.user.id,
+      display_name: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favourite_songs: favouriteSongs.value.trim(),
+      onboarding_completed: true
+    }, { onConflict: 'id' })
 
-  router.push('/profile')
+    if (error) throw error
+
+    userStore.updateDisplayName(displayName.value.trim())
+
+    // Keep the existing profile page working during migration
+    const profile = {
+      displayName: displayName.value.trim(),
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value.trim()
+    }
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(profile))
+    } catch (cacheError) {
+      console.warn('Profile saved online, but local copy could not be updated:', cacheError)
+    }
+
+    await router.push('/profile')
+  } catch (error) {
+    errorMessage.value = 'Your preferences could not be saved: ' + error.message
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
 
 
 <template>
-  <main class="onboarding-page">
+  <main v-if="userStore.isLoggedIn" class="onboarding-page">
 
     <header class="page-heading">
       <h1>Let’s build your taste profile</h1>
@@ -92,9 +184,7 @@ function savePreferences() {
             <p>Use your music preferences to build your profile.</p>
           </div>
 
-          <button class="connect-button" type="button" disabled>
-            Coming soon
-          </button>
+          <button class="connect-button" type="button" @click="router.push('/spotify-demo')">Connect</button>
         </div>
       </div>
 
@@ -144,6 +234,32 @@ function savePreferences() {
           <section class="preference-box">
             <h2>Pick your songs</h2>
             <p>Tell us a few favourites. This is optional.</p>
+            <!-- Search for songs -->
+            <label for="song-search">Search Spotify</label>
+
+            <input id="song-search" v-model="songQuery" class="text-input" type="text"placeholder="Enter a song or artist"@keydown.enter.prevent="searchForSongs">
+
+            <button class="connect-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">
+            {{ songLoading ? 'Searching…' : 'Search' }}
+            </button>
+
+            <p v-if="songError" role="alert">
+              {{ songError }}
+            </p>
+
+            <!-- Search results -->
+            <ul class="list-unstyled mt-3">
+              <li v-for="song in songResults" :key="song.id" class="mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                  <div>
+                    <strong>{{ song.name }}</strong>
+                    <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
+                  </div>
+                  <button v-if="!isSongAdded(song)" class="connect-button" type="button" @click="addSong(song)">+ Add</button>
+                  <button v-else class="connect-button" type="button" @click="removeSong(song)">Remove</button>
+                </div>
+              </li>
+            </ul>
 
             <label for="favourite-songs">
               Song titles and artists
@@ -178,13 +294,12 @@ function savePreferences() {
       </p>
 
 
-      <div class="actions">
-        <button class="next-button" type="submit">
-          Next →
-        </button>
-      </div>
+    <div class="actions">
+      <button class="next-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Next →' }}</button>
+    </div>
     </form>
   </main>
+  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
 </template>
 
 <style scoped>
