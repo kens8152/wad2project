@@ -13,19 +13,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <AppNavbar />
-  <main class="app-main">
-  <RouterView v-slot="{ Component }">
-    <Transition name="page" mode="out-in">
-      <component :is="Component" />
-    </Transition>
-  </RouterView>
-  </main>
-  <ToastHost />
   <template v-if="userStore.authReady">
     <AppNavbar />
     <main class="app-main d-flex flex-column">
-      <RouterView :key="userStore.user.id" />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="userStore.user?.id" />
+        </Transition>
+      </RouterView>
     </main>
     <ToastHost />
   </template>
@@ -33,8 +28,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 .app-main {
-  height: calc(100vh - var(--navbar-height));
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 .page-enter-active,
 .page-leave-active {
