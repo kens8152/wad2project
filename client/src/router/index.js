@@ -30,7 +30,7 @@ const routes = [
   {
     path: '/discover',
     name: 'discover',
-    component: Placeholder,
+    component: () => import('@/features/artists/views/DiscoverView.vue'),
     meta: { title: 'Discover', section: 'discover', owner: 'Powell' },
   },
   {
