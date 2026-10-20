@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { getArtists, setArtistAction, saveArtist, refreshArtists } from '@/services/matchmakingApi';
+import { useToastStore } from '@/stores/toast';
+
+const toastStore = useToastStore();
 
 const DISPLAY_COUNT = 5;
 
@@ -60,6 +63,10 @@ function follow() {
   setArtistAction(artists.value[current.value], "<userid>", 'follow');
   nextArtist();
 }
+function unsure() {
+  setArtistAction(artists.value[current.value].id, "<userid>", 'unsure');
+  nextArtist();
+}
 
 // Goes up by 1 on every Save click. The Save button uses it in its key, so the
 // button is re-created and its flash animation plays again on every click.
@@ -71,6 +78,7 @@ async function toggleSave() {
 
   artist.saved = !artist.saved;  // update the button straight away
   saveFlash.value++;             // play the flash
+  toastStore.show(artist.saved ? `Saved ${artist.name}` : `Removed ${artist.name} from saved`);
 
   try {
     await saveArtist(artist.id, "<userid>");
@@ -173,6 +181,15 @@ onMounted(async () => {
                 <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
               </button>
 
+              <!-- Unsure button -->
+              <button
+                v-if="slot.offset === 0"
+                class="unsure-btn btn btn-sm bg-black bg-opacity-50 text-white border-0 rounded-pill position-absolute top-0 start-50 translate-middle-x mt-2"
+                @click="unsure()"
+              >
+                <i class="bi bi-question-circle"></i> &nbsp; Unsure
+              </button>
+
               <!-- Card position / total -->
               <span
                 v-if="slot.offset === 0"
@@ -225,12 +242,12 @@ onMounted(async () => {
                   </div>
 
                   <!-- First song -->
-                  <button class="btn btn-sm w-100 text-start text-white text-truncate mt-1" @click="openSong = 0">
+                  <button class="btn btn-sm border-0 px-0 w-100 text-start text-white text-truncate mt-1" @click="openSong = 0">
                     {{ tracksFor(slot.artist)[0].title }}
                   </button>
 
                   <!-- Preview player -->
-                  <div v-if="openSong === 0" class="player-drop d-flex align-items-center gap-2 px-2 pb-2">
+                  <div v-if="openSong === 0" class="player-drop d-flex align-items-center gap-2 pb-2">
                     <button class="btn btn-light btn-sm rounded-circle">
                       <i class="bi bi-play-fill"></i>
                     </button>
@@ -258,12 +275,12 @@ onMounted(async () => {
                     v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
                   >
                     <div v-for="(track, i) in tracksFor(slot.artist).slice(1)" :key="track.id">
-                      <button class="btn btn-sm w-100 text-start text-white text-truncate" @click="openSong = i + 1">
+                      <button class="btn btn-sm border-0 px-0 w-100 text-start text-white text-truncate" @click="openSong = i + 1">
                         {{ track.title }}
                       </button>
 
                       <!-- Preview player -->
-                      <div v-if="openSong === i + 1" class="player-drop d-flex align-items-center gap-2 px-2 pb-2">
+                      <div v-if="openSong === i + 1" class="player-drop d-flex align-items-center gap-2 pb-2">
                         <button class="btn btn-light btn-sm rounded-circle">
                           <i class="bi bi-play-fill"></i>
                         </button>
@@ -521,6 +538,11 @@ onMounted(async () => {
   font-size: 24px;
 }
 
+/* Unsure button */
+.unsure-btn {
+  font-size: 0.8rem;
+}
+
 /* Phones: smaller buttons and info text */
 @media (max-width: 575px) {
   .action-btn {
@@ -533,6 +555,9 @@ onMounted(async () => {
   }
   .card-info h3 {
     font-size: 1.5em;
+  }
+  .unsure-btn {
+    font-size: 1.6vh;
   }
 }
 
