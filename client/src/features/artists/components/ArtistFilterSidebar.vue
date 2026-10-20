@@ -1,19 +1,19 @@
 <script setup>
 import { toggleInList } from '../utils/artists'
 
-// the page gives us all the filter data (from useArtistFilters)
 const props = defineProps({
-  filters: { type: Object, required: true },
+  searchText: { type: Object, required: true },   // ref<string>
+  draftGenres: { type: Object, required: true },  // ref<string[]>
+  draftVenues: { type: Object, required: true },  // ref<string[]>
+  genreOptions: { type: Object, required: true }, // computed
+  venueOptions: { type: Object, required: true }, // computed
+  isDirty: { type: Object, required: true },      // computed
 })
 
-// tell the page when Apply was pressed (so it can close the panel on phones)
-const emit = defineEmits(['applied'])
-
-// take out the things this sidebar uses
-const { searchText, draftGenres, draftVenues, genreOptions, venueOptions, isDirty } = props.filters
+const emit = defineEmits(['apply', 'reset', 'clear-search', 'applied'])
 
 function apply() {
-  props.filters.applyFilters()
+  emit('apply')
   emit('applied')
 }
 </script>
@@ -23,8 +23,8 @@ function apply() {
     <!-- Search -->
     <div class="filters__search">
       <i class="bi bi-search"></i>
-      <input v-model="searchText" type="search" placeholder="Search artists" />
-      <button v-if="searchText" type="button" class="filters__clear" @click="filters.clearSearch()">
+      <input v-model="searchText.value" type="search" placeholder="Search artists" />
+      <button v-if="searchText.value" type="button" class="filters__clear" @click="emit('clear-search')">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
@@ -32,12 +32,12 @@ function apply() {
     <!-- Genre -->
     <section class="filters__group">
       <h2 class="filters__heading">Genre</h2>
-      <label v-for="g in genreOptions" :key="g.name" class="filters__option">
+      <label v-for="g in genreOptions.value" :key="g.name" class="filters__option">
         <input
           class="form-check-input"
           type="checkbox"
-          :checked="draftGenres.includes(g.name)"
-          @change="toggleInList(draftGenres, g.name)"
+          :checked="draftGenres.value.includes(g.name)"
+          @change="toggleInList(draftGenres.value, g.name)"
         />
         <span class="filters__chip" :style="{ background: g.color }"></span>
         <span class="filters__option-label">{{ g.name }}</span>
@@ -48,29 +48,29 @@ function apply() {
     <!-- Venue -->
     <section class="filters__group">
       <h2 class="filters__heading">Venue</h2>
-      <label v-for="v in venueOptions" :key="v.name" class="filters__option">
+      <label v-for="v in venueOptions.value" :key="v.name" class="filters__option">
         <input
           class="form-check-input"
           type="checkbox"
-          :checked="draftVenues.includes(v.name)"
-          @change="toggleInList(draftVenues, v.name)"
+          :checked="draftVenues.value.includes(v.name)"
+          @change="toggleInList(draftVenues.value, v.name)"
         />
         <span class="filters__option-label">{{ v.name }}</span>
         <span class="filters__count">{{ v.count }}</span>
       </label>
     </section>
 
-    <!-- Apply and reset buttons -->
+    <!-- Buttons -->
     <div class="filters__footer">
       <button
         type="button"
         class="btn btn-riffle filters__apply"
-        :class="{ 'is-dirty': isDirty }"
+        :class="{ 'is-dirty': isDirty.value }"
         @click="apply"
       >
-        {{ isDirty ? 'Apply changes' : 'Apply filters' }}
+        {{ isDirty.value ? 'Apply changes' : 'Apply filters' }}
       </button>
-      <button type="button" class="filters__reset" @click="filters.resetFilters()">Reset filters</button>
+      <button type="button" class="filters__reset" @click="emit('reset')">Reset filters</button>
     </div>
   </aside>
 </template>

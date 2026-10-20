@@ -79,8 +79,9 @@ export function buildArtists(events) {
       }
 
       // add this event's info to the artist (no duplicates)
-      if (!artist.genres.includes(event.genre.name)) {
-        artist.genres.push(event.genre.name)
+      // only add the artist's own genre, not whatever genre the event is listed under
+      if (!artist.genres.includes(artist.genre.name)) {
+        artist.genres.push(artist.genre.name)
       }
       if (!artist.venues.includes(event.venue.name)) {
         artist.venues.push(event.venue.name)
