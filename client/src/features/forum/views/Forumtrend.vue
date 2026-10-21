@@ -4,13 +4,16 @@ import { useRouter } from 'vue-router'
 import Forumnav from '../components/forumnav.vue'
 import Forumsearch from '../components/forumsearch.vue'
 import Postcard from '../components/postcard.vue'
-import { posts, tags} from '../data/mockdata.js'
 
+const props = defineProps({
+     posts: { type: Array, default: () => [] },
+     tags: { type: Array, default: () => [] },
+})
 const selectedTag = ref(null)
 
 const topTags = computed (() =>{
     const counts = {}
-    for (const p of posts) {
+    for (const p of props.posts) {
         for (const t of p.tags) {
             counts[t] = (counts[t] ?? 0) +1
         }
@@ -19,7 +22,7 @@ const topTags = computed (() =>{
 })
 
 const topPosts = computed (() => {
-    return [...posts].sort((a,b) => (b.upvotes ?? 0 ) - (a.upvotes??0)).slice(0,10)
+    return [...props.posts].sort((a,b) => (b.upvotes ?? 0 ) - (a.upvotes??0)).slice(0,10)
 })
 
 function displayTagPost(name) {
@@ -28,9 +31,7 @@ function displayTagPost(name) {
 
 const shownPosts = computed(() => {
   if (!selectedTag.value) return topPosts.value
-  return posts
-    .filter(p => p.tags.includes(selectedTag.value))
-    .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+  return props.posts.filter(p => p.tags.includes(selectedTag.value)).sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
 })
 
 function onReset() {
@@ -42,7 +43,6 @@ function onReset() {
 <template>
     <div>
         <div class="d-flex flex-column flex-lg-row">
-            <Forumnav @select="feed = $event" @reset="onReset" />
         
             <main class=" p-3  flex-grow-1" style="min-width: 0">
                 <h5 class="mb-2">Trending tags</h5>
