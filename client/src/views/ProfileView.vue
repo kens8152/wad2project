@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 
 import { useUserStore } from '@/stores/user.js'
+import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 
 import { searchSongs } from '@/services/spotifyApi'
 
@@ -194,6 +195,10 @@ async function saveProfile() {
     <header class="page-heading">
       <h1>My profile</h1>
       <p>View and update your music preferences.</p>
+      <!-- Saved artists -->
+      <RouterLink :to="{ name: 'saved-artists' }" class="btn btn-riffle">
+        <i class="bi bi-bookmark-heart me-1"></i> Saved artists
+      </RouterLink>
     </header>
 
     <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
@@ -298,7 +303,7 @@ async function saveProfile() {
       </div>
     </template>
   </main>
-  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
+  <LoginPrompt v-else />
 </template>
 
 

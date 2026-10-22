@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { searchSongs } from '@/services/spotifyApi'
 
 import { useUserStore } from '@/stores/user.js'
+import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 
 import { supabase } from '@/services/supabase.js'
 
@@ -299,7 +300,7 @@ async function savePreferences() {
     </div>
     </form>
   </main>
-  <p v-else class="text-center p-4">Please <RouterLink to="/login">log in</RouterLink> to manage your preferences.</p>
+  <LoginPrompt v-else />
 </template>
 
 <style scoped>

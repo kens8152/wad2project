@@ -1,9 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { getArtists, setArtistAction, saveArtist, refreshArtists } from '@/services/matchmakingApi';
-import { useToastStore } from '@/stores/toast';
+import {
+  getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction,
+  getSavedArtists, addSavedArtist, removeSavedArtist,
+} from '@/services/matchmakingApi';
+import { useUserStore } from '@/stores/user';
+import LoginPrompt from '@/components/layout/LoginPrompt.vue';
 
-const toastStore = useToastStore();
+const userStore = useUserStore();
 
 const DISPLAY_COUNT = 5;
 
@@ -55,16 +59,34 @@ function finishSwiping() {
   }, (FLY_UP_DURATIONS[2] + 0.2)*1000); // Second index is the longest
 }
 
+// Save the current artist's choice to Supabase
+async function updateArtistAction(action) {
+  const artist = artists.value[current.value];
+  if (!artist || artistsFinished.value || !userStore.isLoggedIn) return;
+
+  try {
+    // Unsure simply removes the artist without updates
+    if (action === 'unsure') {
+      await removeArtistAction(artist.id);
+    } else {
+      // Skip or follow updates the db
+      await setArtistAction(artist.id, action);
+    }
+  } catch (err) {
+    console.error('Could not save action', err);
+  }
+}
+
 function skip() {
-  setArtistAction(artists.value[current.value], "<userid>", 'skip');
+  updateArtistAction('skip');
   nextArtist();
 }
 function follow() {
-  setArtistAction(artists.value[current.value], "<userid>", 'follow');
+  updateArtistAction('follow');
   nextArtist();
 }
 function unsure() {
-  setArtistAction(artists.value[current.value].id, "<userid>", 'unsure');
+  updateArtistAction('unsure');
   nextArtist();
 }
 
@@ -72,29 +94,43 @@ function unsure() {
 // button is re-created and its flash animation plays again on every click.
 const saveFlash = ref(0);
 
+// Saved / unsaved message at the top of the page
+const saveMessage = ref(null);
+let saveMessageTimer = null;
+
+function showSaveMessage(artist) {
+  saveMessage.value = { saved: artist.saved, name: artist.name };
+  clearTimeout(saveMessageTimer);
+  saveMessageTimer = setTimeout(() => (saveMessage.value = null), 2500);
+}
+
 async function toggleSave() {
   const artist = artists.value[current.value];
   if (!artist) return;
 
   artist.saved = !artist.saved;  // update the button straight away
   saveFlash.value++;             // play the flash
-  toastStore.show(artist.saved ? `Saved ${artist.name}` : `Removed ${artist.name} from saved`);
+  showSaveMessage(artist);
 
   try {
-    await saveArtist(artist.id, "<userid>");
-    await refreshArtistList();
+    if (artist.saved) {
+      await addSavedArtist(artist.id);
+    } else {
+      await removeSavedArtist(artist.id);
+    }
   } catch (err) {
-    artist.saved = !artist.saved;  // server failed: put the button back
+    artist.saved = !artist.saved;  // Supabase failed: put the button back
     console.error('Could not save artist', err);
   }
 }
 
-// Same artists, same ids, so Vue reuses the cards and no animation replays
-async function refreshArtistList() {
+// Mark which of the loaded artists are already saved
+async function markSavedArtists() {
   try {
-    artists.value = await refreshArtists(artists.value);
+    const savedIds = (await getSavedArtists()).map(row => row.artist_id);
+    artists.value.forEach(artist => (artist.saved = savedIds.includes(artist.id)));
   } catch (err) {
-    console.error('Could not refresh artists', err);
+    console.error('Could not load saved artists', err);
   }
 }
 
@@ -110,9 +146,41 @@ function tracksFor(artist) {
   return artist.tracks?.length ? artist.tracks.slice(0, 3) : PLACEHOLDER_TRACKS;
 }
 
-onMounted(async () => {
-  try {
+// Today's artists: continue the saved batch, or get a new one and save it
+async function loadTodaysArtists() {
+  const rows = await getTodaysArtistRows();
+
+  // No batch yet today
+  if (rows.length === 0) {
     artists.value = await getArtists();
+    await saveTodaysArtists(artists.value.map(artist => artist.id));
+    return;
+  }
+
+  // Batch exists: show the ones without an action
+  const pending = rows.filter(row => row.action === null);
+  if (pending.length === 0) {
+    artistsFinished.value = true;
+    showFinishedMessage.value = true;
+    return;
+  }
+  artists.value = await getArtistDetails(pending.map(row => row.artist_id));
+}
+
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return;
+
+  try {
+    await loadTodaysArtists();
+    await markSavedArtists();
+    return;
+  } catch (err) {
+    console.error("Could not load today's artists", err);
+  }
+
+  // If Supabase failed: a batch that isn't saved
+  try {
+    if (!artists.value.length) artists.value = await getArtists();
   } catch (err) {
     console.error('Could not load artists', err);
   }
@@ -120,7 +188,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-4 pb-xl-5">
+  <div v-if="userStore.isLoggedIn" class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-4 pb-xl-5">
+    <!-- Saved message -->
+    <Transition name="save-msg">
+      <div
+        v-if="saveMessage"
+        class="save-msg position-fixed start-50 translate-middle-x d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow fw-semibold small"
+        :class="saveMessage.saved ? 'text-bg-primary' : 'text-bg-dark'"
+        role="status"
+      >
+        <i class="bi" :class="saveMessage.saved ? 'bi-bookmark-check-fill' : 'bi-bookmark-x'"></i>
+        {{ saveMessage.saved ? `Saved ${saveMessage.name}` : `Removed ${saveMessage.name} from saved` }}
+      </div>
+    </Transition>
+
     <!-- Header -->
     <div class="text-center mb-2 pt-3">
       <h1 class="fw-bold mb-2">Discover Local Artists</h1>
@@ -164,7 +245,13 @@ onMounted(async () => {
           }"
         >
           <template v-if="slot.artist">
-            <img :src="slot.artist.image" :alt="slot.artist.name" class="w-100 h-100 object-fit-cover" />
+            <img
+              :src="slot.artist.image"
+              :alt="slot.artist.name"
+              class="w-100 h-100 object-fit-cover"
+              :style="{ backgroundColor: slot.artist.genreColor }"
+              @error="e => { e.target.alt = ''; e.target.removeAttribute('src'); }"
+            />
 
             <!-- Text sits on top of the image, pushed to the bottom of the card -->
             <div class="card-img-overlay d-flex flex-column justify-content-end px-0 pb-0 pt-5">
@@ -221,24 +308,21 @@ onMounted(async () => {
                     aria-expanded="false"
                     @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
                   >
-                    <h3 class="card-title fw-bold mb-0">
-                      {{ slot.artist.name }}
-                      <i v-if="slot.artist.verified" class="bi bi-patch-check-fill text-primary fs-5"></i>
-                    </h3>
-                    <p class="mb-2">{{ slot.artist.role }}</p>
+                    <h3 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h3>
+                    <p class="mb-2">
+                      <i class="bi bi-geo-alt"></i> {{ slot.artist.hometown }}
+                      <span v-if="slot.artist.formed"> · Since {{ slot.artist.formed }}</span>
+                    </p>
 
                     <!-- Genres -->
                     <div class="d-flex flex-wrap gap-2 mb-sm-2">
-                      <span
-                        v-for="genre in slot.artist.genres"
-                        :key="genre"
-                        class="badge rounded-pill border border-light fw-normal"
-                      >
-                        {{ genre }}
+                      <span v-if="slot.artist.genre" class="badge rounded-pill border border-light fw-normal">
+                        {{ slot.artist.genre }}
+                      </span>
+                      <span v-if="slot.artist.tag" class="badge rounded-pill border border-light fw-normal">
+                        {{ slot.artist.tag }}
                       </span>
                     </div>
-
-                    <p class="small mb-0 d-none d-sm-block">{{ slot.artist.bio }}</p>
                   </div>
 
                   <!-- First song -->
@@ -302,7 +386,7 @@ onMounted(async () => {
                 <!-- Side cards: name and genres only -->
                 <template v-else>
                   <h5 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h5>
-                  <p class="small mb-0">{{ slot.artist.genres.slice(0, 2).join(' • ') }}</p>
+                  <p class="small mb-0">{{ [slot.artist.genre, slot.artist.tag].filter(Boolean).join(' • ') }}</p>
                 </template>
               </div>
             </div>
@@ -326,13 +410,14 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Shown after every card has flown away -->
+    <!-- Shown after all cards has been swiped -->
     <div v-else class="drop-in text-center py-5">
       <i class="bi bi-stars display-3 text-primary"></i>
       <h2 class="fw-bold mt-3 mb-2">You've swiped through all the artists for today!</h2>
       <p class="text-secondary mb-0">Come back tomorrow for a fresh batch of local artists.</p>
     </div>
   </div>
+  <LoginPrompt v-else message="to discover artists." />
 </template>
 
 <style scoped>
@@ -536,6 +621,21 @@ onMounted(async () => {
   width: 64px;
   height: 64px;
   font-size: 24px;
+}
+
+/* Saved message */
+.save-msg {
+  top: 96px;
+  z-index: 1050;
+}
+.save-msg-enter-active,
+.save-msg-leave-active {
+  transition: opacity 0.2s ease, translate 0.2s ease;
+}
+.save-msg-enter-from,
+.save-msg-leave-to {
+  opacity: 0;
+  translate: 0px -10px;
 }
 
 /* Unsure button */

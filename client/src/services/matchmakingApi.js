@@ -1,22 +1,100 @@
 import axios from 'axios'
+import { supabase } from '@/services/supabase'
+import { useEventsStore } from '@/stores/events'
+import artistProfiles from '@/data/artistProfiles.json'
 
-// Artist data comes from the Express server (server/server.js -> /artists-matchmaking).
+// Random artists come from the Express server (server/server.js -> /matchmaking).
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Full artist details for a list of ids:
+// name, genre and tag from the events data, bio / hometown / formed / socials from artistProfiles.json
+export async function getArtistDetails(artistIds) {
+  const eventsStore = useEventsStore();
+  await eventsStore.fetchEvents();
+
+  return artistIds.map(id => {
+    const base = eventsStore.artists.find(artist => artist.id === id) || {};
+    const genre = eventsStore.genres.find(g => g.id === base.genreId) || {};
+    const profile = artistProfiles[id] || {};
+
+    return {
+      id,
+      name: base.name || id,
+      genre: genre.name || '',
+      genreColor: genre.color || '#6c757d',
+      tag: base.tag || '',
+      image: '/images/Artists/' + id + '.svg',
+      bio: profile.bio || '',
+      hometown: profile.hometown || '',
+      formed: profile.formed || '',
+      socials: profile.socials || {},
+    };
+  });
+}
+
+// A random batch of artists
 export async function getArtists() {
   const res = await axios.get(`${API_BASE_URL}/matchmaking`);
-  return res.data;
+  return getArtistDetails(res.data.map(artist => artist.id));
 }
 
-export async function setArtistAction(artistId, userId, action) {
-  const res = await axios.post(`${API_BASE_URL}/matchmaking`, { artistId, userId, action });
+// Today's matchmaking rows for the logged-in user (action is null until they Skip / Follow)
+export async function getTodaysArtistRows() {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('matchmaking_actions')
+    .select('artist_id, action')
+    .gte('created_at', startOfToday.toISOString())
+    .order('id');
+  if (error) throw error;
+  return data;
 }
 
-export async function refreshArtists(artists) {
-  const res = await axios.post(`${API_BASE_URL}/matchmaking/refresh`, { artists });
-  return res.data;
+// Saves today's batch of artists with no action yet
+export async function saveTodaysArtists(artistIds) {
+  const rows = artistIds.map(artistId => ({ artist_id: artistId, action: null }));
+  const { error } = await supabase.from('matchmaking_actions').insert(rows);
+  if (error) throw error;
 }
 
-export async function saveArtist(artistId, userId) {
-  const res = await axios.post(`${API_BASE_URL}/matchmaking/save`, { artistId, userId });
+// Skip / Follow: fills in the action for that artist's row
+export async function setArtistAction(artistId, action) {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .update({ action })
+    .eq('artist_id', artistId)
+    .is('action', null);
+  if (error) throw error;
+}
+
+// Unsure: removes that artist's row
+export async function removeArtistAction(artistId) {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .delete()
+    .eq('artist_id', artistId)
+    .is('action', null);
+  if (error) throw error;
+}
+
+// Saved artists, newest first
+export async function getSavedArtists() {
+  const { data, error } = await supabase
+    .from('saved_artists')
+    .select('artist_id, saved_at')
+    .order('saved_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addSavedArtist(artistId) {
+  const { error } = await supabase.from('saved_artists').insert({ artist_id: artistId });
+  if (error) throw error;
+}
+
+export async function removeSavedArtist(artistId) {
+  const { error } = await supabase.from('saved_artists').delete().eq('artist_id', artistId);
+  if (error) throw error;
 }
