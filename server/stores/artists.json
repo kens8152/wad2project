@@ -1,222 +1,149 @@
-[
-  {
-    "id": "fallingislands",
-    "name": "FallingIslands",
-    "verified": true,
-    "role": "Singer-Songwriter",
-    "genres": ["Indie Folk", "Acoustic", "Alternative", "Indie Pop"],
-    "bio": "Dreamy indie-folk tunes about everyday moments and quiet places.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/fallingislands/480/640",
-    "spotifyId": null
+{
+  "fallingislands": {
+    "bio": "Falling Islands crafts shimmering synthwave soundscapes that pull from 80s retrofuturism and late-night neon aesthetics. The project began as solo studio experiments in a Queenstown apartment and has since evolved into a live A/V performance act. Their music feels like driving through an empty city at 3am with all the windows down.",
+    "hometown": "Queenstown",
+    "formed": "2017",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "x": "https://x.com"
+    }
   },
-  {
-    "id": "evanturetime",
-    "name": "Evanturetime",
-    "verified": true,
-    "role": "Producer",
-    "genres": ["Electronic", "EDM", "Dance"],
-    "bio": "High-energy electronic sets built for late nights and big rooms.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/evanturetime/480/640",
-    "spotifyId": null
+  "evanturetime": {
+    "bio": "Evanture Time brings high-energy EDM to Singapore's festival circuit, blending euphoric drops with melodic builds that keep dance floors moving until sunrise. Formed by two childhood friends from Tampines, they honed their craft playing underground warehouse parties before breaking onto the main stage. Their productions are known for tight sound design and crowd-tested energy.",
+    "hometown": "Tampines",
+    "formed": "2016",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "sherman-zhuo",
-    "name": "Sherman Zhuo",
-    "verified": true,
-    "role": "Singer-Songwriter",
-    "genres": ["Mandopop", "Ballad", "Pop"],
-    "bio": "Heartfelt Mandopop ballads with warm vocals and piano-led arrangements.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/sherman-zhuo/480/640",
-    "spotifyId": null
+  "sherman-zhuo": {
+    "bio": "Sherman Zhuo writes Mandopop with a contemporary edge, weaving personal stories of identity and belonging into polished, radio-ready arrangements. Growing up in Toa Payoh with music playing constantly in his family home, he began writing his own songs at fifteen. His voice carries an emotional warmth that resonates with listeners across the Mandarin-speaking world.",
+    "hometown": "Toa Payoh",
+    "formed": "2018",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "cloudy-yan",
-    "name": "Cloudy Yan",
-    "verified": false,
-    "role": "Vocalist",
-    "genres": ["Mandopop", "Ballad"],
-    "bio": "Soft, cinematic ballads for rainy evenings.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/cloudy-yan/480/640",
-    "spotifyId": null
+  "cloudy-yan": {
+    "bio": "Cloudy Yan is a balladeer whose hushed, intimate vocals float over spare piano and orchestral strings. Her songs dwell in the quiet spaces between heartbreak and acceptance, drawing from her years living between Singapore and Taipei. Each release feels like a handwritten letter you keep in a drawer and reread on rainy days.",
+    "hometown": "Buona Vista",
+    "formed": "2020",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com"
+    }
   },
-  {
-    "id": "krunkle",
-    "name": "Krunkle",
-    "verified": false,
-    "role": "Band",
-    "genres": ["Indie Rock", "Funk"],
-    "bio": "Groovy, riff-heavy funk rock that is impossible to stand still to.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/krunkle/480/640",
-    "spotifyId": null
+  "krunkle": {
+    "bio": "Krunkle is a five-piece indie rock band with a deep funk groove, influenced equally by vintage Stax records and the chaos of Singapore HDB corridor jams. Their live shows are notoriously sweaty affairs packed with extended instrumental breakdowns and call-and-response crowd moments. They've been a fixture of the Esplanade Annexe scene since their earliest gigs.",
+    "hometown": "Geylang",
+    "formed": "2015",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "x": "https://x.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "forest-bloom",
-    "name": "Forest Bloom",
-    "verified": false,
-    "role": "Band",
-    "genres": ["Indie Rock", "Dream Pop", "Shoegaze"],
-    "bio": "Hazy guitars and floating vocals that sound like a long summer afternoon.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/forest-bloom/480/640",
-    "spotifyId": null
+  "forest-bloom": {
+    "bio": "Forest Bloom makes hazy, reverb-drenched dream-pop that sounds like it was recorded inside a cloud. The duo met studying music at LASALLE and began layering guitar shimmer over drum machines in a Clementi practice room. Their songs are about daydreams, seasonal change, and the strange peace of being alone in a crowded city.",
+    "hometown": "Clementi",
+    "formed": "2019",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com"
+    }
   },
-  {
-    "id": "moon-carrot",
-    "name": "Moon Carrot",
-    "verified": false,
-    "role": "Producer",
-    "genres": ["Lo-fi", "Indie Rock", "Chill"],
-    "bio": "Lo-fi bedroom recordings for studying, drifting and daydreaming.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/moon-carrot/480/640",
-    "spotifyId": null
+  "lullaboy": {
+    "bio": "Lullaboy is a Singapore R&B singer-songwriter whose velvety falsetto and introspective lyrics have earned him a devoted online following. He started posting bedroom recordings to SoundCloud during his national service years and signed his first independent deal shortly after. His music sits at the intersection of neo-soul and contemporary R&B, always with a local emotional honesty.",
+    "hometown": "Woodlands",
+    "formed": "2018",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "x": "https://x.com"
+    }
   },
-  {
-    "id": "lullaboy",
-    "name": "Lullaboy",
-    "verified": true,
-    "role": "Singer-Songwriter",
-    "genres": ["Pop", "R&B"],
-    "bio": "Smooth pop and R&B with honest, conversational lyrics.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/lullaboy/480/640",
-    "spotifyId": null
+  "aiyna": {
+    "bio": "Aiyna makes alt-pop that refuses to sit still, jumping between wiry guitar hooks, layered synths, and lyrics that feel ripped from a private journal. She grew up in Jurong East absorbing everything from Björk to Mitski before finding her own voice in her early twenties. Her performances are visually striking and sonically unpredictable in the best way.",
+    "hometown": "Jurong East",
+    "formed": "2021",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "x": "https://x.com"
+    }
   },
-  {
-    "id": "aiyna",
-    "name": "ai.yna",
-    "verified": true,
-    "role": "Singer-Songwriter",
-    "genres": ["Alt-Pop", "Pop", "Electronic"],
-    "bio": "Moody alt-pop with glossy production and sharp hooks.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/aiyna/480/640",
-    "spotifyId": null
+  "kin-leonn": {
+    "bio": "Kin Leonn is a Singapore hip-hop artist and producer whose dense, lyrical flow reflects life growing up in the heartlands with big city ambitions. He raps about code-switching, family pressure, and the grind of creative work in a country that doesn't always have a lane for it. His self-produced instrumentals pull from boom-bap, trap, and the sounds of Singapore's street corners.",
+    "hometown": "Ang Mo Kio",
+    "formed": "2016",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "x": "https://x.com"
+    }
   },
-  {
-    "id": "kin-leonn",
-    "name": "Kin Leonn",
-    "verified": false,
-    "role": "Producer",
-    "genres": ["Hip-Hop", "Ambient", "Experimental"],
-    "bio": "Atmospheric beats that blur the line between hip-hop and ambient.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/kin-leonn/480/640",
-    "spotifyId": null
+  "riot-in-magenta": {
+    "bio": "Riot in Magenta makes synthpop with sharp hooks and a dramatic flair, nodding to classic new wave while staying firmly planted in the present. The trio formed in Katong after a chance meeting at a record swap meet and quickly built a reputation for theatrical live shows with synchronized lighting rigs. Their music is big, bright, and unashamedly catchy.",
+    "hometown": "Katong",
+    "formed": "2017",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "riot-in-magenta",
-    "name": "Riot In Magenta",
-    "verified": false,
-    "role": "Band",
-    "genres": ["Synthpop", "Electronic", "Pop"],
-    "bio": "Bright synths and big choruses with a retro edge.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/riot-in-magenta/480/640",
-    "spotifyId": null
+  "mindosphere": {
+    "bio": "Mindosphere is a house music producer and DJ rooted in the deeper, more meditative end of the dance music spectrum. Drawing from Chicago house, UK garage, and the ambient sounds of Singapore's late-night hawker centres, his sets are built for long, hypnotic journeys on the dance floor. He runs a monthly night in Chinatown that has become essential listening for the local electronic community.",
+    "hometown": "Chinatown",
+    "formed": "2014",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "mindosphere",
-    "name": "Mindosphere",
-    "verified": false,
-    "role": "DJ",
-    "genres": ["House", "Electronic"],
-    "bio": "Deep, rolling house grooves for the dancefloor.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/mindosphere/480/640",
-    "spotifyId": null
+  "intrgnt": {
+    "bio": "intrgnt is a techno producer operating at the harder, industrial end of Singapore's electronic underground, releasing on limited-run vinyl and headlining basement clubs most people find by word of mouth. The project is intentionally anonymous — no press photos, no interviews — letting the music speak entirely on its own terms. Tracks are long, grinding, and engineered for maximum subwoofer damage.",
+    "hometown": "Kallang",
+    "formed": "2019",
+    "socials": {
+      "spotify": "https://open.spotify.com",
+      "x": "https://x.com"
+    }
   },
-  {
-    "id": "intrgnt",
-    "name": "INTRGNT",
-    "verified": false,
-    "role": "Producer",
-    "genres": ["Techno", "Electronic"],
-    "bio": "Dark, driving techno with industrial textures.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/intrgnt/480/640",
-    "spotifyId": null
+  "loka-nada": {
+    "bio": "Loka Nada is a gamelan ensemble dedicated to keeping Javanese and Balinese court music traditions alive in Singapore's multicultural landscape. Founded by a group of second-generation Singaporeans who learned the instruments from community elders in Geylang Serai, they perform at cultural festivals, temples, and schools across the island. Their work bridges ritual heritage and contemporary audience curiosity.",
+    "hometown": "Geylang Serai",
+    "formed": "2015",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "youtube": "https://youtube.com",
+      "facebook": "https://facebook.com"
+    }
   },
-  {
-    "id": "loka-nada",
-    "name": "Loka Nada",
-    "verified": false,
-    "role": "Ensemble",
-    "genres": ["Traditional", "Gamelan", "World"],
-    "bio": "Contemporary takes on gamelan, bridging heritage and modern sound.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/loka-nada/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "kancing-rasa",
-    "name": "Kancing Rasa",
-    "verified": false,
-    "role": "Ensemble",
-    "genres": ["Traditional", "Keroncong"],
-    "bio": "Nostalgic keroncong melodies with a fresh, playful twist.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/kancing-rasa/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "the-northbound",
-    "name": "The Northbound",
-    "verified": false,
-    "role": "Band",
-    "genres": ["Indie Rock", "Post-Rock"],
-    "bio": "Sweeping guitar anthems that build slowly and hit hard.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/the-northbound/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "echo-harbour",
-    "name": "Echo Harbour",
-    "verified": false,
-    "role": "Duo",
-    "genres": ["Electronic", "Chillwave"],
-    "bio": "Neon-lit chillwave inspired by city lights and sea breeze.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/echo-harbour/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "zuo",
-    "name": "Zuo",
-    "verified": false,
-    "role": "Singer-Songwriter",
-    "genres": ["Mandopop", "Indie Pop"],
-    "bio": "Gentle Mandopop with indie sensibilities and bilingual lyrics.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/zuo/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "paper-lanterns",
-    "name": "Paper Lanterns",
-    "verified": false,
-    "role": "Band",
-    "genres": ["Folk", "Acoustic", "Indie Folk"],
-    "bio": "Warm acoustic folk with three-part harmonies.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/paper-lanterns/480/640",
-    "spotifyId": null
-  },
-  {
-    "id": "velvet-tide",
-    "name": "Velvet Tide",
-    "verified": false,
-    "role": "Vocalist",
-    "genres": ["R&B", "Neo-Soul", "Jazz"],
-    "bio": "Silky neo-soul and late-night jazz-tinged R&B.",
-    "location": "Singapore",
-    "image": "https://picsum.photos/seed/velvet-tide/480/640",
-    "spotifyId": null
+  "kancing-rasa": {
+    "bio": "Kancing Rasa revives the gentle, waltzing rhythms of keroncong — the Indonesian-Portuguese folk style — and gives them room to breathe in modern Singapore. The group brings together musicians trained in classical strings, traditional kroncong guitar, and modern jazz to create arrangements that feel both archival and alive. Their name translates loosely to 'the fastening of feeling', which captures exactly what their music does.",
+    "hometown": "Kampong Glam",
+    "formed": "2016",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "youtube": "https://youtube.com",
+      "facebook": "https://facebook.com"
+    }
   }
-]
+}

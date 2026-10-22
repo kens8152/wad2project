@@ -27,12 +27,15 @@ onBeforeUnmount(() => {
   <p v-else class="text-center p-4">Loading Riffle…</p>
 </template>
 
-<style scoped>
+<style>
 #app {
   height: 100vh;
   display: flex;
   flex-direction: column;
 }
+</style>
+
+<style scoped>
 .app-main {
   flex: 1;
   min-height: 0;

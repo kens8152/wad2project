@@ -42,7 +42,7 @@ const routes = [
   {
     path: '/matchmaking',
     name: 'matchmaking',
-    component: () => import('@/views/ArtistMatchmaking.vue'),
+    component: () => import('@/views/matchmaking/ArtistMatchmaking.vue'),
     meta: { title: 'Discover Artists', section: 'artists' },
   },
   {
@@ -96,6 +96,12 @@ const routes = [
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),
     meta: {title: 'Profile', section: 'profile', owner: 'Kenson'},
+  },
+  {
+    path: '/profile/saved-artists',
+    name: 'saved-artists',
+    component: () => import('@/views/matchmaking/SavedArtistsView.vue'),
+    meta: { title: 'Saved artists', section: 'profile' },
   },
 
   {

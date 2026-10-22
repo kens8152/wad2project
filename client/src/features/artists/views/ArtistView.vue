@@ -45,7 +45,11 @@ function openArtist(artist) {
         <p class="artists-shell__subtitle">{{ subtitle }}</p>
       </div>
 
-      <div class="artists-shell__actions">
+      <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
+        <!-- Match with artists -->
+        <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle text-nowrap">
+          <i class="bi bi-stars me-1"></i> Discover artists
+        </RouterLink>
         <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
       </div>
     </header>

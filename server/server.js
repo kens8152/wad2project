@@ -22,10 +22,12 @@ server.get("/matchmaking", async (req, res) => {
     try {
         let data = await fs.readFile(ARTISTS_DATA, "utf-8");
         data = JSON.parse(data);
+        const ids = Object.keys(data);
         let randomizedArtists = [];
 
-        for (let i=0; i<returnCount; i++) {
-            randomizedArtists.push(data.splice(Math.floor(Math.random() * data.length), 1)[0]);
+        for (let i=0; i<returnCount && ids.length; i++) {
+            const id = ids.splice(Math.floor(Math.random() * ids.length), 1)[0];
+            randomizedArtists.push({ id, ...data[id] });
         }
 
         return res.json(randomizedArtists);
@@ -35,36 +37,36 @@ server.get("/matchmaking", async (req, res) => {
     }
 });
 
-server.post("/matchmaking", async (req, res) => {
+// server.post("/matchmaking", async (req, res) => {
 
-});
+// });
 
-server.post("/matchmaking/save", async (req, res) => {
+// server.post("/matchmaking/save", async (req, res) => {
 
-});
+// });
 
-server.post("/matchmaking/refresh", async (req, res) => {
-    const { artists } = req.body;
+// server.post("/matchmaking/refresh", async (req, res) => {
+//     const { artists } = req.body;
 
-    if (!Array.isArray(artists)) {
-        return res.status(400).json({ error: "artists must be an array" });
-    }
+//     if (!Array.isArray(artists)) {
+//         return res.status(400).json({ error: "artists must be an array" });
+//     }
 
-    try {
-        let data = await fs.readFile(ARTISTS_DATA, "utf-8");
-        data = JSON.parse(data);
+//     try {
+//         let data = await fs.readFile(ARTISTS_DATA, "utf-8");
+//         data = JSON.parse(data);
 
-        const updatedArtists = artists.map(artist => {
-            const latest = data.find(a => a.id === artist.id);
-            return latest ? { ...artist, ...latest } : artist;
-        });
+//         const updatedArtists = artists.map(artist => {
+//             const latest = data.find(a => a.id === artist.id);
+//             return latest ? { ...artist, ...latest } : artist;
+//         });
 
-        return res.json(updatedArtists);
-    } catch (err) {
-        console.error("Failed to refresh artists", err);
-        return res.status(500).json({ error: "Could not refresh artists" });
-    }
-});
+//         return res.json(updatedArtists);
+//     } catch (err) {
+//         console.error("Failed to refresh artists", err);
+//         return res.status(500).json({ error: "Could not refresh artists" });
+//     }
+// });
 
 
 const hostname = "localhost";
