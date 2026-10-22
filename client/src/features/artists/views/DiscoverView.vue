@@ -21,11 +21,11 @@ const genres = computed(() => {
   return Object.values(seen)
 })
 
-const activeGenre = ref('all')
+const activeGenres = ref([])
 
 const visibleArtists = computed(() => {
-  if (activeGenre.value === 'all') return allArtists.value
-  return allArtists.value.filter(a => a.genre.id === activeGenre.value)
+  if (activeGenres.value.length === 0) return allArtists.value
+  return allArtists.value.filter(a => activeGenres.value.includes(a.genre.id))
 })
 
 // ── Stars background ──────────────────────────────────────────────────────────
@@ -239,7 +239,7 @@ function centreView(animated = false) {
   const canvas = canvasRef.value
   if (!canvas) return
   const targetPanX = (canvas.width / 2) - (WORLD_W / 2) * 1
-  const targetPanY = (canvas.height / 2) - (WORLD_H / 2) * 1
+  const targetPanY = (canvas.height / 2) - (WORLD_H / 2) * 1 + 70
   const targetZoom = 1
   if (animated) {
     animateTo(targetPanX, targetPanY, targetZoom)
@@ -324,12 +324,15 @@ function draw() {
       ctx.fill()
     }
 
+    ctx.shadowColor = artist.genre.color
+    ctx.shadowBlur = 18 / zoom.value  
     ctx.beginPath()
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
     ctx.fillStyle = artist.genre.color
     ctx.globalAlpha = isHovered ? 1 : 0.9
     ctx.fill()
     ctx.globalAlpha = 1
+    ctx.shadowBlur = 0
 
     ctx.beginPath()
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
@@ -508,9 +511,14 @@ function zoomOut() {
 // ── Genre chip click — filter + animate to group ──────────────────────────────
 
 function selectGenre(genreId) {
-  activeGenre.value = genreId
+  const i = activeGenres.value.indexOf(genreId)
+  if (i === -1) {
+    activeGenres.value.push(genreId)
+  } else {
+    activeGenres.value.splice(i, 1)
+  }
   setTimeout(() => {
-    if (genreId === 'all') {
+    if (activeGenres.value.length === 0) {
       centreView(true)
     } else {
       centreOnArtists(visibleArtists.value)
@@ -590,27 +598,11 @@ watch(visibleArtists, () => { draw() })
     </template>
 
     <!-- Genre filter chips -->
-    <div v-if="!eventsStore.loading && !eventsStore.error" class="discover-map__chips">
-      <button
-        type="button"
-        class="genre-chip"
-        :class="{ 'is-active': activeGenre === 'all' }"
-        @click="selectGenre('all')"
-      >
-        All genres
-      </button>
-      <button
-        v-for="genre in genres"
-        :key="genre.id"
-        type="button"
-        class="genre-chip"
-        :class="{ 'is-active': activeGenre === genre.id }"
-        :style="activeGenre === genre.id
+   <div v-if="!eventsStore.loading && !eventsStore.error" class="discover-map__chips">
+      <button v-for="genre in genres" :key="genre.id" type="button" class="genre-chip"
+        :class="{ 'is-active': activeGenres.includes(genre.id) }" :style="activeGenres.includes(genre.id)
           ? { background: genre.color, borderColor: genre.color, color: '#fff' }
-          : { borderColor: genre.color }"
-        @click="selectGenre(genre.id)"
-      >
-        <!-- <span class="genre-chip__dot" :style="{ background: genre.color }"></span> -->
+          : { borderColor: genre.color }" @click="selectGenre(genre.id)">
         {{ genre.name }}
       </button>
     </div>
