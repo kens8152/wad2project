@@ -78,7 +78,7 @@ function fittedView() {
   const centreY = (bounds.minY + bounds.maxY) / 2
   return {
     z: z,
-    x: props.insetLeft + freeWidth() / 2 - centreX * z,
+    x: props.insetLeft + freeWidth() / 2 - centreX * z - 160,
     y: freeHeight() / 2 - centreY * z,
   }
 }
@@ -137,7 +137,7 @@ onMounted(() => {
 })
 
 // when a panel opens or closes, move the web into the free space
-watch(() => props.insetLeft + props.insetRight + props.insetBottom, refit)
+watch(() => props.insetLeft + props.insetBottom, refit)
 
 // when a dot is picked from outside the map (search, recommended list) and it is not near the middle, bring it there
 watch(() => props.pickedId, id => {
@@ -301,16 +301,6 @@ const tastePillStyle = computed(() => {
   >
     <svg class="web__svg" role="application" aria-label="Web of artists. Each dot is an artist and each line joins two artists who share fans.">
       <g class="web__world" :class="{ 'is-smooth': smooth }" :style="worldStyle">
-        <!-- genre names -->
-        <text
-          v-for="genre in graph.genres"
-          :key="genre.id"
-          class="web__genre"
-          :class="{ 'is-quiet': focusId !== null }"
-          :x="genre.labelX"
-          :y="genre.labelY + 14"
-          :fill="genre.color"
-        >{{ genre.label }}</text>
 
         <!-- the lines between artists who share fans -->
         <path class="web__edges" :class="{ 'is-quiet': focusId !== null }" :d="edgesPath" fill="none" />
@@ -363,13 +353,14 @@ const tastePillStyle = computed(() => {
 
     <!-- recentre and zoom -->
     <div class="map-controls" @pointerdown.stop @click.stop>
-      <button type="button" class="control-card recentre" @click="recentre">
-        <i class="recentre-dot"></i> Recentre
-      </button>
+      
       <div class="control-card zoom">
         <button type="button" aria-label="Zoom in" @click="zoomStep(1.4)"><i class="bi bi-plus-lg"></i></button>
         <button type="button" aria-label="Zoom out" @click="zoomStep(1 / 1.4)"><i class="bi bi-dash-lg"></i></button>
       </div>
+      <button type="button" class="control-card recentre" @click="recentre">
+        <i class="bi bi-fullscreen"></i>
+      </button>
     </div>
 
     <!-- hover: a small card. click: the full card -->
@@ -472,21 +463,6 @@ const tastePillStyle = computed(() => {
   transition: transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
 
-/* genre names */
-.web__genre {
-  font-size: 16px;
-  font-weight: 800;
-  paint-order: stroke;
-  stroke: #fbfaf8;
-  stroke-width: 5px;
-  stroke-linejoin: round;
-  pointer-events: none;
-  transition: opacity 0.25s;
-  animation: fade-in 0.8s ease 0.5s backwards;
-}
-.web__genre.is-quiet {
-  opacity: 0.3;
-}
 
 /* lines */
 .web__edges {
@@ -858,8 +834,9 @@ const tastePillStyle = computed(() => {
   bottom: 24px;
   z-index: 12;
   display: flex;
-  align-items: flex-end;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
 }
 .control-card {
   border: 1px solid var(--riffle-border);
@@ -893,7 +870,7 @@ const tastePillStyle = computed(() => {
   overflow: hidden;
 }
 .zoom button {
-  width: 44px;
+  width: 100%;
   height: 42px;
   border: 0;
   background: transparent;
