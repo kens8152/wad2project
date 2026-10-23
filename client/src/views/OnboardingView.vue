@@ -1,6 +1,6 @@
 <script setup>
 
-import {ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchSongs } from '@/services/spotifyApi'
 
@@ -31,6 +31,30 @@ const genres = [
 
 const selectedGenres = ref([])
 const favouriteSongs = ref('')
+
+const selectedSongs = computed(() => {
+  return favouriteSongs.value
+    .split('\n')
+    .map(song => song.trim())
+    .filter(song => song !== '')
+    .map(text => {
+      const parts = text.split(' — ')
+
+      return {
+        text,
+        title: parts[0],
+        artist: parts.slice(1).join(' — ')
+      }
+    })
+})
+
+function removeSelectedSong(song) {
+  favouriteSongs.value = selectedSongs.value
+    .filter(item => item.text !== song.text)
+    .map(item => item.text)
+    .join('\n')
+}
+
 const songQuery = ref('')
 const songResults = ref([])
 const songLoading = ref(false)
@@ -303,11 +327,21 @@ async function savePreferences() {
               </li>
             </ul>
 
-            <label for="favourite-songs">
-              Song titles and artists
-            </label>
-
-            <textarea id="favourite-songs" v-model.trim="favouriteSongs" class="text-input" rows="6" maxlength="500" placeholder="Enter one song per line." ></textarea>
+            <div class="selected-song-section">
+              <h3>Your selected songs</h3>
+              <p v-if="selectedSongs.length === 0">No songs added yet. Search above and click + Add.</p>
+              <ul v-else class="selected-song-list">
+                <li v-for="(song, index) in selectedSongs" :key="index" class="selected-song-row">
+                  <span class="selected-song-icon" aria-hidden="true">♫</span>
+                  <div class="selected-song-info">
+                    <strong>{{ song.title }}</strong>
+                    <small v-if="song.artist">{{ song.artist }}</small>
+                  </div>
+                  <button class="remove-song-button" type="button" :disabled="saving || connectingSpotify" :aria-label="'Remove ' + song.title" @click="removeSelectedSong(song)">Remove</button>
+                </li>
+              </ul>
+              <p class="selected-song-count">{{ selectedSongs.length }} songs added</p>
+            </div>
             
           </section>
         </div>
@@ -552,6 +586,86 @@ async function savePreferences() {
 
 .next-button:hover {
   background-color: #304779;
+}
+
+.selected-song-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e5f0;
+}
+
+.selected-song-section h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.selected-song-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.selected-song-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef0f5;
+}
+
+.selected-song-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #eee7ff;
+  color: #513ba0;
+  font-size: 24px;
+}
+
+.selected-song-info {
+  flex: 1;
+  min-width: 120px;
+}
+
+.selected-song-info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.selected-song-info small {
+  display: block;
+  margin-top: 4px;
+  color: #64708a;
+}
+
+.remove-song-button {
+  padding: 8px 14px;
+  border: 1px solid #d8deeb;
+  border-radius: 20px;
+  background-color: white;
+  color: #14234b;
+  cursor: pointer;
+}
+
+.remove-song-button:hover {
+  background-color: #f3efff;
+}
+
+.remove-song-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.selected-song-count {
+  margin-top: 15px;
+  margin-bottom: 0;
+  color: #64708a;
+  font-size: 14px;
 }
 
 .error-message {
