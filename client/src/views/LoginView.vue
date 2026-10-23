@@ -2,27 +2,55 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/services/supabase.js'
+import { useUserStore } from '@/stores/user.js'
 
 const router = useRouter()
+const userStore = useUserStore()
+
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 
 async function login() {
+  if (loading.value) return
+
   errorMessage.value = ''
   loading.value = true
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.value.trim(),
       password: password.value
     })
 
     if (error) throw error
 
+    if (!data.user) {
+      throw new Error('Your account could not be loaded. Please try again.')
+    }
+
     password.value = ''
-    await router.push('/discover')
+
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('display_name, onboarding_completed').eq('id', data.user.id).maybeSingle()
+
+    if (profileError) {
+      throw new Error('You are signed in, but your profile could not be loaded. Please try logging in again.')
+    }
+
+    if (userStore.user.id !== data.user.id) {
+      throw new Error('Your account session changed. Please try again.')
+    }
+
+    if (profile) {
+      userStore.updateDisplayName(profile.display_name)
+    }
+
+    if (profile && profile.onboarding_completed === true) {
+      await router.replace('/discover')
+    } else {
+      await router.replace('/onboarding')
+    }
   } catch (error) {
     errorMessage.value = error.message || 'Login failed. Please try again.'
   } finally {

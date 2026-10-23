@@ -6,7 +6,6 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = ref(false)
   const authReady = ref(false)
 
-  // Keep the fields other pages expect
   const user = ref({
     id: '',
     name: 'Guest',
@@ -15,13 +14,35 @@ export const useUserStore = defineStore('user', () => {
     location: { lat: 1.295, lng: 103.849, label: 'Bras Basah' }
   })
 
+  let nameVersion = 0
+
   function updateDisplayName(name) {
-    const cleanName = name.trim()
+    const cleanName = typeof name === 'string' ? name.trim() : ''
 
     if (!cleanName || !isLoggedIn.value) return
 
+    nameVersion++
     user.value.name = cleanName
     user.value.initials = cleanName.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()
+  }
+
+  async function loadDisplayName(accountId, version) {
+    if (user.value.id !== accountId || nameVersion !== version) return
+
+    try {
+      const { data, error } = await supabase.from('profiles').select('display_name').eq('id', accountId).maybeSingle()
+
+      if (error) throw error
+
+      // Ignore an old response if the account or display name has changed
+      if (user.value.id !== accountId || nameVersion !== version) return
+
+      if (data && typeof data.display_name === 'string') {
+        updateDisplayName(data.display_name)
+      }
+    } catch (error) {
+      console.error('Could not load the profile name:', error)
+    }
   }
 
   function applySession(session) {
@@ -31,6 +52,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn.value = Boolean(account)
 
     if (accountChanged) {
+      nameVersion++
       user.value.id = account ? account.id : ''
       user.value.name = 'Guest'
       user.value.initials = ''
@@ -39,15 +61,13 @@ export const useUserStore = defineStore('user', () => {
       if (account) {
         updateDisplayName('Music fan')
 
-        try {
-          const saved = JSON.parse(localStorage.getItem('riffle-preferences-v1:' + account.id))
+        const accountId = account.id
+        const version = nameVersion
 
-          if (saved && typeof saved.displayName === 'string') {
-            updateDisplayName(saved.displayName)
-          }
-        } catch (error) {
-          console.error('Could not load profile name:', error)
-        }
+        // schedules the profile request after the authentication callback finishes
+        setTimeout(() => {
+          loadDisplayName(accountId, version)
+        }, 0)
       }
     }
 
