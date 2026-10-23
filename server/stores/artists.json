@@ -8,7 +8,21 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "x": "https://x.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "6axtsPu4DGvae6PkTQxfKd",
+        "title": "FREE THE VEIL"
+      },
+      {
+        "id": "4ipAFSdUmJ1WQCBRDumv7z",
+        "title": "MANIFESTO"
+      },
+      {
+        "id": "2lztR62CNOSKvC7iadfX8i",
+        "title": "NETWLKR"
+      }
+    ]
   },
   "evanturetime": {
     "bio": "Evanture Time brings high-energy EDM to Singapore's festival circuit, blending euphoric drops with melodic builds that keep dance floors moving until sunrise. Formed by two childhood friends from Tampines, they honed their craft playing underground warehouse parties before breaking onto the main stage. Their productions are known for tight sound design and crowd-tested energy.",
@@ -19,7 +33,21 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "1o0OB224RbIplg102GZ2x9",
+        "title": "if it's with you"
+      },
+      {
+        "id": "25AJ3Ikr4Kryorbk8bqIvw",
+        "title": "you"
+      },
+      {
+        "id": "1tpHsyhnjet2NILsgbYN66",
+        "title": "I'm An Artiste"
+      }
+    ]
   },
   "sherman-zhuo": {
     "bio": "Sherman Zhuo writes Mandopop with a contemporary edge, weaving personal stories of identity and belonging into polished, radio-ready arrangements. Growing up in Toa Payoh with music playing constantly in his family home, he began writing his own songs at fifteen. His voice carries an emotional warmth that resonates with listeners across the Mandarin-speaking world.",
@@ -30,7 +58,21 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "5UJPhXmu7vQktcpuXJVmRX",
+        "title": "下一個你"
+      },
+      {
+        "id": "5a59iCKJGGzVqZBDLRBD0J",
+        "title": "有話沒說"
+      },
+      {
+        "id": "3QzvC0v07VV76tZ8SoIUce",
+        "title": "hard to let you go"
+      }
+    ]
   },
   "cloudy-yan": {
     "bio": "Cloudy Yan is a balladeer whose hushed, intimate vocals float over spare piano and orchestral strings. Her songs dwell in the quiet spaces between heartbreak and acceptance, drawing from her years living between Singapore and Taipei. Each release feels like a handwritten letter you keep in a drawer and reread on rainy days.",
@@ -40,7 +82,8 @@
       "instagram": "https://instagram.com",
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com"
-    }
+    },
+    "tracks": []
   },
   "krunkle": {
     "bio": "Krunkle is a five-piece indie rock band with a deep funk groove, influenced equally by vintage Stax records and the chaos of Singapore HDB corridor jams. Their live shows are notoriously sweaty affairs packed with extended instrumental breakdowns and call-and-response crowd moments. They've been a fixture of the Esplanade Annexe scene since their earliest gigs.",
@@ -52,7 +95,21 @@
       "youtube": "https://youtube.com",
       "x": "https://x.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "6NW9iSJo36QtFSxwvn4cKA",
+        "title": "Philia"
+      },
+      {
+        "id": "7MzIqF3Uj3KSf4pxYondnp",
+        "title": "Stale"
+      },
+      {
+        "id": "45MeU4w7ktRKynx0mxHnNd",
+        "title": "Roofie Romance"
+      }
+    ]
   },
   "forest-bloom": {
     "bio": "Forest Bloom makes hazy, reverb-drenched dream-pop that sounds like it was recorded inside a cloud. The duo met studying music at LASALLE and began layering guitar shimmer over drum machines in a Clementi practice room. Their songs are about daydreams, seasonal change, and the strange peace of being alone in a crowded city.",
@@ -62,7 +119,8 @@
       "instagram": "https://instagram.com",
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com"
-    }
+    },
+    "tracks": []
   },
   "lullaboy": {
     "bio": "Lullaboy is a Singapore R&B singer-songwriter whose velvety falsetto and introspective lyrics have earned him a devoted online following. He started posting bedroom recordings to SoundCloud during his national service years and signed his first independent deal shortly after. His music sits at the intersection of neo-soul and contemporary R&B, always with a local emotional honesty.",
@@ -73,7 +131,21 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "x": "https://x.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "3ynNOuFyjyhzfKVYbWM8dp",
+        "title": "shortcut to heaven"
+      },
+      {
+        "id": "6VMuD05WDxorQZJr5e9sDI",
+        "title": "someone like u"
+      },
+      {
+        "id": "00FncmbU5PCKfrSXmRE0AS",
+        "title": "life with u"
+      }
+    ]
   },
   "aiyna": {
     "bio": "Aiyna makes alt-pop that refuses to sit still, jumping between wiry guitar hooks, layered synths, and lyrics that feel ripped from a private journal. She grew up in Jurong East absorbing everything from Björk to Mitski before finding her own voice in her early twenties. Her performances are visually striking and sonically unpredictable in the best way.",
@@ -83,7 +155,8 @@
       "instagram": "https://instagram.com",
       "spotify": "https://open.spotify.com",
       "x": "https://x.com"
-    }
+    },
+    "tracks": []
   },
   "kin-leonn": {
     "bio": "Kin Leonn is a Singapore hip-hop artist and producer whose dense, lyrical flow reflects life growing up in the heartlands with big city ambitions. He raps about code-switching, family pressure, and the grind of creative work in a country that doesn't always have a lane for it. His self-produced instrumentals pull from boom-bap, trap, and the sounds of Singapore's street corners.",
@@ -94,7 +167,17 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "x": "https://x.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "6JOqf329YiXuPl9Zut4cRq",
+        "title": "There Were Days"
+      },
+      {
+        "id": "1zjZLHeQ4OqbPMOr5Bu5IK",
+        "title": "Missed Flight / New Friends"
+      }
+    ]
   },
   "riot-in-magenta": {
     "bio": "Riot in Magenta makes synthpop with sharp hooks and a dramatic flair, nodding to classic new wave while staying firmly planted in the present. The trio formed in Katong after a chance meeting at a record swap meet and quickly built a reputation for theatrical live shows with synchronized lighting rigs. Their music is big, bright, and unashamedly catchy.",
@@ -105,7 +188,21 @@
       "spotify": "https://open.spotify.com",
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": [
+      {
+        "id": "6wkzksHkrpMybgJBlgaKRP",
+        "title": "Told You So"
+      },
+      {
+        "id": "0qKU1DaYLGTr6A2lepW2uJ",
+        "title": "Lost"
+      },
+      {
+        "id": "2ptRwqPzKYT7RQ9jNm7ZaP",
+        "title": "Cloud"
+      }
+    ]
   },
   "mindosphere": {
     "bio": "Mindosphere is a house music producer and DJ rooted in the deeper, more meditative end of the dance music spectrum. Drawing from Chicago house, UK garage, and the ambient sounds of Singapore's late-night hawker centres, his sets are built for long, hypnotic journeys on the dance floor. He runs a monthly night in Chinatown that has become essential listening for the local electronic community.",
@@ -115,7 +212,8 @@
       "instagram": "https://instagram.com",
       "spotify": "https://open.spotify.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": []
   },
   "intrgnt": {
     "bio": "intrgnt is a techno producer operating at the harder, industrial end of Singapore's electronic underground, releasing on limited-run vinyl and headlining basement clubs most people find by word of mouth. The project is intentionally anonymous — no press photos, no interviews — letting the music speak entirely on its own terms. Tracks are long, grinding, and engineered for maximum subwoofer damage.",
@@ -124,7 +222,8 @@
     "socials": {
       "spotify": "https://open.spotify.com",
       "x": "https://x.com"
-    }
+    },
+    "tracks": []
   },
   "loka-nada": {
     "bio": "Loka Nada is a gamelan ensemble dedicated to keeping Javanese and Balinese court music traditions alive in Singapore's multicultural landscape. Founded by a group of second-generation Singaporeans who learned the instruments from community elders in Geylang Serai, they perform at cultural festivals, temples, and schools across the island. Their work bridges ritual heritage and contemporary audience curiosity.",
@@ -134,7 +233,8 @@
       "instagram": "https://instagram.com",
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": []
   },
   "kancing-rasa": {
     "bio": "Kancing Rasa revives the gentle, waltzing rhythms of keroncong — the Indonesian-Portuguese folk style — and gives them room to breathe in modern Singapore. The group brings together musicians trained in classical strings, traditional kroncong guitar, and modern jazz to create arrangements that feel both archival and alive. Their name translates loosely to 'the fastening of feeling', which captures exactly what their music does.",
@@ -144,6 +244,7 @@
       "instagram": "https://instagram.com",
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
-    }
+    },
+    "tracks": []
   }
 }

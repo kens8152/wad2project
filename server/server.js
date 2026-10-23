@@ -5,11 +5,11 @@ const path = require("path");
 const fs = require("fs/promises");
 const cors = require("cors");
 
-dotenv.config({ path: "./config.env" });
+dotenv.config({ path: "./.env" });
 
 const server = express();
 
-// Allow the Vite dev server to call this API
+// Allow client app to call server
 server.use(cors({ origin: ["http://127.0.0.1:5173", "http://localhost:5173"] }));
 server.use(express.urlencoded({ extended: true }));
 server.use(express.json());
@@ -31,6 +31,21 @@ server.get("/matchmaking", async (req, res) => {
         }
 
         return res.json(randomizedArtists);
+    } catch (err) {
+        console.error("Failed to read artists.json", err);
+        return res.status(500).json({ error: "Could not load artists" });
+    }
+});
+
+server.get("/matchmaking/artists", async (req, res) => {
+    const ids = String(req.query.ids || "").split(",").filter(Boolean);
+
+    try {
+        let data = await fs.readFile(ARTISTS_DATA, "utf-8");
+        data = JSON.parse(data);
+
+        const artists = ids.filter(id => data[id]).map(id => ({ id, ...data[id] }));
+        return res.json(artists);
     } catch (err) {
         console.error("Failed to read artists.json", err);
         return res.status(500).json({ error: "Could not load artists" });

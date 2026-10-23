@@ -1,21 +1,29 @@
 import axios from 'axios'
 import { supabase } from '@/services/supabase'
 import { useEventsStore } from '@/stores/events'
-import artistProfiles from '@/data/artistProfiles.json'
 
-// Random artists come from the Express server (server/server.js -> /matchmaking).
+// Artist data comes from the Express server (server/server.js -> server/stores/artists.json).
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Profiles (bio, hometown, formed, socials, tracks) for specific artists
+async function getArtistProfiles(artistIds) {
+  if (!artistIds.length) return [];
+  const res = await axios.get(`${API_BASE_URL}/matchmaking/artists`, { params: { ids: artistIds.join(',') } });
+  return res.data;
+}
+
 // Full artist details for a list of ids:
-// name, genre and tag from the events data, bio / hometown / formed / socials from artistProfiles.json
-export async function getArtistDetails(artistIds) {
+// name, genre and tag from the events data, everything else from the server's artists.json
+// (pass profiles in if you already have them, to skip the extra request)
+export async function getArtistDetails(artistIds, profiles = null) {
   const eventsStore = useEventsStore();
   await eventsStore.fetchEvents();
+  if (!profiles) profiles = await getArtistProfiles(artistIds);
 
   return artistIds.map(id => {
     const base = eventsStore.artists.find(artist => artist.id === id) || {};
     const genre = eventsStore.genres.find(g => g.id === base.genreId) || {};
-    const profile = artistProfiles[id] || {};
+    const profile = profiles.find(p => p.id === id) || {};
 
     return {
       id,
@@ -28,6 +36,7 @@ export async function getArtistDetails(artistIds) {
       hometown: profile.hometown || '',
       formed: profile.formed || '',
       socials: profile.socials || {},
+      tracks: profile.tracks || [],   // [{ id: Spotify track id, title }]
     };
   });
 }
@@ -35,7 +44,7 @@ export async function getArtistDetails(artistIds) {
 // A random batch of artists
 export async function getArtists() {
   const res = await axios.get(`${API_BASE_URL}/matchmaking`);
-  return getArtistDetails(res.data.map(artist => artist.id));
+  return getArtistDetails(res.data.map(artist => artist.id), res.data);
 }
 
 // Today's matchmaking rows for the logged-in user (action is null until they Skip / Follow)

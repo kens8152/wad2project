@@ -6,6 +6,7 @@ import {
 } from '@/services/matchmakingApi';
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
+import FlashMessage from '@/components/layout/FlashMessage.vue';
 
 const userStore = useUserStore();
 
@@ -47,7 +48,6 @@ function nextArtist() {
   }
 
   hasSwipedCards.value = true;
-  saveFlash.value = 0;  // so the next card's Save button doesn't flash when it appears
   openSong.value = 0;
   current.value++;
 }
@@ -90,26 +90,20 @@ function unsure() {
   nextArtist();
 }
 
-// Goes up by 1 on every Save click. The Save button uses it in its key, so the
-// button is re-created and its flash animation plays again on every click.
-const saveFlash = ref(0);
-
 // Saved / unsaved message at the top of the page
-const saveMessage = ref(null);
-let saveMessageTimer = null;
+const saveMessage = ref({ saved: false, name: '' });
+const saveFlashMessage = ref(null);
 
 function showSaveMessage(artist) {
   saveMessage.value = { saved: artist.saved, name: artist.name };
-  clearTimeout(saveMessageTimer);
-  saveMessageTimer = setTimeout(() => (saveMessage.value = null), 2500);
+  saveFlashMessage.value.flash();
 }
 
 async function toggleSave() {
   const artist = artists.value[current.value];
   if (!artist) return;
 
-  artist.saved = !artist.saved;  // update the button straight away
-  saveFlash.value++;             // play the flash
+  artist.saved = !artist.saved;
   showSaveMessage(artist);
 
   try {
@@ -134,16 +128,10 @@ async function markSavedArtists() {
   }
 }
 
-// Songs panel
-const PLACEHOLDER_TRACKS = [
-  { id: 'track-1', title: 'Song 1' },
-  { id: 'track-2', title: 'Song 2' },
-  { id: 'track-3', title: 'Song 3' },
-];
 const openSong = ref(0);
 
-function tracksFor(artist) {
-  return artist.tracks?.length ? artist.tracks.slice(0, 3) : PLACEHOLDER_TRACKS;
+function artistTracks(artist) {
+  return artist.tracks?.length ? artist.tracks.slice(0, 3) : [];
 }
 
 // Today's artists: continue the saved batch, or get a new one and save it
@@ -188,29 +176,27 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-4 pb-xl-5">
-    <!-- Saved message -->
-    <Transition name="save-msg">
-      <div
-        v-if="saveMessage"
-        class="save-msg position-fixed start-50 translate-middle-x d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow fw-semibold small"
-        :class="saveMessage.saved ? 'text-bg-primary' : 'text-bg-dark'"
-        role="status"
-      >
-        <i class="bi" :class="saveMessage.saved ? 'bi-bookmark-check-fill' : 'bi-bookmark-x'"></i>
-        {{ saveMessage.saved ? `Saved ${saveMessage.name}` : `Removed ${saveMessage.name} from saved` }}
-      </div>
-    </Transition>
+  <div v-if="userStore.isLoggedIn" class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-3 pb-xl-4">
+    <FlashMessage
+      ref="saveFlashMessage"
+      bg-color="secondary"
+    >
+      <i class="bi" :class="saveMessage.saved ? 'bi-bookmark-check-fill' : 'bi-bookmark-x'"></i>
+      {{ saveMessage.saved ? `Saved ${saveMessage.name}` : `Removed ${saveMessage.name} from saved` }}
+    </FlashMessage>
 
     <!-- Header -->
     <div class="text-center mb-2 pt-3">
-      <h1 class="fw-bold mb-2">Discover Local Artists</h1>
+      <h2 class="fw-bold mb-2">Discover Local Artists</h2>
       <p class="lead text-dark mb-0 fs-6">
         Swipe through artists, listen to a preview, and find new music that matches your taste.
       </p>
     </div>
 
-    <div v-if="!showFinishedMessage" class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-4">
+    <div 
+      v-if="!showFinishedMessage" 
+      class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-2"
+    >
       <!-- Skip Btn -->
       <div
         class="action skip-action text-center mt-3 mt-sm-5"
@@ -285,21 +271,23 @@ onMounted(async () => {
                 {{ slot.index + 1 }} / {{ artists.length }}
               </span>
 
-              <div class="card-info p-2 p-sm-3 overflow-auto">
+              <div class="info-wrap position-relative d-flex flex-column">
+              <!-- Collapse arrow -->
+              <div
+                v-if="slot.offset === 0"
+                class="collapse-arrow collapsed position-absolute top-0 start-50 translate-middle-x z-2 lh-1"
+                role="button"
+                aria-label="Show fewer songs"
+                data-bs-toggle="collapse"
+                :data-bs-target="'#songs-' + slot.artist.id"
+                aria-expanded="false"
+              >
+                <i class="bi bi-chevron-compact-down"></i>
+              </div>
+
+              <div class="card-info p-2 pt-3 p-sm-3 overflow-auto">
                 <!-- Main card: full details -->
                 <template v-if="slot.offset === 0">
-                  <!-- Collapse arrow -->
-                  <div
-                    class="collapse-arrow collapsed text-center lh-1"
-                    role="button"
-                    aria-label="Show fewer songs"
-                    data-bs-toggle="collapse"
-                    :data-bs-target="'#songs-' + slot.artist.id"
-                    aria-expanded="false"
-                  >
-                    <i class="bi bi-chevron-compact-down fs-4"></i>
-                  </div>
-
                   <!-- Pull-up area -->
                   <div
                     class="pull-area collapsed"
@@ -325,20 +313,36 @@ onMounted(async () => {
                     </div>
                   </div>
 
-                  <!-- First song -->
-                  <button class="btn btn-sm border-0 px-0 w-100 text-start text-white text-truncate mt-1" @click="openSong = 0">
-                    {{ tracksFor(slot.artist)[0].title }}
-                  </button>
+                  <template v-if="artistTracks(slot.artist).length">
+                    <!-- First song -->
+                    <div class="mt-1 mb-2">
+                      <button
+                        v-show="openSong !== 0"
+                        class="song-row btn btn-sm border-0 rounded-3 w-100 py-0 text-start text-white text-truncate"
+                        @click="openSong = 0"
+                      >
+                        <i class="bi bi-play-circle-fill me-2"></i>{{ artistTracks(slot.artist)[0].title }}
+                      </button>
 
-                  <!-- Preview player -->
-                  <div v-if="openSong === 0" class="player-drop d-flex align-items-center gap-2 pb-2">
-                    <button class="btn btn-light btn-sm rounded-circle">
-                      <i class="bi bi-play-fill"></i>
-                    </button>
-                    <input type="range" class="form-range" min="0" max="30" value="0" />
-                    <span class="small text-nowrap">0:00 / 0:30</span>
-                    <i class="bi bi-volume-up-fill"></i>
-                  </div>
+                      <!-- Spotify player -->
+                      <Transition name="song">
+                        <iframe
+                          v-show="openSong === 0"
+                          class="align-bottom w-100 border-0 rounded-3"
+                          :src="'https://open.spotify.com/embed/track/' + artistTracks(slot.artist)[0].id + '?theme=0'"
+                          height="80"
+                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                          loading="lazy"
+                          :title="'Spotify player: ' + artistTracks(slot.artist)[0].title"
+                        ></iframe>
+                      </Transition>
+                    </div>
+                  </template>
+
+                  <!-- No songs -->
+                  <p v-else class="small fst-italic opacity-75 mt-1 mb-2">
+                    <i class="bi bi-music-note"></i> No song samples to show yet
+                  </p>
 
                   <div
                     class="pull-area songs-hint collapsed small d-flex align-items-center gap-1"
@@ -348,7 +352,9 @@ onMounted(async () => {
                     @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
                   >
                     <i class="bi bi-music-note-beamed"></i> &nbsp;
-                    Checkout {{ tracksFor(slot.artist).length - 1 }} more samples
+                    {{ artistTracks(slot.artist).length > 1
+                      ? `Checkout ${artistTracks(slot.artist).length - 1} more samples`
+                      : 'More about this artist' }}
                     <i class="bi bi-chevron-up ms-auto"></i>
                   </div>
 
@@ -358,20 +364,27 @@ onMounted(async () => {
                     :id="'songs-' + slot.artist.id"
                     v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
                   >
-                    <div v-for="(track, i) in tracksFor(slot.artist).slice(1)" :key="track.id">
-                      <button class="btn btn-sm border-0 px-0 w-100 text-start text-white text-truncate" @click="openSong = i + 1">
-                        {{ track.title }}
+                    <div v-for="(track, i) in artistTracks(slot.artist).slice(1)" :key="track.id" class="mb-2">
+                      <button
+                        v-show="openSong !== i + 1"
+                        class="song-row btn btn-sm border-0 rounded-3 w-100 py-0 text-start text-white text-truncate"
+                        @click="openSong = i + 1"
+                      >
+                        <i class="bi bi-play-circle-fill me-2"></i>{{ track.title }}
                       </button>
 
-                      <!-- Preview player -->
-                      <div v-if="openSong === i + 1" class="player-drop d-flex align-items-center gap-2 pb-2">
-                        <button class="btn btn-light btn-sm rounded-circle">
-                          <i class="bi bi-play-fill"></i>
-                        </button>
-                        <input type="range" class="form-range" min="0" max="30" value="0" />
-                        <span class="small text-nowrap">0:00 / 0:30</span>
-                        <i class="bi bi-volume-up-fill"></i>
-                      </div>
+                      <!-- Spotify player -->
+                      <Transition name="song">
+                        <iframe
+                          v-show="openSong === i + 1"
+                          class="align-bottom w-100 border-0 rounded-3"
+                          :src="'https://open.spotify.com/embed/track/' + track.id + '?theme=0'"
+                          height="80"
+                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                          loading="lazy"
+                          :title="'Spotify player: ' + track.title"
+                        ></iframe>
+                      </Transition>
                     </div>
 
                     <RouterLink
@@ -388,6 +401,7 @@ onMounted(async () => {
                   <h5 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h5>
                   <p class="small mb-0">{{ [slot.artist.genre, slot.artist.tag].filter(Boolean).join(' • ') }}</p>
                 </template>
+              </div>
               </div>
             </div>
           </template>
@@ -575,6 +589,31 @@ onMounted(async () => {
 .card-info {
   background-color: rgba(0, 0, 0, 0.5);
   font-size: 0.875rem;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+}
+.info-wrap {
+  min-height: 0;
+}
+
+@media (max-height: 700px) {
+  .card-info {
+    font-size: 0.75rem;
+  }
+  .card-info iframe {
+    zoom: 0.8;
+  }
+}
+
+/* Song rows */
+.song-row {
+  background-color: rgba(255, 255, 255, 0.1);
+  height: 2.25em;
+  line-height: 2.25em;
+}
+.song-row:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Info text sizes */
@@ -601,19 +640,15 @@ onMounted(async () => {
   display: none !important;
 }
 
-/* Player drop-down */
-@keyframes player-drop {
-  from {
-    opacity: 0;
-    translate: 0px -6px;
-  }
-  to {
-    opacity: 1;
-    translate: 0px 0px;
-  }
+/* Song open / close */
+.song-enter-active,
+.song-leave-active {
+  transition: height 0.35s ease;
+  overflow: hidden;
 }
-.player-drop {
-  animation: player-drop 0.25s ease-out;
+.song-enter-from,
+.song-leave-to {
+  height: 0;
 }
 
 /* Skip and follow buttons */
@@ -621,21 +656,6 @@ onMounted(async () => {
   width: 64px;
   height: 64px;
   font-size: 24px;
-}
-
-/* Saved message */
-.save-msg {
-  top: 96px;
-  z-index: 1050;
-}
-.save-msg-enter-active,
-.save-msg-leave-active {
-  transition: opacity 0.2s ease, translate 0.2s ease;
-}
-.save-msg-enter-from,
-.save-msg-leave-to {
-  opacity: 0;
-  translate: 0px -10px;
 }
 
 /* Unsure button */
