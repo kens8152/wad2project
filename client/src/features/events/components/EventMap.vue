@@ -1,25 +1,19 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import SingaporeMapArt from './SingaporeMapArt.vue'
-import {
-  MAP_HEIGHT,
-  MAP_WIDTH,
-  MAP_PAD_X,
-  MAP_PAD_Y,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
-  project,
-} from '../utils/mapProjection'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { ATTRIBUTION, MAX_ZOOM, MIN_ZOOM, SG_BOUNDS, TILE_URL } from '../utils/onemap'
 
-// Interactive map surface (pan / zoom / pins / genre key).
+// Interactive map surface (OneMap tiles drawn with Leaflet, pins, genre key).
 //
-// This is the ONLY component that knows how the map is drawn. To switch to
-// Google Maps (or similar), replace the contents of the `.event-map__world`
-// block + the pan/zoom code with the API's map and keep the props/emits:
-//
+// This is the ONLY component that knows how the map is drawn.
 //   props:  events (hydrated, with event.venue.lat/lng), genres, userLocation,
 //           selectedId, hoverId
 //   emits:  select(id), open(id)
+//
+// Leaflet draws the map itself (tiles, dragging, zooming). The pins and the "you are here"
+// marker are normal Vue elements laid over the map; their pixel position is worked out from
+// their lat/lng every time the map moves or zooms.
 const props = defineProps({
   events: { type: Array, required: true },
   genres: { type: Array, required: true },
@@ -29,124 +23,60 @@ const props = defineProps({
 })
 const emit = defineEmits(['select', 'open'])
 
-const MAX_ZOOM = 2.5
-
 const root = ref(null)
-const size = reactive({ w: 0, h: 0 })
-const zoom = ref(1)
-const pan = reactive({ x: 0, y: 0 })
-const dragging = ref(false)
+const mapEl = ref(null)
+const zoomLevel = ref(MIN_ZOOM)
 const keyOpen = ref(typeof window === 'undefined' || window.innerWidth >= 768)
+const zooming = ref(false) // true while a zoom animation runs, so the pins glide along with the tiles
+let map = null // the Leaflet map (kept out of Vue's reactivity on purpose)
+let zoomTimer = null
+// Until you touch the map (drag, zoom or pick a pin), it keeps itself fitted to every event shown, whenever the
+// events or the size of the box change. So the first thing you see is the same view as "Show all events".
+let autoFit = true
 
-// the starting view fills the box with the centre picture (the area events are on)
-const coverScale = computed(() => (size.w ? Math.max(size.w / MAP_WIDTH, size.h / MAP_HEIGHT) : 1))
-// the furthest we can zoom out: the whole drawn map fills the box (never any empty edges)
-const containScale = computed(() => (size.w ? Math.max(size.w / WORLD_WIDTH, size.h / WORLD_HEIGHT) : 1))
-const baseScale = coverScale
-const MIN_ZOOM = computed(() => containScale.value / coverScale.value) // can zoom out until everything is visible
-const scale = computed(() => baseScale.value * zoom.value)
+// where each marker is on screen, in pixels from the top-left of the map box
+const pixel = ref({})
+const userPixel = ref(null)
 
-// smooth movement for button / focus actions (not while dragging or wheel-zooming)
-const animating = ref(false)
-let animTimer = null
-function animate() {
-  animating.value = true
-  clearTimeout(animTimer)
-  animTimer = setTimeout(() => (animating.value = false), 500)
+function toPixel(lat, lng, center, zoom) {
+  // centre and zoom can be the ones the map is about to have (during a zoom animation)
+  const size = map.getSize()
+  const here = map.project([lat, lng], zoom)
+  const mid = map.project(center, zoom)
+  return { x: here.x - mid.x + size.x / 2, y: here.y - mid.y + size.y / 2 }
 }
 
-const worldStyle = computed(() => ({
-  width: `${WORLD_WIDTH}px`,
-  height: `${WORLD_HEIGHT}px`,
-  transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale.value})`,
-}))
-
-// keep the picture inside the box (and centred when it is smaller than the box)
-function clampPan() {
-  const worldW = WORLD_WIDTH * scale.value
-  const worldH = WORLD_HEIGHT * scale.value
-  if (worldW <= size.w) pan.x = (size.w - worldW) / 2
-  else pan.x = Math.min(0, Math.max(size.w - worldW, pan.x))
-  if (worldH <= size.h) pan.y = (size.h - worldH) / 2
-  else pan.y = Math.min(0, Math.max(size.h - worldH, pan.y))
-}
-
-/** Zoom keeping the world point under (cx, cy) fixed. */
-function zoomAt(nextZoom, cx = size.w / 2, cy = size.h / 2) {
-  const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM.value, nextZoom))
-  const before = scale.value
-  const wx = (cx - pan.x) / before
-  const wy = (cy - pan.y) / before
-  zoom.value = z
-  const after = baseScale.value * z
-  pan.x = cx - wx * after
-  pan.y = cy - wy * after
-  clampPan()
-}
-
-// the + and - buttons: a gentle step, animated
-function zoomStep(factor) {
-  animate()
-  zoomAt(zoom.value * factor)
-}
-
-function centerOn(point, zoomLevel = zoom.value) {
-  zoom.value = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM.value, zoomLevel))
-  pan.x = size.w / 2 - point.x * scale.value
-  pan.y = size.h / 2 - point.y * scale.value
-  clampPan()
-}
-
-// "Show all events": zoom and move so that every pin is inside the box
-function fitAll() {
-  if (!pins.value.length) return
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
+function refresh(center = map.getCenter(), zoom = map.getZoom()) {
+  if (!map) return
+  const next = {}
   for (const pin of pins.value) {
-    minX = Math.min(minX, pin.point.x)
-    maxX = Math.max(maxX, pin.point.x)
-    minY = Math.min(minY, pin.point.y)
-    maxY = Math.max(maxY, pin.point.y)
+    const spot = toPixel(pin.lat, pin.lng, center, zoom)
+    // events at the same venue are lined up side by side so every event has a pin of its own
+    next[pin.id] = { x: spot.x + pin.sideways, y: spot.y }
   }
-  const padding = 120
-  const width = Math.max(maxX - minX + padding * 2, 200)
-  const height = Math.max(maxY - minY + padding * 2, 200)
-  const wanted = Math.min(size.w / width, size.h / height) / baseScale.value
-  animate()
-  centerOn({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 }, wanted)
+  pixel.value = next
+  userPixel.value = toPixel(props.userLocation.lat, props.userLocation.lng, center, zoom)
+  zoomLevel.value = map.getZoom()
 }
 
-// ---- pointer interaction ---------------------------------------------------------
-let drag = null
+function zoomStep(amount) {
+  autoFit = false
+  map.setZoom(map.getZoom() + amount)
+}
 
-function onPointerDown(e) {
-  if (e.button !== undefined && e.button !== 0) return
-  animating.value = false
-  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y, moved: false }
-  root.value.setPointerCapture?.(e.pointerId)
+// "Show all events": zoom and move so that every pin is inside the box.
+// The map starts in this same view, so the first thing you see is every event.
+function fitAll(animate = true) {
+  if (!pins.value.length) return
+  const bounds = L.latLngBounds(pins.value.map((p) => [p.lat, p.lng]))
+  map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16, animate: animate })
 }
-function onPointerMove(e) {
-  if (!drag || drag.id !== e.pointerId) return
-  const dx = e.clientX - drag.x
-  const dy = e.clientY - drag.y
-  if (!drag.moved && Math.hypot(dx, dy) < 4) return
-  drag.moved = true
-  dragging.value = true
-  pan.x = drag.panX + dx
-  pan.y = drag.panY + dy
-  clampPan()
-}
-function onPointerUp(e) {
-  if (drag?.id === e.pointerId) root.value.releasePointerCapture?.(e.pointerId)
-  drag = null
-  dragging.value = false
-}
+
 // Plain scrolling scrolls the page as usual. The map only zooms with
 // Ctrl (or Cmd) + scroll, and shows a small reminder otherwise.
 const zoomHint = ref(false)
 let hintTimer = null
+let wheelLocked = false
 
 function onWheel(e) {
   if (!e.ctrlKey && !e.metaKey) {
@@ -156,110 +86,165 @@ function onWheel(e) {
     return
   }
   e.preventDefault()
+  autoFit = false
+  if (wheelLocked) return
   const rect = root.value.getBoundingClientRect()
-  // proportional to how far the wheel / pinch moved, so it never jumps
-  const amount = Math.max(-25, Math.min(25, e.deltaY))
-  zoomAt(zoom.value * Math.exp(-amount * 0.012), e.clientX - rect.left, e.clientY - rect.top)
+  // one zoom level per wheel "notch" (or pinch), zooming towards the mouse
+  const point = L.point(e.clientX - rect.left, e.clientY - rect.top)
+  const next = map.getZoom() + (e.deltaY < 0 ? 1 : -1)
+  map.setZoomAround(point, Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next)))
+  wheelLocked = true // a fast wheel or trackpad sends many events, so wait for this zoom to finish
+  setTimeout(() => (wheelLocked = false), 350)
 }
 
-// ---- sizing ----------------------------------------------------------------------
+// ---- set up / tear down ----------------------------------------------------------
 let observer
 onMounted(() => {
-  const measure = () => {
-    const first = size.w === 0
-    size.w = root.value.clientWidth
-    size.h = root.value.clientHeight
-    if (first) centerOn(userPoint.value)
-    else clampPan()
-  }
-  observer = new ResizeObserver(measure)
+  map = L.map(mapEl.value, {
+    zoomControl: false, // our own buttons are used instead
+    scrollWheelZoom: false, // zoom is handled in onWheel (Ctrl / Cmd + scroll)
+    zoomSnap: 1, // whole zoom levels only, so the map tiles are always drawn sharp (never stretched)
+    zoomDelta: 1,
+    minZoom: MIN_ZOOM,
+    maxZoom: MAX_ZOOM,
+    maxBounds: SG_BOUNDS,
+    maxBoundsViscosity: 1,
+  })
+  map.attributionControl.setPrefix('') // keep only the OneMap credit
+  // detectRetina: on a sharp (retina) screen, ask OneMap for the next zoom level's tiles and draw them at half
+  // size, so the street names are small and crisp instead of stretched
+  L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM }).addTo(map)
+
+  map.setView([1.295, 103.8575], 14) // a first view; it is fitted to the pins once the box has a size
+  map.on('move zoom', () => refresh())
+  map.on('zoomanim', (e) => {
+    // the zoom animation is about to start: send the pins to where they will end up
+    zooming.value = true
+    clearTimeout(zoomTimer)
+    zoomTimer = setTimeout(() => (zooming.value = false), 400)
+    refresh(e.center, e.zoom)
+  })
+  map.on('zoomend', () => (zooming.value = false))
+
+  map.on('dragstart', () => (autoFit = false))
+
+  observer = new ResizeObserver(() => {
+    map.invalidateSize()
+    if (autoFit && root.value.clientWidth > 0) fitAll(false)
+    refresh()
+  })
   observer.observe(root.value)
-  measure()
+  refresh()
 })
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  clearTimeout(zoomTimer)
+  clearTimeout(hintTimer)
+  map?.remove()
+})
 
 // ---- markers ---------------------------------------------------------------------
-// positions are measured from the centre picture; the world has extra map around it
-const toWorld = (point) => ({ x: point.x + MAP_PAD_X, y: point.y + MAP_PAD_Y })
-const userPoint = computed(() => toWorld(project(props.userLocation)))
+// the colour of a genre (the pin takes the colour of its genre)
+function genreColor(genreId) {
+  const genre = props.genres.find((g) => g.id === genreId)
+  return genre ? genre.hex : '#2563eb'
+}
 
-const genreById = computed(() => new Map(props.genres.map((g) => [g.id, g])))
-const pins = computed(() =>
-  props.events.map((e) => ({
-    id: e.id,
-    point: toWorld(project(e.venue)),
-    color: genreById.value.get(e.genreId)?.hex || '#2563eb',
-    label: `${e.headliner.name} - ${e.dowLabel} ${e.timeCompact}`,
-  })),
-)
+// Several events can be at the same venue (so at the same place on the map). Without this their pins would
+// sit exactly on top of each other. Each pin gets a few pixels to the left or right of the venue instead.
+const PIN_GAP = 26
+const pins = computed(() => {
+  // how many events are at each venue
+  const total = {}
+  for (const e of props.events) {
+    total[e.venueId] = (total[e.venueId] || 0) + 1
+  }
+
+  const placedSoFar = {}
+  const list = []
+  for (const e of props.events) {
+    const place = placedSoFar[e.venueId] || 0
+    placedSoFar[e.venueId] = place + 1
+
+    list.push({
+      id: e.id,
+      lat: e.venue.lat,
+      lng: e.venue.lng,
+      // 0 for a venue with one event; -13 and +13 for two events; and so on, centred on the venue
+      sideways: (place - (total[e.venueId] - 1) / 2) * PIN_GAP,
+      color: genreColor(e.genreId),
+      label: `${e.headliner.name} - ${e.dowLabel} ${e.timeCompact}`,
+    })
+  }
+  return list
+})
+watch(pins, () => {
+  if (autoFit && map) fitAll(false)
+  refresh()
+})
+
 const pinHoverId = ref(null) // the pin the mouse is over
 const activeId = computed(() => props.hoverId || pinHoverId.value || props.selectedId)
-
-const inverse = computed(() => 1 / scale.value)
 
 // Bring the selected pin into view (smoothly) when it is chosen from a pin or a card.
 watch(
   () => props.selectedId,
-  async (id) => {
-    if (!id) return
+  (id) => {
+    if (!id || !map) return
     const pin = pins.value.find((p) => p.id === id)
     if (!pin) return
-    await nextTick()
-    const sx = pin.point.x * scale.value + pan.x
-    const sy = pin.point.y * scale.value + pan.y
+    const at = pixel.value[pin.id]
+    const size = map.getSize()
     const margin = 90
-    const visible = sx > margin && sx < size.w - margin && sy > margin && sy < size.h - margin
+    const visible = at && at.x > margin && at.x < size.x - margin && at.y > margin && at.y < size.y - margin
+    autoFit = false
     if (!visible) {
       // far away: move there, but do not stay zoomed in too close
-      animate()
-      centerOn(pin.point, Math.min(zoom.value, 1.2))
+      map.setView([pin.lat, pin.lng], Math.min(map.getZoom(), 15), { animate: true })
     }
   },
 )
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="event-map"
-    :class="{ 'is-dragging': dragging, 'is-animating': animating }"
-    @pointerdown="onPointerDown"
-    @pointermove="onPointerMove"
-    @pointerup="onPointerUp"
-    @pointercancel="onPointerUp"
-    @wheel="onWheel"
-  >
-    <div class="event-map__world" :style="worldStyle">
-      <SingaporeMapArt />
+  <div ref="root" class="event-map" @wheel="onWheel">
+    <!-- the OneMap map (Leaflet draws it in here) -->
+    <div ref="mapEl" class="event-map__tiles"></div>
 
+    <!-- markers laid over the map -->
+    <div class="event-map__markers" :class="{ 'is-zooming': zooming }">
       <!-- your location -->
-      <div class="event-map__marker event-map__marker--you" :style="{ left: `${userPoint.x}px`, top: `${userPoint.y}px`, '--inv': inverse }">
+      <div
+        v-if="userPixel"
+        class="event-map__marker event-map__marker--you"
+        :style="{ left: `${userPixel.x}px`, top: `${userPixel.y}px` }"
+      >
         <span class="event-map__you-wave"></span>
         <span class="event-map__you-wave event-map__you-wave--2"></span>
         <span class="event-map__you" title="You are here"></span>
       </div>
 
       <!-- event pins -->
-      <div
-        v-for="pin in pins"
-        :key="pin.id"
-        class="event-map__marker"
-        :class="{ 'is-active': activeId === pin.id }"
-        :style="{ left: `${pin.point.x}px`, top: `${pin.point.y}px`, '--inv': inverse }"
-      >
-        <button
-          type="button"
-          class="event-map__pin"
-          :style="{ '--pin': pin.color }"
-          :aria-label="pin.label"
-          @pointerdown.stop
-          @pointerenter="pinHoverId = pin.id"
-          @pointerleave="pinHoverId = null"
-          @click.stop="emit('select', pin.id)"
-          @dblclick.stop="emit('open', pin.id)"
-        ></button>
-        <span v-if="activeId === pin.id" class="event-map__label">{{ pin.label }}</span>
-      </div>
+      <template v-for="pin in pins" :key="pin.id">
+        <div
+          v-if="pixel[pin.id]"
+          class="event-map__marker"
+          :class="{ 'is-active': activeId === pin.id }"
+          :style="{ left: `${pixel[pin.id].x}px`, top: `${pixel[pin.id].y}px` }"
+        >
+          <button
+            type="button"
+            class="event-map__pin"
+            :style="{ '--pin': pin.color }"
+            :aria-label="pin.label"
+            @pointerenter="pinHoverId = pin.id"
+            @pointerleave="pinHoverId = null"
+            @click.stop="emit('select', pin.id)"
+            @dblclick.stop="emit('open', pin.id)"
+          ></button>
+          <span v-if="activeId === pin.id" class="event-map__label">{{ pin.label }}</span>
+        </div>
+      </template>
     </div>
 
     <!-- shown briefly when scrolling over the map -->
@@ -268,25 +253,25 @@ watch(
     </Transition>
 
     <!-- genre key -->
-    <div class="event-map__key" @pointerdown.stop @wheel.stop>
+    <div class="event-map__key" @wheel.stop>
       <button type="button" class="event-map__key-head" :aria-expanded="keyOpen" @click="keyOpen = !keyOpen">
         Genre key <i class="bi" :class="keyOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
       </button>
-      <ul v-show="keyOpen" class="event-map__key-list">
+      <ul v-if="keyOpen" class="event-map__key-list">
         <li v-for="g in genres" :key="g.id"><span class="dot" :style="{ background: g.color }"></span>{{ g.label }}</li>
         <li class="event-map__key-you"><span class="dot dot--you"></span>Your location</li>
       </ul>
     </div>
 
     <!-- zoom -->
-    <div class="event-map__zoom" @pointerdown.stop @wheel.stop>
-      <button type="button" aria-label="Zoom in" :disabled="zoom >= MAX_ZOOM" @click="zoomStep(1.4)">
+    <div class="event-map__zoom" @wheel.stop>
+      <button type="button" aria-label="Zoom in" :disabled="zoomLevel >= MAX_ZOOM - 0.001" @click="zoomStep(1)">
         <i class="bi bi-plus-lg"></i>
       </button>
-      <button type="button" aria-label="Zoom out" :disabled="zoom <= MIN_ZOOM + 0.001" @click="zoomStep(1 / 1.4)">
+      <button type="button" aria-label="Zoom out" :disabled="zoomLevel <= MIN_ZOOM + 0.001" @click="zoomStep(-1)">
         <i class="bi bi-dash-lg"></i>
       </button>
-      <button type="button" aria-label="Show all events" title="Show all events" @click="fitAll">
+      <button type="button" aria-label="Show all events" title="Show all events" @click="fitAll()">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
     </div>
@@ -300,33 +285,36 @@ watch(
   height: 100%;
   min-height: 420px;
   border-radius: var(--riffle-radius);
-  background: #efe8da;
-  cursor: grab;
-  touch-action: pan-y; /* a vertical swipe still scrolls the page */
+  background: #e9edf4;
   user-select: none;
 }
-.event-map.is-dragging {
-  cursor: grabbing;
+
+/* the Leaflet map fills the box; isolation keeps Leaflet's own layers below our markers and buttons */
+.event-map__tiles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate;
+  background: #e9edf4;
 }
 
-.event-map__world {
+/* the markers sit over the map; empty space lets mouse and touch through to the map below */
+.event-map__markers {
   position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  will-change: transform;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
 }
-.event-map.is-animating .event-map__world {
-  transition: transform 0.45s ease;
-}
-/* pins and labels resize smoothly along with the animated zoom */
-.event-map.is-animating .event-map__pin,
-.event-map.is-animating .event-map__label,
-.event-map.is-animating .event-map__you {
-  transition: transform 0.45s ease;
+/* while the map zooms, the markers glide to their new place at the same speed as the tiles */
+.event-map__markers.is-zooming .event-map__marker {
+  transition:
+    left 0.25s cubic-bezier(0, 0, 0.25, 1),
+    top 0.25s cubic-bezier(0, 0, 0.25, 1);
 }
 
 .event-map__marker {
+  --inv: 1; /* pins keep the same size at every zoom level */
   position: absolute;
   width: 0;
   height: 0;
@@ -367,6 +355,7 @@ watch(
   }
 }
 .event-map__you {
+  pointer-events: auto; /* so the "You are here" tooltip shows */
   position: absolute;
   width: 20px;
   height: 20px;
@@ -394,6 +383,7 @@ watch(
   transform: rotate(-45deg) scale(var(--inv));
   transition: box-shadow 0.15s;
   cursor: pointer;
+  pointer-events: auto;
 }
 .event-map__pin::after {
   content: '';
@@ -407,7 +397,7 @@ watch(
   background: #fff;
 }
 .event-map__marker.is-active .event-map__pin {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pin) 40%, transparent), 0 3px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--pin), 0 3px 10px rgba(0, 0, 0, 0.45); /* a white ring and a ring in the genre colour */
   transform: rotate(-45deg) scale(calc(var(--inv) * 1.25));
 }
 
@@ -456,12 +446,12 @@ watch(
 /* overlays */
 .event-map__key {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 10px;
+  left: 10px;
   z-index: 10;
-  min-width: 190px;
-  padding: 0.7rem 0.9rem;
-  border-radius: 12px;
+  min-width: 150px;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--riffle-shadow);
   cursor: default;
@@ -474,7 +464,7 @@ watch(
   padding: 0;
   border: 0;
   background: none;
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -482,26 +472,26 @@ watch(
 }
 .event-map__key-list {
   list-style: none;
-  margin: 0.55rem 0 0;
+  margin: 0.35rem 0 0;
   padding: 0;
-  font-size: 0.88rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--riffle-ink);
 }
 .event-map__key-list li {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.18rem 0;
+  gap: 0.45rem;
+  padding: 0.08rem 0;
 }
 .event-map__key-you {
-  margin-top: 0.4rem;
-  padding-top: 0.55rem !important;
+  margin-top: 0.25rem;
+  padding-top: 0.35rem !important;
   border-top: 1px solid var(--riffle-border);
 }
 .dot {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex: none;
 }
