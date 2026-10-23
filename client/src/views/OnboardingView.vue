@@ -9,6 +9,9 @@ import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 
 import { supabase } from '@/services/supabase.js'
 
+import { loginWithSpotify } from '@/services/spotifyAuth'
+
+
 const userStore = useUserStore()
 
 const saving = ref(false)
@@ -37,6 +40,8 @@ const errorMessage = ref('')
 
 const router = useRouter()
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
+const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
+const connectingSpotify = ref(false)
 
 onMounted(async () => {
   if (!userStore.isLoggedIn) return
@@ -46,18 +51,54 @@ onMounted(async () => {
 
     if (error) throw error
 
-    // A new account may not have a profile yet
-    if (!data) return
+    if (data) {
+      displayName.value = data.display_name || ''
+      selectedGenres.value = Array.isArray(data.genres) ? genres.filter(genre => data.genres.includes(genre)) : []
+      favouriteSongs.value = data.favourite_songs || ''
 
-    displayName.value = data.display_name
-    selectedGenres.value = genres.filter(genre => data.genres.includes(genre))
-    favouriteSongs.value = data.favourite_songs
-
-    userStore.updateDisplayName(data.display_name)
+      userStore.updateDisplayName(displayName.value)
+    }
   } catch (error) {
     errorMessage.value = 'Your preferences could not be loaded: ' + error.message
   }
+
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(draftKey))
+
+    if (draft) {
+      displayName.value = typeof draft.displayName === 'string' ? draft.displayName : ''
+      selectedGenres.value = Array.isArray(draft.genres) ? genres.filter(genre => draft.genres.includes(genre)) : []
+      favouriteSongs.value = typeof draft.favouriteSongs === 'string' ? draft.favouriteSongs : ''
+
+      sessionStorage.removeItem(draftKey)
+    }
+  } catch {
+    errorMessage.value = 'Your unfinished form could not be restored. Please check your preferences.'
+  }
 })
+
+async function connectSpotify() {
+  if (!userStore.isLoggedIn || connectingSpotify.value) return
+
+  errorMessage.value = ''
+  connectingSpotify.value = true
+
+  try {
+    const draft = {
+      displayName: displayName.value,
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value
+    }
+
+    sessionStorage.setItem(draftKey, JSON.stringify(draft))
+    await loginWithSpotify('/onboarding')
+  } catch (error) {
+    errorMessage.value = 'Spotify could not be opened: ' + error.message
+  } finally {
+    connectingSpotify.value = false
+  }
+}
+
 
 async function searchForSongs() {
   songError.value = ''
@@ -185,7 +226,7 @@ async function savePreferences() {
             <p>Use your music preferences to build your profile.</p>
           </div>
 
-          <button class="connect-button" type="button" @click="router.push('/spotify-demo')">Connect</button>
+          <button class="connect-button" type="button" :disabled="connectingSpotify || saving" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
         </div>
       </div>
 
