@@ -29,8 +29,8 @@ export const loginWithSpotify = async (returnTo = '') => {
   localStorage.setItem('pkce_verifier', verifier)
   localStorage.setItem('pkce_state', state)
 
-  if (returnTo === '/onboarding') {
-    sessionStorage.setItem('riffle-spotify-return-to', '/onboarding')
+  if (returnTo === '/onboarding' || returnTo === '/profile') {
+    sessionStorage.setItem('riffle-spotify-return-to', returnTo)
   } else {
     sessionStorage.removeItem('riffle-spotify-return-to')
   }

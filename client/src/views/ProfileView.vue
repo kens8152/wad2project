@@ -5,12 +5,15 @@ import { useUserStore } from '@/stores/user.js'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 
 import { searchSongs } from '@/services/spotifyApi'
+import { loginWithSpotify } from '@/services/spotifyAuth'
 
 import { supabase } from '@/services/supabase.js'
 
 const userStore = useUserStore()
 
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
+const draftKey = 'riffle-profile-draft:' + userStore.user.id
+const connectingSpotify = ref(false)
 
 const genres = [
   'Indie Rock',
@@ -46,17 +49,32 @@ onMounted(async () => {
 
     if (error) throw error
 
-    if (!data) return
+    if (data) {
+      profile.value = {
+        displayName: data.display_name || '',
+        genres: Array.isArray(data.genres) ? genres.filter(genre => data.genres.includes(genre)) : [],
+        favouriteSongs: data.favourite_songs || ''
+      }
 
-    profile.value = {
-      displayName: data.display_name,
-      genres: genres.filter(genre => data.genres.includes(genre)),
-      favouriteSongs: data.favourite_songs
+      userStore.updateDisplayName(profile.value.displayName)
     }
-
-    userStore.updateDisplayName(data.display_name)
   } catch (error) {
     errorMessage.value = 'Your preferences could not be loaded: ' + error.message
+  }
+
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(draftKey))
+
+    if (draft && profile.value) {
+      displayName.value = typeof draft.displayName === 'string' ? draft.displayName : ''
+      selectedGenres.value = Array.isArray(draft.genres) ? genres.filter(genre => draft.genres.includes(genre)) : []
+      favouriteSongs.value = typeof draft.favouriteSongs === 'string' ? draft.favouriteSongs : ''
+
+      isEditing.value = true
+      sessionStorage.removeItem(draftKey)
+    }
+  } catch {
+    errorMessage.value = 'Your unfinished changes could not be restored. Please edit your profile again.'
   }
 })
 
@@ -82,6 +100,28 @@ function cancelEditing() {
   errorMessage.value = ''
 }
 
+//connect spotify
+async function connectSpotify() {
+  if (!userStore.isLoggedIn || saving.value || connectingSpotify.value) return
+
+  errorMessage.value = ''
+  connectingSpotify.value = true
+
+  try {
+    const draft = {
+      displayName: displayName.value,
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value
+    }
+
+    sessionStorage.setItem(draftKey, JSON.stringify(draft))
+    await loginWithSpotify('/profile')
+  } catch (error) {
+    errorMessage.value = 'Spotify could not be opened: ' + error.message
+  } finally {
+    connectingSpotify.value = false
+  }
+}
 //search songs
 async function searchForSongs() {
   songError.value = ''
@@ -93,7 +133,7 @@ async function searchForSongs() {
   }
 
   if (!localStorage.getItem('access_token')) {
-    songError.value = 'Please connect Spotify through onboarding first.'
+    songError.value = 'Please click Connect Spotify before searching.'    
     return
   }
 
@@ -266,6 +306,7 @@ async function saveProfile() {
           <section class="col-12 col-md-6 mb-3">
             <h3>Favourite songs</h3>
 
+            <button class="profile-button mb-3" type="button" :disabled="connectingSpotify || saving" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
             <label for="profile-song-search">Search Spotify</label>
             <input id="profile-song-search" v-model="songQuery" class="text-input" type="text" placeholder="Enter a song or artist" @keydown.enter.prevent="searchForSongs">
 
@@ -292,8 +333,8 @@ async function saveProfile() {
         </div>
 
         <div class="actions">
-          <button class="profile-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save changes' }}</button>
-          <button class="cancel-button" type="button" :disabled="saving" @click="cancelEditing">Cancel</button>
+          <button class="profile-button" type="submit" :disabled="saving || connectingSpotify">{{ saving ? 'Saving…' : 'Save changes' }}</button>
+          <button class="cancel-button" type="button" :disabled="saving || connectingSpotify" @click="cancelEditing">Cancel</button>
         </div>
       </form>
 

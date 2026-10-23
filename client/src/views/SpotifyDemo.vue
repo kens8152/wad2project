@@ -3,7 +3,7 @@
     <h1>Spotify Demo</h1>
 
     <p v-if="error" class="error">{{ error }}</p>
-    <RouterLink to="/onboarding" class="return-link">Return to onboarding →</RouterLink>
+    <RouterLink :to="returnPath" class="return-link">Return to Riffle →</RouterLink>
 
     <!-- Logged out -->
     <button v-if="!accessToken" @click="loginWithSpotify">Log in with Spotify</button>
@@ -81,6 +81,8 @@ const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
 
 // ---- State --------------------------------------------------------------
 const router = useRouter()
+const returnPath = ref('/onboarding')
+
 const accessToken = ref(null)
 
 const profile = ref(null)
@@ -162,6 +164,12 @@ onBeforeUnmount(() => document.body.classList.remove('spotify-dark'))
 
 onMounted(async () => {
   document.body.classList.add('spotify-dark')
+
+  const savedReturnTo = sessionStorage.getItem('riffle-spotify-return-to')
+
+  if (savedReturnTo === '/profile') {
+    returnPath.value = '/profile'
+  }
   const params = new URLSearchParams(window.location.search)
 
   // Returned from Spotify with an error (e.g. user denied access)
@@ -193,8 +201,8 @@ onMounted(async () => {
     const returnTo = sessionStorage.getItem('riffle-spotify-return-to')
     sessionStorage.removeItem('riffle-spotify-return-to')
 
-    if (returnTo === '/onboarding') {
-      await router.replace('/onboarding')
+    if (returnTo === '/onboarding' || returnTo === '/profile') {
+      await router.replace(returnTo)
       return
     }
 
