@@ -297,10 +297,6 @@ async function saveProfile() {
         </div>
       </form>
 
-      <div class="page-links">
-        <RouterLink to="/discover">Explore artists</RouterLink>
-        <RouterLink to="/onboarding">Return to onboarding</RouterLink>
-      </div>
     </template>
   </main>
   <LoginPrompt v-else />
@@ -438,8 +434,7 @@ async function saveProfile() {
   cursor: pointer;
 }
 
-.actions,
-.page-links {
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
