@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 // Events the user has hearted / saved. Persisted locally for now; swap the
 // persistence for an API call when the backend exists.
@@ -24,6 +24,7 @@ function persist() {
 
 export function useSavedEvents() {
   const isSaved = (id) => saved.value.has(id)
+  const savedIds = computed(() => [...saved.value]) // for lists such as the Profile page
 
   /** Returns the new saved state. */
   function toggle(id) {
@@ -35,5 +36,5 @@ export function useSavedEvents() {
     return nowSaved
   }
 
-  return { isSaved, toggle }
+  return { isSaved, savedIds, toggle }
 }
