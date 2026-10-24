@@ -20,6 +20,8 @@ const userStore = useUserStore()
 const notifications = useNotificationsStore()
 
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
+const draftKey = 'riffle-profile-draft:' + userStore.user.id
+const connectingSpotify = ref(false)
 
 const genres = [
   'Indie Rock',
@@ -36,6 +38,29 @@ const isEditing = ref(false)
 const displayName = ref('')
 const selectedGenres = ref([])
 const favouriteSongs = ref('')
+
+const selectedSongs = computed(() => {
+  return favouriteSongs.value
+    .split('\n')
+    .map(song => song.trim())
+    .filter(song => song !== '')
+    .map(text => {
+      const parts = text.split(' — ')
+
+      return {
+        text,
+        title: parts[0],
+        artist: parts.slice(1).join(' — ')
+      }
+    })
+})
+
+function removeSelectedSong(song) {
+  favouriteSongs.value = selectedSongs.value
+    .filter(item => item.text !== song.text)
+    .map(item => item.text)
+    .join('\n')
+}
 
 const songQuery = ref('')
 const songResults = ref([])
@@ -155,19 +180,34 @@ onMounted(async () => {
 
     if (error) throw error
 
-    if (!data) return
+    if (data) {
+      profile.value = {
+        displayName: data.display_name || '',
+        genres: Array.isArray(data.genres) ? genres.filter(genre => data.genres.includes(genre)) : [],
+        favouriteSongs: data.favourite_songs || ''
+      }
 
-    profile.value = {
-      displayName: data.display_name,
-      genres: genres.filter(genre => data.genres.includes(genre)),
-      favouriteSongs: data.favourite_songs
+      userStore.updateDisplayName(profile.value.displayName)
     }
-
-    userStore.updateDisplayName(data.display_name)
   } catch (error) {
     errorMessage.value = 'Your preferences could not be loaded: ' + error.message
   } finally {
     loadingProfile.value = false
+  }
+
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(draftKey))
+
+    if (draft && profile.value) {
+      displayName.value = typeof draft.displayName === 'string' ? draft.displayName : ''
+      selectedGenres.value = Array.isArray(draft.genres) ? genres.filter(genre => draft.genres.includes(genre)) : []
+      favouriteSongs.value = typeof draft.favouriteSongs === 'string' ? draft.favouriteSongs : ''
+
+      isEditing.value = true
+      sessionStorage.removeItem(draftKey)
+    }
+  } catch {
+    errorMessage.value = 'Your unfinished changes could not be restored. Please edit your profile again.'
   }
 })
 
@@ -193,6 +233,28 @@ function cancelEditing() {
   errorMessage.value = ''
 }
 
+//connect spotify
+async function connectSpotify() {
+  if (!userStore.isLoggedIn || saving.value || connectingSpotify.value) return
+
+  errorMessage.value = ''
+  connectingSpotify.value = true
+
+  try {
+    const draft = {
+      displayName: displayName.value,
+      genres: [...selectedGenres.value],
+      favouriteSongs: favouriteSongs.value
+    }
+
+    sessionStorage.setItem(draftKey, JSON.stringify(draft))
+    await loginWithSpotify('/profile')
+  } catch (error) {
+    errorMessage.value = 'Spotify could not be opened: ' + error.message
+  } finally {
+    connectingSpotify.value = false
+  }
+}
 //search songs
 async function searchForSongs() {
   songError.value = ''
@@ -204,7 +266,7 @@ async function searchForSongs() {
   }
 
   if (!localStorage.getItem('access_token')) {
-    songError.value = 'Please connect Spotify through onboarding first.'
+    songError.value = 'Please click Connect Spotify before searching.'    
     return
   }
 
@@ -513,6 +575,7 @@ async function saveProfile() {
           <section class="col-12 col-md-6 mb-3">
             <h3>Favourite songs</h3>
 
+            <button class="profile-button mb-3" type="button" :disabled="connectingSpotify || saving" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
             <label for="profile-song-search">Search Spotify</label>
             <input id="profile-song-search" v-model="songQuery" class="text-input" type="text" placeholder="Enter a song or artist" @keydown.enter.prevent="searchForSongs">
 
@@ -533,14 +596,28 @@ async function saveProfile() {
               </li>
             </ul>
 
-            <label for="profile-songs">Selected songs — one per line</label>
+            <div class="selected-song-section">
+              <h3>Your selected songs</h3>
+              <p v-if="selectedSongs.length === 0">No songs added yet. Search above and click + Add.</p>
+              <ul v-else class="selected-song-list">
+                <li v-for="(song, index) in selectedSongs" :key="index" class="selected-song-row">
+                  <span class="selected-song-icon" aria-hidden="true">♫</span>
+                  <div class="selected-song-info">
+                    <strong>{{ song.title }}</strong>
+                    <small v-if="song.artist">{{ song.artist }}</small>
+                  </div>
+                  <button class="remove-song-button" type="button" :disabled="saving || connectingSpotify" :aria-label="'Remove ' + song.title" @click="removeSelectedSong(song)">Remove</button>
+                </li>
+              </ul>
+              <p class="selected-song-count">{{ selectedSongs.length }} songs added</p>
+            </div>
             <textarea id="profile-songs" v-model.trim="favouriteSongs" class="text-input" rows="6"></textarea>
           </section>
         </div>
 
         <div class="actions">
-          <button class="profile-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save changes' }}</button>
-          <button class="cancel-button" type="button" :disabled="saving" @click="cancelEditing">Cancel</button>
+          <button class="profile-button" type="submit" :disabled="saving || connectingSpotify">{{ saving ? 'Saving…' : 'Save changes' }}</button>
+          <button class="cancel-button" type="button" :disabled="saving || connectingSpotify" @click="cancelEditing">Cancel</button>
         </div>
       </form>
 
@@ -1131,8 +1208,7 @@ async function saveProfile() {
   color: #14234b;
 }
 
-.actions,
-.page-links {
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
@@ -1141,6 +1217,86 @@ async function saveProfile() {
 
 .page-links {
   justify-content: center;
+}
+
+.selected-song-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e5f0;
+}
+
+.selected-song-section h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.selected-song-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.selected-song-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef0f5;
+}
+
+.selected-song-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #eee7ff;
+  color: #513ba0;
+  font-size: 24px;
+}
+
+.selected-song-info {
+  flex: 1;
+  min-width: 120px;
+}
+
+.selected-song-info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.selected-song-info small {
+  display: block;
+  margin-top: 4px;
+  color: #64708a;
+}
+
+.remove-song-button {
+  padding: 8px 14px;
+  border: 1px solid #d8deeb;
+  border-radius: 20px;
+  background-color: white;
+  color: #14234b;
+  cursor: pointer;
+}
+
+.remove-song-button:hover {
+  background-color: #f3efff;
+}
+
+.remove-song-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.selected-song-count {
+  margin-top: 15px;
+  margin-bottom: 0;
+  color: #64708a;
+  font-size: 14px;
 }
 
 .error-message {

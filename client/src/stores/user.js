@@ -6,7 +6,6 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = ref(false)
   const authReady = ref(false)
 
-  // Keep the fields other pages expect
   const user = ref({
     id: '',
     name: 'Guest',
@@ -15,11 +14,14 @@ export const useUserStore = defineStore('user', () => {
     location: { lat: 1.295, lng: 103.849, label: 'Bras Basah' }
   })
 
+  let nameVersion = 0
+
   function updateDisplayName(name) {
-    const cleanName = name.trim()
+    const cleanName = typeof name === 'string' ? name.trim() : ''
 
     if (!cleanName || !isLoggedIn.value) return
 
+    nameVersion++
     user.value.name = cleanName
     user.value.initials = cleanName.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()
   }
@@ -67,6 +69,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn.value = Boolean(account)
 
     if (accountChanged) {
+      nameVersion++
       user.value.id = account ? account.id : ''
       user.value.name = 'Guest'
       user.value.initials = ''
