@@ -8,11 +8,11 @@ const emit = defineEmits(['select','reset'])
 
 const feeds = [
   { key: 'explore', label: 'Explore', icon: 'bi-compass', to: '/forum' },
-  { key: 'trend', label: 'Trend', icon: 'bi-fire' , to:'/forumtrend'},
-  { key: 'tag', label: 'Tags', icon: 'bi-hash' , to: '/forumtags'},
-  { key: 'lfg', label: 'Look for group', icon: 'bi-people', to: '/forumlfg' },
-  { key: 'saved', label: 'Saved Post', icon: 'bi-bookmark' },
-  { key: 'mypost', label: 'My Post', icon: 'bi-person' },
+  { key: 'trend', label: 'Trend', icon: 'bi-fire' , to:'/forum/trend'},
+  { key: 'tag', label: 'Tags', icon: 'bi-hash' , to: '/forum/tags'},
+  { key: 'lfg', label: 'Look for group', icon: 'bi-people', to: '/forum/lfg' },
+  { key: 'saved', label: 'Saved Post', icon: 'bi-bookmark', to: '/forum/saved'},
+  { key: 'mypost', label: 'My Post', icon: 'bi-person' , to:'/forum/mypost'},
 ]
 
 const activeKey = computed(() =>

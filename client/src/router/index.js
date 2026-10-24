@@ -56,24 +56,19 @@ const routes = [
     name: 'forum',
     component: () => import('@/features/forum/views/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+    children: [
+    { path: 'trend', name: 'forum-trend', component: () => import('@/features/forum/views/Forumtrend.vue') },
+    { path: 'tags', name: 'forum-tags', component: () => import('@/features/forum/views/Forumtag.vue') },
+    { path: 'lfg', name: 'forum-lfg', component: () => import('@/features/forum/views/Forumlfg.vue') },
+    { path: 'saved', name: 'forum-saved', component: () => import('@/features/forum/views/Forumsaved.vue') },
+    { path: 'mypost', name: 'forum-mypost', component: () => import('@/features/forum/views/Forummypost.vue') },
+  ],
   },
   {
-    path: '/forumtags',
-    name: 'forum-tags',
-    component: () => import('@/features/forum/views/Forumtag.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
-  },
-  {
-    path: '/forumlfg',
-    name: 'forum-lfg',
-    component: () => import('@/features/forum/views/Forumlfg.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
-  },
-  {
-    path: '/forumtrend',
-    name: 'forum-trend',
-    component: () => import('@/features/forum/views/Forumtrend.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+  path: '/forum/post/:id',
+  name: 'post-detail',
+  component: () => import('@/features/forum/views/Postdetail.vue'),
+  meta: { title: 'Post', section: 'forum', owner: 'Justin' },
   },
 
   // Existing Spotify OAuth demo (kept intact, moved out of App.vue)
