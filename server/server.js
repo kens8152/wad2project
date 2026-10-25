@@ -16,6 +16,30 @@ server.use(express.json());
 
 const ARTISTS_DATA = path.join(__dirname, "stores", "artists.json");
 
+// Apple Music 30s previews for each artist's tracks
+async function addPreviews(artists) {
+    const trackIds = artists.flatMap(artist => (artist.tracks || []).map(track => track.id));
+    if (!trackIds.length) return artists;
+
+    let songs = [];
+    try {
+        const res = await fetch(`https://itunes.apple.com/lookup?id=${trackIds.join(",")}&country=sg`);
+        songs = (await res.json()).results;
+    } catch (err) {
+        console.error("Failed to load Apple previews", err);
+    }
+
+    return artists.map(artist => ({
+        ...artist,
+        tracks: (artist.tracks || [])
+            .map(track => {
+                const song = songs.find(s => s.trackId === track.id) || {};
+                return { ...track, preview: song.previewUrl, url: song.trackViewUrl, artwork: song.artworkUrl100 };
+            })
+            .filter(track => track.preview),
+    }));
+}
+
 server.get("/matchmaking", async (req, res) => {
     const returnCount = 7;
 
@@ -30,7 +54,7 @@ server.get("/matchmaking", async (req, res) => {
             randomizedArtists.push({ id, ...data[id] });
         }
 
-        return res.json(randomizedArtists);
+        return res.json(await addPreviews(randomizedArtists));
     } catch (err) {
         console.error("Failed to read artists.json", err);
         return res.status(500).json({ error: "Could not load artists" });
@@ -45,7 +69,7 @@ server.get("/matchmaking/artists", async (req, res) => {
         data = JSON.parse(data);
 
         const artists = ids.filter(id => data[id]).map(id => ({ id, ...data[id] }));
-        return res.json(artists);
+        return res.json(await addPreviews(artists));
     } catch (err) {
         console.error("Failed to read artists.json", err);
         return res.status(500).json({ error: "Could not load artists" });

@@ -7,6 +7,7 @@ import {
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
 import FlashMessage from '@/components/layout/FlashMessage.vue';
+import SongPreview from '@/components/matchmaking/SongPreview.vue';
 
 const userStore = useUserStore();
 
@@ -315,28 +316,12 @@ onMounted(async () => {
 
                   <template v-if="artistTracks(slot.artist).length">
                     <!-- First song -->
-                    <div class="mt-1 mb-2">
-                      <button
-                        v-show="openSong !== 0"
-                        class="song-row btn btn-sm border-0 rounded-3 w-100 py-0 text-start text-white text-truncate"
-                        @click="openSong = 0"
-                      >
-                        <i class="bi bi-play-circle-fill me-2"></i>{{ artistTracks(slot.artist)[0].title }}
-                      </button>
-
-                      <!-- Spotify player -->
-                      <Transition name="song">
-                        <iframe
-                          v-show="openSong === 0"
-                          class="align-bottom w-100 border-0 rounded-3"
-                          :src="'https://open.spotify.com/embed/track/' + artistTracks(slot.artist)[0].id + '?theme=0'"
-                          height="80"
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                          loading="lazy"
-                          :title="'Spotify player: ' + artistTracks(slot.artist)[0].title"
-                        ></iframe>
-                      </Transition>
-                    </div>
+                    <SongPreview
+                      class="mt-1 mb-2"
+                      :track="artistTracks(slot.artist)[0]"
+                      :open="openSong === 0"
+                      @open="openSong = 0"
+                    />
                   </template>
 
                   <!-- No songs -->
@@ -364,28 +349,14 @@ onMounted(async () => {
                     :id="'songs-' + slot.artist.id"
                     v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
                   >
-                    <div v-for="(track, i) in artistTracks(slot.artist).slice(1)" :key="track.id" class="mb-2">
-                      <button
-                        v-show="openSong !== i + 1"
-                        class="song-row btn btn-sm border-0 rounded-3 w-100 py-0 text-start text-white text-truncate"
-                        @click="openSong = i + 1"
-                      >
-                        <i class="bi bi-play-circle-fill me-2"></i>{{ track.title }}
-                      </button>
-
-                      <!-- Spotify player -->
-                      <Transition name="song">
-                        <iframe
-                          v-show="openSong === i + 1"
-                          class="align-bottom w-100 border-0 rounded-3"
-                          :src="'https://open.spotify.com/embed/track/' + track.id + '?theme=0'"
-                          height="80"
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                          loading="lazy"
-                          :title="'Spotify player: ' + track.title"
-                        ></iframe>
-                      </Transition>
-                    </div>
+                    <SongPreview
+                      v-for="(track, i) in artistTracks(slot.artist).slice(1)"
+                      :key="track.id"
+                      class="mb-2"
+                      :track="track"
+                      :open="openSong === i + 1"
+                      @open="openSong = i + 1"
+                    />
 
                     <RouterLink
                       :to="{ name: 'artist-detail', params: { id: slot.artist.id } }"
@@ -601,19 +572,6 @@ onMounted(async () => {
   .card-info {
     font-size: 0.75rem;
   }
-  .card-info iframe {
-    zoom: 0.8;
-  }
-}
-
-/* Song rows */
-.song-row {
-  background-color: rgba(255, 255, 255, 0.1);
-  height: 2.25em;
-  line-height: 2.25em;
-}
-.song-row:hover {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Info text sizes */
@@ -638,17 +596,6 @@ onMounted(async () => {
 /* Songs hint */
 .songs-hint:not(.collapsed) {
   display: none !important;
-}
-
-/* Song open / close */
-.song-enter-active,
-.song-leave-active {
-  transition: height 0.35s ease;
-  overflow: hidden;
-}
-.song-enter-from,
-.song-leave-to {
-  height: 0;
 }
 
 /* Skip and follow buttons */
