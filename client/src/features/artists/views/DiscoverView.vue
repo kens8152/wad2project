@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
 import { buildArtists } from '@/features/artists/utils/artists'
+import RecommendedSongs from '@/features/artists/components/RecommendedSongs.vue'
 
 const router = useRouter()
 const eventsStore = useEventsStore()
@@ -569,6 +570,7 @@ watch(visibleArtists, () => { draw() })
 
 <template>
   <div class="discover-map">
+    <RecommendedSongs v-if="!eventsStore.loading && !eventsStore.error" :artists="allArtists" />
 
     <div v-if="eventsStore.loading" class="discover-map__state">
       <div class="spinner-border text-primary" role="status"></div>

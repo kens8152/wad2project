@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const Placeholder = () => import('@/views/PlaceholderView.vue')
 
 const routes = [
-  { path: '/', redirect: { name: 'events-map' } },
+  { path: '/', redirect: { name: 'discover' } },
 
   // ---- Events (Aryan) ----------------------------------------------------
   {
@@ -30,7 +30,7 @@ const routes = [
   {
     path: '/discover',
     name: 'discover',
-    component: () => import('@/features/artists/views/DiscoverView.vue'),
+    component: () => import('@/features/discover/views/DiscoverWebView.vue'),
     meta: { title: 'Discover', section: 'discover', owner: 'Powell' },
   },
   {
@@ -56,24 +56,14 @@ const routes = [
     name: 'forum',
     component: () => import('@/features/forum/views/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
-  },
-  {
-    path: '/forumtags',
-    name: 'forum-tags',
-    component: () => import('@/features/forum/views/Forumtag.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
-  },
-  {
-    path: '/forumlfg',
-    name: 'forum-lfg',
-    component: () => import('@/features/forum/views/Forumlfg.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
-  },
-  {
-    path: '/forumtrend',
-    name: 'forum-trend',
-    component: () => import('@/features/forum/views/Forumtrend.vue'),
-    meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
+    children: [
+    { path: 'trend', name: 'forum-trend', component: () => import('@/features/forum/views/Forumtrend.vue') },
+    { path: 'tags', name: 'forum-tags', component: () => import('@/features/forum/views/Forumtag.vue') },
+    { path: 'lfg', name: 'forum-lfg', component: () => import('@/features/forum/views/Forumlfg.vue') },
+    { path: 'saved', name: 'forum-saved', component: () => import('@/features/forum/views/Forumsaved.vue') },
+    { path: 'mypost', name: 'forum-mypost', component: () => import('@/features/forum/views/Forummypost.vue') },
+    { path: 'post/:id', name: 'post-detail', component: () => import('@/features/forum/views/Postdetail.vue') },
+  ],
   },
 
   // Existing Spotify OAuth demo (kept intact, moved out of App.vue)
@@ -102,6 +92,19 @@ const routes = [
     name: 'saved-artists',
     component: () => import('@/views/matchmaking/SavedArtistsView.vue'),
     meta: { title: 'Saved artists', section: 'profile' },
+  },
+
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/NotificationsView.vue'),
+    meta: { title: 'Notifications', section: 'profile' },
+  },
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('@/views/MessagesView.vue'),
+    meta: { title: 'Messages', section: 'profile' },
   },
 
   {

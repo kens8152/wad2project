@@ -45,11 +45,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class=" forum-search d-flex align-items-center w-100 px-3">
+  <div class=" forum-search d-flex align-items-center flex-grow-1">
     <button
       type="button"
       class="btn w-100 d-flex align-items-center text-start text-body-secondary bg-body-tertiary border rounded-pill px-3 py-2"
-      aria-haspopup="dialog"
       @click="openModal"
     >
       <i class="bi bi-search me-2"></i>
@@ -66,8 +65,6 @@ onBeforeUnmount(() => {
         class="modal d-block"
         tabindex="-1"
         role="dialog"
-        aria-modal="true"
-        aria-labelledby="forum-search-title"
         @click.self="close"
       >
         <div class="modal-dialog modal-dialog-centered">
@@ -85,7 +82,6 @@ onBeforeUnmount(() => {
                   type="search"
                   class="form-control"
                   placeholder="Search posts, topics, or people"
-                  aria-label="Search the forum"
                 />
                 <button type="submit" class="btn btn-primary" :disabled="!term.trim()">
                   <i class="bi bi-search me-1"></i> Search
@@ -101,9 +97,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .forum-search {
-  position: sticky;
-  top: var(--navbar-height, 0px);   
-  z-index: 1020;                    
+  min-width: 0;
   height: var(--forum-search-height, 3.5rem);
 }
 </style>

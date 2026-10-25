@@ -8,11 +8,11 @@ const emit = defineEmits(['select','reset'])
 
 const feeds = [
   { key: 'explore', label: 'Explore', icon: 'bi-compass', to: '/forum' },
-  { key: 'trend', label: 'Trend', icon: 'bi-fire' , to:'/forumtrend'},
-  { key: 'tag', label: 'Tags', icon: 'bi-hash' , to: '/forumtags'},
-  { key: 'lfg', label: 'Look for group', icon: 'bi-people', to: '/forumlfg' },
-  { key: 'saved', label: 'Saved Post', icon: 'bi-bookmark' },
-  { key: 'mypost', label: 'My Post', icon: 'bi-person' },
+  { key: 'trend', label: 'Trend', icon: 'bi-fire' , to:'/forum/trend'},
+  { key: 'tag', label: 'Tags', icon: 'bi-hash' , to: '/forum/tags'},
+  { key: 'lfg', label: 'Look for group', icon: 'bi-people', to: '/forum/lfg' },
+  { key: 'saved', label: 'Saved Post', icon: 'bi-bookmark', to: '/forum/saved'},
+  { key: 'mypost', label: 'My Post', icon: 'bi-person' , to:'/forum/mypost'},
 ]
 
 const activeKey = computed(() =>
@@ -66,7 +66,6 @@ function select(item) {
             { 'is-active': activeKey === item.key },
             { 'justify-content-lg-center': collapsed },
           ]"
-          :aria-current="activeKey === item.key ? 'page' : null"
           :title="collapsed ? item.label : null"
           @click="select(item)"
         >
@@ -99,8 +98,8 @@ function select(item) {
   .forumnav {
     width: 270px;
     position: sticky;
-    top: calc(var(--navbar-height, 0px) + var(--forum-search-height, 0px));
-    height: calc(100vh - var(--navbar-height, 0px) - var(--forum-search-height, 0px));
+    top: 0;
+    height: calc(100vh - var(--navbar-height, 0px));
     overflow-y: auto;
     border-bottom: 0 !important;
     transition: width 0.25s ease;

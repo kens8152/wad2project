@@ -3,13 +3,13 @@
     <h1>Spotify Demo</h1>
 
     <p v-if="error" class="error">{{ error }}</p>
+    <RouterLink :to="returnPath" class="return-link">Return to Riffle →</RouterLink>
 
     <!-- Logged out -->
     <button v-if="!accessToken" @click="loginWithSpotify">Log in with Spotify</button>
 
     <!-- Logged in -->
     <template v-else>
-      <RouterLink to="/onboarding" class="return-link">Continue to onboarding →</RouterLink>
 
       <button class="secondary" @click="logout">Log out</button>
 
@@ -67,7 +67,10 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+
 import { getTopGenres } from '@/services/lastFM'
 import { fetchTopArtists } from '@/services/spotifyApi'
 import { loginWithSpotify, exchangeCodeForToken, logout as clearSession } from '@/services/spotifyAuth'
@@ -77,7 +80,11 @@ const PROFILE_URL = 'https://api.spotify.com/v1/me'
 const PLAYLISTS_URL = 'https://api.spotify.com/v1/me/playlists?limit=10'
 
 // ---- State --------------------------------------------------------------
+const router = useRouter()
+const returnPath = ref('/onboarding')
+
 const accessToken = ref(null)
+
 const profile = ref(null)
 const playlists = ref([])
 const loading = ref(false)
@@ -157,10 +164,17 @@ onBeforeUnmount(() => document.body.classList.remove('spotify-dark'))
 
 onMounted(async () => {
   document.body.classList.add('spotify-dark')
+
+  const savedReturnTo = sessionStorage.getItem('riffle-spotify-return-to')
+
+  if (savedReturnTo === '/profile') {
+    returnPath.value = '/profile'
+  }
   const params = new URLSearchParams(window.location.search)
 
   // Returned from Spotify with an error (e.g. user denied access)
-  if (params.get('error')) {
+    if (params.get('error')) {
+    sessionStorage.removeItem('riffle-spotify-return-to')
     error.value = `Spotify auth error: ${params.get('error')}`
     window.history.replaceState({}, document.title, window.location.pathname)
     return
@@ -174,21 +188,29 @@ onMounted(async () => {
     // Remove ?code=... from the URL right away (codes are single-use)
     window.history.replaceState({}, document.title, window.location.pathname)
 
-    if (!returnedState || returnedState !== savedState) {
-      error.value = 'State mismatch. Please try logging in again.'
-      return
+        if (!returnedState || returnedState !== savedState) {
+    sessionStorage.removeItem('riffle-spotify-return-to')
+    error.value = 'State mismatch. Please try logging in again.'
+    return
     }
 
     try {
-      const token = await exchangeCodeForToken(code)
-      localStorage.setItem('access_token', token)
-      // Spotify tokens last 1 hour
-      localStorage.setItem('token_expires_at', String(Date.now() + 3600 * 1000))
-      accessToken.value = token
-      await loadData()
-    } catch (e) {
-      error.value = e.response?.data?.error_description || e.message
+    const token = await exchangeCodeForToken(code)
+    accessToken.value = token
+
+    const returnTo = sessionStorage.getItem('riffle-spotify-return-to')
+    sessionStorage.removeItem('riffle-spotify-return-to')
+
+    if (returnTo === '/onboarding' || returnTo === '/profile') {
+      await router.replace(returnTo)
+      return
     }
+
+    await loadData()
+  } catch (e) {
+    sessionStorage.removeItem('riffle-spotify-return-to')
+    error.value = e.response?.data?.error_description || e.message
+  }
     return
   }
 

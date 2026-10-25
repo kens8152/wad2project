@@ -1,11 +1,16 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useNotificationsStore } from '@/stores/notifications'
+import { useMessagesStore } from '@/stores/messages'
+import { supabase } from '@/services/supabase'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const notifications = useNotificationsStore()
+const messages = useMessagesStore()
 
 const user = computed(() => userStore.user)
 const logoutError = ref('')
@@ -24,11 +29,34 @@ const menuOpen = ref(false)
 const searchOpen = ref(false)
 const searchTerm = ref('')
 
-// Whenever the page changes, close the menu and the search box
+// the account menu under your name
+const accountOpen = ref(false)
+const email = ref('')
+
+// Messages and Notifications have their own icons in the navbar, so they are not repeated here
+const accountLinks = [
+  { label: 'Your profile', to: '/profile' },
+  { label: 'Your web of artists', to: '/discover' },
+  { label: 'Edit taste profile', to: '/onboarding' },
+]
+
+// Whenever the page changes, close the menus and the search box
 watch(() => route.fullPath, () => {
   menuOpen.value = false
   searchOpen.value = false
+  accountOpen.value = false
 })
+
+// the email shown at the top of the account menu comes from the signed-in session
+async function loadEmail() {
+  email.value = ''
+  if (!userStore.isLoggedIn) return
+
+  const { data } = await supabase.auth.getSession()
+  email.value = data.session ? data.session.user.email : ''
+}
+onMounted(loadEmail)
+watch(() => userStore.isLoggedIn, loadEmail)
 
 // Global search jumps to the events list with the term pre-filled.
 function submitSearch() {
@@ -40,6 +68,7 @@ function submitSearch() {
 
 async function logoutUser() {
   logoutError.value = ''
+  accountOpen.value = false
 
   try {
     await userStore.logout()
@@ -71,7 +100,7 @@ async function logoutUser() {
     </svg>
 
     <div class="riffle-nav__inner container-xxl">
-      <RouterLink :to="{ name: 'events-map' }" class="riffle-nav__brand" aria-label="Riffle home">
+      <RouterLink :to="{ name: 'discover' }" class="riffle-nav__brand" aria-label="Riffle home">
         <i class="bi bi-music-note-beamed riffle-nav__logo"></i>
         <span>Riffle</span>
       </RouterLink>
@@ -104,11 +133,44 @@ async function logoutUser() {
         </button>
 
         <template v-if="userStore.isLoggedIn">
-          <button class="riffle-nav__user" type="button" aria-label="Open your profile" @click="router.push('/profile')">
-            <span class="riffle-nav__avatar">{{ user.initials }}</span>
-            <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
-          </button>
-          <button class="btn btn-sm btn-outline-secondary" type="button" @click="logoutUser">Log out</button>
+          <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
+            <i class="bi bi-chat-dots"></i>
+            <span v-if="messages.unreadCount" class="riffle-nav__dot"></span>
+          </RouterLink>
+          <RouterLink to="/notifications" class="riffle-nav__icon-btn" :aria-label="notifications.unreadCount ? 'Notifications (' + notifications.unreadCount + ' unread)' : 'Notifications'">
+            <i class="bi bi-bell"></i>
+            <span v-if="notifications.unreadCount" class="riffle-nav__dot"></span>
+          </RouterLink>
+
+          <div class="riffle-nav__account">
+
+            <button
+              class="riffle-nav__user"
+              type="button"
+              aria-haspopup="menu"
+              :aria-expanded="accountOpen"
+              @click="accountOpen = !accountOpen"
+              @keydown.esc="accountOpen = false"
+            >
+              <span class="riffle-nav__avatar">
+                <template v-if="user.initials">{{ user.initials }}</template>
+                <i v-else class="bi bi-person-fill"></i>
+              </span>
+              <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
+              <i class="bi bi-chevron-down riffle-nav__caret d-none d-md-inline" :class="{ 'is-open': accountOpen }"></i>
+            </button>
+
+            <div v-if="accountOpen" class="riffle-nav__menu" role="menu">
+              <p v-if="email" class="riffle-nav__email">{{ email }}</p>
+              <RouterLink v-for="item in accountLinks" :key="item.to" :to="item.to" class="riffle-nav__menu-item" role="menuitem">
+                {{ item.label }}
+              </RouterLink>
+              <div class="riffle-nav__menu-divider"></div>
+              <button type="button" class="riffle-nav__menu-item riffle-nav__menu-item--logout" role="menuitem" @click="logoutUser">
+                Log out
+              </button>
+            </div>
+          </div>
         </template>
 
         <template v-else>
@@ -130,6 +192,9 @@ async function logoutUser() {
       </div>
     </div>
   </header>
+
+  <!-- a see-through layer behind the account menu: click anywhere else to close it -->
+  <div v-if="accountOpen" class="riffle-nav__backdrop" @click="accountOpen = false"></div>
 </template>
 
 <style scoped>
@@ -234,6 +299,104 @@ async function logoutUser() {
 }
 .riffle-nav__icon-btn:hover {
   background: #eef1fb;
+}
+.riffle-nav__icon-btn {
+  position: relative;
+  text-decoration: none;
+}
+/* the small red dot for unread messages and notifications */
+.riffle-nav__dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e0245e;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* account menu */
+.riffle-nav__account {
+  position: relative;
+  margin-right: -0.5rem; /* a little closer to the right edge */
+}
+.riffle-nav__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1020; /* under the navbar (1030), over the page */
+}
+.riffle-nav__caret {
+  font-size: 0.75rem;
+  color: var(--riffle-muted);
+  transition: transform 0.2s;
+}
+.riffle-nav__caret.is-open {
+  transform: rotate(180deg);
+}
+.riffle-nav__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 1040;
+  width: 190px;
+  padding: 0.35rem 0;
+  border: 1px solid var(--riffle-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(20, 35, 90, 0.16);
+  transform-origin: top right;
+  animation: menu-pop 0.16s ease;
+}
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.riffle-nav__email {
+  margin: 0;
+  padding: 0.25rem 0.9rem 0.4rem;
+  overflow: hidden;
+  color: var(--riffle-faint);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.riffle-nav__menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  background: transparent;
+  color: var(--riffle-ink);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.riffle-nav__menu-item:hover {
+  background: #f1f3fb;
+}
+.riffle-nav__menu-divider {
+  height: 1px;
+  margin: 0.4rem 0;
+  background: var(--riffle-border);
+}
+/* Log out: red and underlined */
+.riffle-nav__menu-item--logout {
+  color: #d62839;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.riffle-nav__menu-item--logout:hover {
+  background: #fff1f2;
 }
 
 .riffle-nav__search {

@@ -4,8 +4,12 @@ import { useRouter } from 'vue-router'
 import Forumnav from '../components/forumnav.vue'
 import Forumsearch from '../components/forumsearch.vue'
 import Postcard from '../components/postcard.vue'
-import { posts, tags} from '../data/mockdata.js'
 
+
+const props = defineProps({
+     posts: { type: Array, default: () => [] },
+     tags: { type: Array, default: () => [] },
+})
 
 const selectedTags = ref([])
 const adding = ref(false)
@@ -18,12 +22,10 @@ const toggleDisplay = computed(() =>{
     return selectedTags.value.length === 0 || adding.value
 })
 
-const tagsFilter = computed(() => tags.filter(t => !selectedTags.value.includes(t.name) && t.name.toLowerCase().includes(lowerSearch.value)))
+const tagsFilter = computed(() => props.tags.filter(t => !selectedTags.value.includes(t.name) && t.name.toLowerCase().includes(lowerSearch.value)))
 
 const postFilter = computed(() =>
-  posts
-    .filter(p => selectedTags.value.every(t => p.tags.includes(t)))
-    .filter(p => {
+  props.posts.filter(p => selectedTags.value.every(t => p.tags.includes(t))).filter(p => {
       if (!lowerSearch.value) return true
       return (
         p.title?.toLowerCase().includes(lowerSearch.value) ||
@@ -54,10 +56,7 @@ watch(toggleDisplay, () => {
 
 <template>
     <div>
-
         <div class="d-flex flex-column flex-lg-row">
-            <Forumnav @select="feed = $event" @reset="onReset" />
-
             <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
                 <div v-if="selectedTags.length>0" class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3">
                         <span v-for="s in selectedTags" :key="s" class="badge text-bg-primary fs-6 d-inline-flex align-items-center gap-2">
