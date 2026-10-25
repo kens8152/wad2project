@@ -36,7 +36,7 @@ export async function getArtistDetails(artistIds, profiles = null) {
       hometown: profile.hometown || '',
       formed: profile.formed || '',
       socials: profile.socials || {},
-      tracks: profile.tracks || [],   // [{ id: Spotify track id, title }]
+      tracks: profile.tracks || [],   // [{ id: Apple track id, title, preview, url, artwork }]
     };
   });
 }
