@@ -66,7 +66,6 @@ function select(item) {
             { 'is-active': activeKey === item.key },
             { 'justify-content-lg-center': collapsed },
           ]"
-          :aria-current="activeKey === item.key ? 'page' : null"
           :title="collapsed ? item.label : null"
           @click="select(item)"
         >
@@ -99,8 +98,8 @@ function select(item) {
   .forumnav {
     width: 270px;
     position: sticky;
-    top: calc(var(--navbar-height, 0px) + var(--forum-search-height, 0px));
-    height: calc(100vh - var(--navbar-height, 0px) - var(--forum-search-height, 0px));
+    top: 0;
+    height: calc(100vh - var(--navbar-height, 0px));
     overflow-y: auto;
     border-bottom: 0 !important;
     transition: width 0.25s ease;

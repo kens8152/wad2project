@@ -1,114 +1,85 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '@/services/supabase.js'
-import { useSavedPosts } from '../composables/savedpost.js'
-const { isSaved, toggleSave } = useSavedPosts()
+import { ref, computed, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import { useSavedPosts } from '../composables/savedpost' 
+import { useVote } from '../composables/useVote'
+import { useUserStore } from '@/stores/user'
+import { deletePost } from '../API/forumapi.js'
+import VoteButtons from './votebuttons.vue'
+import OptionsMenu from './optionsmenu.vue'
 
 const props = defineProps({
   post: { type: Object, required: true },
 })
 
+const router = useRouter()
+const userStore = useUserStore()
+
+
+const forumPosts = inject('forumPosts', null)
+
+
+const { isSaved, toggleSave } = useSavedPosts()
 const saved = computed(() => isSaved(props.post.id))
 
 
-const toDirection = (v) => (v === 1 ? 'up' : v === -1 ? 'down' : null)
-const initialVote = ref(toDirection(props.post.my_vote?.[0]?.vote))
-const userVote = ref(initialVote.value)
-
-const voting = ref(false)
-
-const upvotes = computed(
-  () => props.post.upvotes + (userVote.value === 'up') - (initialVote.value === 'up'),
-)
-const downvotes = computed(
-  () => props.post.downvotes + (userVote.value === 'down') - (initialVote.value === 'down'),
-)
-
+const { userVote, upvotes, downvotes, vote } = useVote(() => props.post)
 
 const postRoute = computed(() => ({
   name: 'post-detail',
   params: { id: props.post.id },
 }))
 
-async function requireUserId() {
-  const { data } = await supabase.auth.getUser()
-  return data.user?.id ?? null
-}
 
-
-onMounted(async () => {
-  if (props.post.my_vote !== undefined) return
-
-  const userId = await requireUserId()
-  if (!userId) return
-
-  const { data, error } = await supabase
-    .from('post_votes')
-    .select('vote')
-    .eq('post_id', props.post.id)
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (error) {
-    console.error('Could not load vote:', error.message)
-    return
-  }
-
-  initialVote.value = toDirection(data?.vote)
-  userVote.value = initialVote.value
+const isOwner = computed(() => {
+  const me = userStore.user?.id
+  return !!me && props.post.user_id === me
 })
 
-async function vote(direction) {
-  if (voting.value) return
-  voting.value = true
 
+function editPost() {
+  router.push({ ...postRoute.value, query: { edit: '1' } })
+}
+
+const actionError = ref('')
+
+async function removePost() {
+  if (!window.confirm("Delete this post? Its replies will be deleted too. This can't be undone.")) return
+
+  actionError.value = ''
   try {
-    const previous = userVote.value
-    const next = previous === direction ? null : direction
-
-    const userId = await requireUserId()
-    if (!userId) return // TODO: prompt login
-
-    userVote.value = next // optimistic update
-
-    const { error } =
-      next === null
-        ? await supabase.from('post_votes').delete().eq('post_id', props.post.id).eq('user_id', userId)
-        : await supabase
-            .from('post_votes')
-            .upsert(
-              { post_id: props.post.id, user_id: userId, vote: next === 'up' ? 1 : -1 },
-              { onConflict: 'post_id,user_id' },
-            )
-
-    if (error) {
-      userVote.value = previous // roll back
-      console.error('Vote failed:', error.message)
-    }
-  } finally {
-    voting.value = false
+    await deletePost(props.post.id)
+    forumPosts?.remove(props.post.id)
+  } catch (err) {
+    console.error('Post delete failed:', err.message)
+    actionError.value = 'Could not delete this post. Please try again.'
   }
 }
 </script>
 
 <template>
-  <article class="card w-100">
+  <article class="card mx-3">
     <div class="card-body">
-
       <div class="d-flex justify-content-between align-items-start mb-1">
         <p class="card-subtitle small text-body-secondary mb-0">
           <i class="bi bi-person-circle me-1"></i>{{ post.username }}
         </p>
 
-        <button
-          type="button"
-          class="btn btn-sm btn-link p-0 position-relative z-2"
-          :class="saved ? 'text-primary' : 'text-body-secondary'"
-          @click="toggleSave(post.id)"
-        >
-          <i class="bi fs-5" :class="saved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
-        </button>
+        <div class="d-flex align-items-center gap-2 position-relative z-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-link p-0"
+            :class="saved ? 'text-primary' : 'text-body-secondary'"
+            @click="toggleSave(post.id)"
+          >
+            <i class="bi fs-5" :class="saved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+          </button>
+
+          <OptionsMenu v-if="isOwner" @edit="editPost" @delete="removePost" />
+        </div>
       </div>
+
+      <p v-if="actionError" class="text-danger small mb-1">{{ actionError }}</p>
 
       <h5 class="card-title">
         <RouterLink :to="postRoute" class="stretched-link text-reset text-decoration-none">
@@ -124,30 +95,8 @@ async function vote(direction) {
         </span>
       </div>
 
-
       <div class="d-flex align-items-center gap-3 small">
-        <button
-          type="button"
-          class="btn btn-sm btn-link p-0 text-decoration-none position-relative z-2"
-          :class="userVote === 'up' ? 'text-success fw-semibold' : 'text-body-secondary'"
-          @click="vote('up')"
-        >
-          <i
-            class="bi me-1 text-success"
-            :class="userVote === 'up' ? 'bi-arrow-up-circle-fill' : 'bi-arrow-up-circle'"
-          ></i>{{ upvotes }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-link p-0 text-decoration-none position-relative z-2"
-          :class="userVote === 'down' ? 'text-danger fw-semibold' : 'text-body-secondary'"
-          @click="vote('down')"
-        >
-          <i
-            class="bi me-1 text-danger"
-            :class="userVote === 'down' ? 'bi-arrow-down-circle-fill' : 'bi-arrow-down-circle'"
-          ></i>{{ downvotes }}
-        </button>
+        <VoteButtons :up="upvotes" :down="downvotes" :current="userVote" @vote="vote" />
         <span class="text-body-secondary"><i class="bi bi-chat me-1"></i>{{ post.replies?.length ?? 0 }}</span>
       </div>
     </div>

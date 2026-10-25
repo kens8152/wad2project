@@ -40,6 +40,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   height: auto;
+  overflow-y: auto;
 }
 .page-enter-active,
 .page-leave-active {
