@@ -2,7 +2,7 @@
 import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSavedPosts } from '../composables/savedpost' 
-import { useVote } from '../composables/useVote'
+import { useVote } from '../composables/usevote'
 import { useUserStore } from '@/stores/user'
 import { deletePost } from '../API/forumapi.js'
 import VoteButtons from './votebuttons.vue'

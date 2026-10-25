@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
-import { useVote } from '../composables/useVote' 
+import { useVote } from '../composables/usevote' 
 import VoteButtons from './votebuttons.vue'
 import OptionsMenu from './optionsmenu.vue'
 
