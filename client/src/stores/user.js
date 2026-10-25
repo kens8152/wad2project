@@ -26,22 +26,39 @@ export const useUserStore = defineStore('user', () => {
     user.value.initials = cleanName.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()
   }
 
-  async function loadDisplayName(accountId, version) {
-    if (user.value.id !== accountId || nameVersion !== version) return
+  // Your real name lives in your Supabase profile, so it is the same on every device.
+  // This runs whenever the page loads with someone logged in, so the navbar never has to wait for the Profile page.
+  async function loadDisplayName(account) {
+    const cacheKey = 'riffle-preferences-v1:' + account.id
 
     try {
-      const { data, error } = await supabase.from('profiles').select('display_name').eq('id', accountId).maybeSingle()
+      const { data, error } = await supabase.from('profiles').select('display_name').eq('id', account.id).maybeSingle()
 
       if (error) throw error
 
-      // Ignore an old response if the account or display name has changed
-      if (user.value.id !== accountId || nameVersion !== version) return
+      // ignore the answer if somebody else has logged in (or out) in the meantime
+      if (user.value.id !== account.id) return
 
-      if (data && typeof data.display_name === 'string') {
+      if (data && data.display_name) {
         updateDisplayName(data.display_name)
+
+        // remember the name in this browser, so next time it shows straight away
+        try {
+          const saved = JSON.parse(localStorage.getItem(cacheKey)) || {}
+          saved.displayName = data.display_name
+          localStorage.setItem(cacheKey, JSON.stringify(saved))
+        } catch (cacheError) {
+          console.warn('Could not remember the profile name:', cacheError)
+        }
+        return
       }
     } catch (error) {
-      console.error('Could not load the profile name:', error)
+      console.error('Could not load profile name:', error)
+    }
+
+    // no saved profile name yet (for example before onboarding): use the start of the email address
+    if (user.value.id === account.id && !user.value.name && account.email) {
+      updateDisplayName(account.email.split('@')[0])
     }
   }
 
@@ -59,15 +76,22 @@ export const useUserStore = defineStore('user', () => {
       user.value.preferredGenreIds = []
 
       if (account) {
-        updateDisplayName('Music fan')
+        // no placeholder name: the navbar stays blank until the real name is known
+        user.value.name = ''
 
-        const accountId = account.id
-        const version = nameVersion
+        // this browser may already remember the name, which shows it straight away
+        try {
+          const saved = JSON.parse(localStorage.getItem('riffle-preferences-v1:' + account.id))
 
-        // schedules the profile request after the authentication callback finishes
-        setTimeout(() => {
-          loadDisplayName(accountId, version)
-        }, 0)
+          if (saved && typeof saved.displayName === 'string') {
+            updateDisplayName(saved.displayName)
+          }
+        } catch (error) {
+          console.error('Could not load profile name:', error)
+        }
+
+        // then ask Supabase (a short delay, because Supabase should not be called inside this callback)
+        setTimeout(() => loadDisplayName(account), 0)
       }
     }
 

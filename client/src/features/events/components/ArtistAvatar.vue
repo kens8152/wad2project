@@ -25,8 +25,9 @@ const style = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,
   fontSize: `${Math.max(10, props.size * 0.36)}px`,
+  // a picture sits on top of the gradient, so an artist whose picture is missing still shows a coloured circle
   background: props.image
-    ? `center / cover url(${props.image})`
+    ? `center / cover url(${props.image}), linear-gradient(135deg, hsl(${props.hue} 70% 38%), hsl(${(props.hue + 40) % 360} 75% 22%))`
     : `linear-gradient(135deg, hsl(${props.hue} 70% 38%), hsl(${(props.hue + 40) % 360} 75% 22%))`,
 }))
 </script>
