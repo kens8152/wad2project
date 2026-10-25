@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const Placeholder = () => import('@/views/PlaceholderView.vue')
 
 const routes = [
-  { path: '/', redirect: { name: 'events-map' } },
+  { path: '/', redirect: { name: 'discover' } },
 
   // ---- Events (Aryan) ----------------------------------------------------
   {
@@ -30,7 +30,7 @@ const routes = [
   {
     path: '/discover',
     name: 'discover',
-    component: () => import('@/features/artists/views/DiscoverView.vue'),
+    component: () => import('@/features/discover/views/DiscoverWebView.vue'),
     meta: { title: 'Discover', section: 'discover', owner: 'Powell' },
   },
   {
