@@ -5,7 +5,7 @@ import { supabase } from '@/services/supabase'
 import { addSavedArtist, getSavedArtists, removeSavedArtist } from '@/services/matchmakingApi'
 import { toast } from '@/composables/useToast'
 import WebOfDots from '../components/WebOfDots.vue'
-import { GENRES, MOODS, formatFans, getGraph, recommendedNodes, tasteSpot } from '../data/discoverGraph'
+import { GENRES, formatFans, getGraph, recommendedNodes, tasteSpot } from '../data/discoverGraph'
 
 // Discover: the web of artists.
 //   Everyone can drag, zoom and click the dots.
@@ -24,10 +24,7 @@ function isWide() {
 
 // ---- filters ----
 const hiddenGenres = ref([]) // genres that are unticked
-const hiddenMoods = ref([]) // moods that are switched off
 const searchTerm = ref('')
-const genresOpen = ref(true)
-const legendOpen = ref(true)
 const filtersOpen = ref(false) // the drawer on a small screen
 
 const visibleGenreCount = computed(() => GENRES.length - hiddenGenres.value.length)
@@ -43,9 +40,8 @@ const dimmed = computed(() => {
 
   for (const node of graph.nodes) {
     const hiddenByGenre = hiddenGenres.value.includes(node.genre)
-    const hiddenByMood = hiddenMoods.value.includes(node.mood)
     const hiddenBySearch = term !== '' && !node.name.toLowerCase().includes(term)
-    if (hiddenByGenre || hiddenByMood || hiddenBySearch) result[node.id] = true
+    if (hiddenByGenre || hiddenBySearch) result[node.id] = true
   }
   return result
 })
@@ -79,12 +75,6 @@ function toggleGenre(genreId) {
   hiddenGenres.value = list.includes(genreId) ? list.filter(id => id !== genreId) : [...list, genreId]
 }
 
-function toggleMood(mood) {
-  if (needsAccount()) return
-  const list = hiddenMoods.value
-  hiddenMoods.value = list.includes(mood) ? list.filter(item => item !== mood) : [...list, mood]
-}
-
 function onSearchFocus(event) {
   if (needsAccount()) event.target.blur()
 }
@@ -101,7 +91,6 @@ function pickFirstResult() {
 
 function clearFilters() {
   hiddenGenres.value = []
-  hiddenMoods.value = []
   searchTerm.value = ''
 }
 
@@ -296,67 +285,39 @@ onMounted(() => {
         <i class="bi bi-x-lg"></i>
       </button>
 
-      <section class="panel-card legend-card">
-        <button class="panel-head" type="button" :aria-expanded="legendOpen" @click="legendOpen = !legendOpen">
-          <span><i class="bi bi-list-ul"></i> Legend</span>
-          <i class="bi" :class="legendOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-        </button>
-        <div v-if="legendOpen" class="panel-body">
-          <p class="small-title">Dot colour = genre</p>
-          <ul class="legend-genres list-unstyled">
-            <li v-for="genre in GENRES" :key="genre.id"><i class="dot" :style="{ background: genre.color }"></i>{{ genre.label }}</li>
-          </ul>
-          <p class="legend-line"><i class="dot dot--big"></i> Bigger dot = more fans</p>
-          <p class="legend-line"><i class="line"></i> Line = shared audience</p>
-          <p class="legend-count">{{ graph.nodes.length }} artists · {{ graph.edges.length }} shared-audience links</p>
-        </div>
-      </section>
-
       <section class="panel-card filter-card">
-        <button class="panel-head" type="button" :aria-expanded="genresOpen" @click="genresOpen = !genresOpen">
-          <span><i class="bi bi-vinyl"></i> Genres · {{ visibleGenreCount }} of {{ GENRES.length }}</span>
-          <i class="bi bi-funnel"></i>
-        </button>
-
-        <div v-if="genresOpen" class="panel-body">
-          <ul class="list-unstyled genre-list">
-            <li v-for="genre in GENRES" :key="genre.id">
-              <label class="genre-row" :class="{ 'is-off': hiddenGenres.includes(genre.id) }">
-                <input
-                  type="checkbox"
-                  :checked="!hiddenGenres.includes(genre.id)"
-                  @click.prevent="toggleGenre(genre.id)"
-                />
-                <i class="dot" :style="{ background: genre.color }"></i>
-                <span>{{ genre.label }}</span>
-                <small>{{ genreCount(genre.id) }}</small>
-              </label>
-            </li>
-          </ul>
-
-          <p class="small-title mt-3">Moods</p>
-          <div class="mood-row">
-            <label v-for="mood in MOODS" :key="mood" class="mood" :class="{ 'is-off': hiddenMoods.includes(mood) }">
-              <span class="form-check form-switch m-0">
-                <input
-                  class="form-check-input mood-switch"
-                  type="checkbox"
-                  role="switch"
-                  :checked="!hiddenMoods.includes(mood)"
-                  :aria-label="mood"
-                  @click.prevent="toggleMood(mood)"
-                />
-              </span>
-              <small>{{ mood }}</small>
-            </label>
+        <div class="panel-body">
+          <p class="small-title"><i class="bi bi-funnel"></i> Filter by genre</p>
+          <div class="genre-pills">
+            <button
+              v-for="genre in GENRES"
+              :key="genre.id"
+              type="button"
+              class="genre-pill"
+              :class="{ 'is-active': !hiddenGenres.includes(genre.id) }"
+              :style="!hiddenGenres.includes(genre.id)
+                ? { background: genre.color, borderColor: genre.color, color: '#fff' }
+                : { borderColor: genre.color, color: genre.color }"
+              @click="toggleGenre(genre.id)"
+            >
+              {{ genre.label }}
+              <small>{{ genreCount(genre.id) }}</small>
+            </button>
           </div>
 
-          <button v-if="hiddenGenres.length || hiddenMoods.length || searchTerm" type="button" class="clear-button" @click="clearFilters">
+          <button v-if="hiddenGenres.length || searchTerm" type="button" class="clear-button" @click="clearFilters">
             <i class="bi bi-arrow-counterclockwise"></i> Clear filters
           </button>
         </div>
       </section>
     </aside>
+
+    <!-- legend bar -->
+    <div class="legend-bar panel-card">
+      <span class="legend-bar__item"><i class="dot dot--big"></i> Bigger dot = more fans</span>
+      <span class="legend-bar__item"><i class="line"></i> Line = shared audience</span>
+      <span class="legend-bar__count">{{ graph.nodes.length }} artists · {{ graph.edges.length }} links</span>
+    </div>
 
     <!-- guests: "log in first" -->
     <Transition name="nudge">
@@ -572,25 +533,7 @@ onMounted(() => {
   border-top: 1px solid var(--riffle-border);
   padding-top: 0.8rem;
 }
-.legend-genres {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.3rem;
-  margin: 0 0 0.8rem;
-  font-size: 0.85rem;
-}
-.legend-genres li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.legend-line {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0.2rem 0;
-  font-size: 0.85rem;
-}
+
 .dot--big {
   width: 14px;
   height: 14px;
@@ -602,81 +545,59 @@ onMounted(() => {
   height: 2px;
   background: #5d6076;
 }
-.legend-count {
-  margin: 0.7rem 0 0;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--riffle-border);
-  color: var(--riffle-faint);
-  font-size: 0.78rem;
-}
 
-.genre-list {
-  margin: 0;
-}
-.genre-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.38rem 0.2rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: background 0.12s, opacity 0.2s;
-}
-.genre-row:hover {
-  background: #f1f3fb;
-}
-.genre-row.is-off {
-  opacity: 0.45;
-}
-.genre-row input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--riffle-navy);
-}
-.genre-row span {
-  flex: 1;
-}
-.genre-row small {
-  color: var(--riffle-faint);
-}
-
-.mood-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-}
-.mood {
+.legend-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 24px;
+  z-index: 8;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  gap: 0.3rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
 }
-.mood.is-off {
-  opacity: 0.55;
-}
-.mood small {
+.legend-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   color: var(--riffle-muted);
-  font-size: 0.74rem;
-  font-weight: 700;
 }
-.mood-switch {
-  width: 2.5em;
-  height: 1.3em;
-  margin: 0;
+.legend-bar__count {
+  color: var(--riffle-faint);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--riffle-border);
+}
+
+.genre-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1.5px solid;
+  background: transparent;
+  font-size: 0.84rem;
+  font-weight: 600;
   cursor: pointer;
-  border: 2px solid #8f9ab8;
-  background-color: #e9edf8;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236b7694'/%3e%3c/svg%3e");
+  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
 }
-.mood-switch:checked {
-  border-color: var(--riffle-navy);
-  background-color: var(--riffle-navy);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+.genre-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(20, 35, 90, 0.12);
 }
+.genre-pill small {
+  opacity: 0.75;
+  font-size: 0.75em;
+}
+
 .clear-button {
   margin-top: 1rem;
   padding: 0;
