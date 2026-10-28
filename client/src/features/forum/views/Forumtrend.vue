@@ -1,66 +1,67 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import Forumnav from '../components/forumnav.vue'
-import Forumsearch from '../components/forumsearch.vue'
+import { ref, computed } from 'vue'
 import Postcard from '../components/postcard.vue'
+import TagDrums from '../components/TagDrums.vue'
 
 const props = defineProps({
-     posts: { type: Array, default: () => [] },
-     tags: { type: Array, default: () => [] },
+  posts: { type: Array, default: () => [] },
+  tags: { type: Array, default: () => [] },
 })
+
 const selectedTag = ref(null)
 
-const topTags = computed (() =>{
-    const counts = {}
-    for (const p of props.posts) {
-        for (const t of p.tags) {
-            counts[t] = (counts[t] ?? 0) +1
-        }
+const byUpvotes = (a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0)
+
+const topTags = computed(() => {
+  const map = new Map()
+  for (const post of props.posts) {
+    const seen = new Set()
+    for (const raw of post.tags ?? []) {
+      const key = raw.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      const entry = map.get(key) ?? { key, name: raw, count: 0 }
+      entry.count++
+      map.set(key, entry)
     }
-    return Object.entries(counts).map(([name,count]) => ({name,count})).sort((a,b) => b.count-a.count).slice(0,5)
+  }
+  return [...map.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 5)
 })
 
-const topPosts = computed (() => {
-    return [...props.posts].sort((a,b) => (b.upvotes ?? 0 ) - (a.upvotes??0)).slice(0,10)
-})
+const topPosts = computed(() => [...props.posts].sort(byUpvotes).slice(0, 10))
+
+const selectedKey = computed(() => selectedTag.value?.toLowerCase() ?? '')
 
 function displayTagPost(name) {
-    selectedTag.value = selectedTag.value === name? null : name
+  selectedTag.value = selectedTag.value === name ? null : name
 }
 
 const shownPosts = computed(() => {
   if (!selectedTag.value) return topPosts.value
-  return props.posts.filter(p => p.tags.includes(selectedTag.value)).sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+  return props.posts
+    .filter((p) => p.tags?.some((t) => t.toLowerCase() === selectedKey.value))
+    .sort(byUpvotes)
 })
-
-function onReset() {
-  selectedTag.value = null
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
 </script>
 
 <template>
-    <div>
-        <div class="d-flex flex-column flex-lg-row">
-        
-            <main class=" p-3  flex-grow-1" style="min-width: 0">
-                <h5 class="mb-2">Trending tags</h5>
-                <div class="d-flex flex-wrap column-gap-2 row-gap-1 align-items-start mb-4">
-                    <span v-for="t in topTags" :key="t.name" class="badge fs-6" :class="selectedTag === t.name ? 'text-bg-success' : 'text-bg-primary'" role="button" @click="displayTagPost(t.name)">
-                    #{{ t.name }}
-                    <span class="opacity-75 ms-1">{{ t.count }}</span>
-                    </span>
-                </div>
+  <div class="vstack gap-3">
+    <TagDrums
+      v-if="topTags.length"
+      title="Trending tags"
+      :tags="topTags"
+      :selected="selectedKey"
+      @select="displayTagPost"
+    />
 
+    <h5 class="px-3 mb-0">
+      {{ selectedTag ? `Posts tagged #${selectedTag}` : 'Trending posts' }}
+    </h5>
 
-                <h5 class="mb-2">
-                {{ selectedTag ? `Posts tagged #${selectedTag}` : 'Trending posts' }}
-                </h5>
-                <div class="vstack gap-3">
-                <Postcard v-for="r in shownPosts" :key="r.id" :post="r" />
-                </div>
-            </main>
-        </div>
-    </div>
+    <Postcard v-for="r in shownPosts" :key="r.id" :post="r" />
+
+    <p v-if="!shownPosts.length" class="text-body-secondary mx-3 mb-0">Nothing to show yet.</p>
+  </div>
 </template>

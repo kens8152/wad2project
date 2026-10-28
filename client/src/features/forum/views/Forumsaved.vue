@@ -28,6 +28,7 @@ const savedPosts = computed(() => {
       (!q ||
         p.title.toLowerCase().includes(q) ||
         p.content?.toLowerCase().includes(q) ||
+        p.username?.toLowerCase().includes(q) ||
         p.tags?.some((t) => t.toLowerCase().includes(q))),
   )
 
