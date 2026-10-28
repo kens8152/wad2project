@@ -8,7 +8,8 @@ import { useNotificationsStore } from '@/stores/notifications'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 import ArtistAvatar from '@/features/events/components/ArtistAvatar.vue'
 
-import { getSavedArtists, getArtistDetails, removeSavedArtist } from '@/services/matchmakingApi'
+import { getSavedArtists, getArtistDetails } from '@/services/matchmakingApi'
+import { useFavouriteArtists } from '@/features/artists/composables/useFavouriteArtists'
 import { useEventsData } from '@/features/events/composables/useEventsData'
 import { useSavedEvents } from '@/features/events/composables/useSavedEvents'
 import { dowUpper, monthShort } from '@/features/events/utils/date'
@@ -20,6 +21,7 @@ import { supabase } from '@/services/supabase.js'
 const userStore = useUserStore()
 const router = useRouter()
 const notifications = useNotificationsStore()
+const { favourites, loadFavourites, toggleFavourite } = useFavouriteArtists()
 
 
 const genres = [
@@ -108,15 +110,17 @@ async function loadSavedArtists() {
 }
 
 async function unsaveArtist(artist) {
-  savedArtists.value = savedArtists.value.filter(item => item.id !== artist.id)
-
   try {
-    await removeSavedArtist(artist.id)
-    toast('Removed ' + artist.name + ' from your saved artists')
+    await loadFavourites()
+
+    if (favourites.value.includes(artist.id)) {
+      await toggleFavourite(artist)
+    }
+
+    await loadSavedArtists()
   } catch (error) {
-    console.error('Could not remove artist', error)
-    toast('Could not remove that artist. Please try again.')
-    loadSavedArtists()
+    console.error('Could not refresh saved artists:', error)
+    toast('Could not refresh your saved artists. Please try again.')
   }
 }
 
