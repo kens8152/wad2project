@@ -1,12 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+import { useRouter } from 'vue-router'
+
 import { useUserStore } from '@/stores/user.js'
 import { useNotificationsStore } from '@/stores/notifications'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 import ArtistAvatar from '@/features/events/components/ArtistAvatar.vue'
 
-import { searchSongs } from '@/services/spotifyApi'
 import { getSavedArtists, getArtistDetails, removeSavedArtist } from '@/services/matchmakingApi'
 import { useEventsData } from '@/features/events/composables/useEventsData'
 import { useSavedEvents } from '@/features/events/composables/useSavedEvents'
@@ -17,11 +18,9 @@ import { toast } from '@/composables/useToast'
 import { supabase } from '@/services/supabase.js'
 
 const userStore = useUserStore()
+const router = useRouter()
 const notifications = useNotificationsStore()
 
-const storageKey = 'riffle-preferences-v1:' + userStore.user.id
-const draftKey = 'riffle-profile-draft:' + userStore.user.id
-const connectingSpotify = ref(false)
 
 const genres = [
   'Indie Rock',
@@ -34,43 +33,10 @@ const genres = [
 
 const profile = ref(null)
 const loadingProfile = ref(true) // true until the saved profile has been fetched, so the page never flashes the wrong screen
-const isEditing = ref(false)
-const displayName = ref('')
-const selectedGenres = ref([])
-const favouriteSongs = ref('')
 
-const selectedSongs = computed(() => {
-  return favouriteSongs.value
-    .split('\n')
-    .map(song => song.trim())
-    .filter(song => song !== '')
-    .map(text => {
-      const parts = text.split(' — ')
-
-      return {
-        text,
-        title: parts[0],
-        artist: parts.slice(1).join(' — ')
-      }
-    })
-})
-
-function removeSelectedSong(song) {
-  favouriteSongs.value = selectedSongs.value
-    .filter(item => item.text !== song.text)
-    .map(item => item.text)
-    .join('\n')
-}
-
-const songQuery = ref('')
-const songResults = ref([])
-const songLoading = ref(false)
-const songError = ref('')
 
 const errorMessage = ref('')
 const successMessage = ref('')
-
-const saving = ref(false)
 
 // ---- the new profile page: saved artists, saved events, tabs ------------------------
 const activeTab = ref('artists')
@@ -195,172 +161,13 @@ onMounted(async () => {
     loadingProfile.value = false
   }
 
-  try {
-    const draft = JSON.parse(sessionStorage.getItem(draftKey))
-
-    if (draft && profile.value) {
-      displayName.value = typeof draft.displayName === 'string' ? draft.displayName : ''
-      selectedGenres.value = Array.isArray(draft.genres) ? genres.filter(genre => draft.genres.includes(genre)) : []
-      favouriteSongs.value = typeof draft.favouriteSongs === 'string' ? draft.favouriteSongs : ''
-
-      isEditing.value = true
-      sessionStorage.removeItem(draftKey)
-    }
-  } catch {
-    errorMessage.value = 'Your unfinished changes could not be restored. Please edit your profile again.'
-  }
 })
 
 // Copy saved preferences into the editing form
 function startEditing() {
-  displayName.value = profile.value.displayName
-  selectedGenres.value = [...profile.value.genres]
-  favouriteSongs.value = profile.value.favouriteSongs
-
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  songQuery.value = ''
-  songResults.value = []
-  songError.value = ''
-
-  isEditing.value = true
+  router.push('/onboarding')
 }
 
-// Leave the saved profile unchanged
-function cancelEditing() {
-  isEditing.value = false
-  errorMessage.value = ''
-}
-
-//connect spotify
-async function connectSpotify() {
-  if (!userStore.isLoggedIn || saving.value || connectingSpotify.value) return
-
-  errorMessage.value = ''
-  connectingSpotify.value = true
-
-  try {
-    const draft = {
-      displayName: displayName.value,
-      genres: [...selectedGenres.value],
-      favouriteSongs: favouriteSongs.value
-    }
-
-    sessionStorage.setItem(draftKey, JSON.stringify(draft))
-    await loginWithSpotify('/profile')
-  } catch (error) {
-    errorMessage.value = 'Spotify could not be opened: ' + error.message
-  } finally {
-    connectingSpotify.value = false
-  }
-}
-//search songs
-async function searchForSongs() {
-  songError.value = ''
-  songResults.value = []
-
-  if (!songQuery.value.trim()) {
-    songError.value = 'Please enter a song or artist.'
-    return
-  }
-
-  if (!localStorage.getItem('access_token')) {
-    songError.value = 'Please click Connect Spotify before searching.'    
-    return
-  }
-
-  songLoading.value = true
-
-  try {
-    songResults.value = await searchSongs(songQuery.value.trim())
-
-    if (songResults.value.length === 0) {
-      songError.value = 'No songs found. Try another search.'
-    }
-  } catch {
-    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
-  } finally {
-    songLoading.value = false
-  }
-}
-
-function getSongText(song) {
-  return song.name + ' — ' + song.artists.map(artist => artist.name).join(', ')
-}
-
-function isSongAdded(song) {
-  return favouriteSongs.value.split('\n').includes(getSongText(song))
-}
-
-function addSong(song) {
-  if (isSongAdded(song)) return
-
-  const songText = getSongText(song)
-
-  if (favouriteSongs.value.trim()) {
-    favouriteSongs.value = favouriteSongs.value.trim() + '\n' + songText
-  } else {
-    favouriteSongs.value = songText
-  }
-}
-
-function removeSong(song) {
-  favouriteSongs.value = favouriteSongs.value.split('\n').filter(text => text !== getSongText(song)).join('\n')
-}
-// Validate and save changes
-async function saveProfile() {
-  if (!userStore.isLoggedIn || saving.value) return
-
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  if (!displayName.value.trim()) {
-    errorMessage.value = 'Please enter your display name.'
-    return
-  }
-
-  if (selectedGenres.value.length === 0) {
-    errorMessage.value = 'Please select at least one genre.'
-    return
-  }
-
-  saving.value = true
-
-  const updatedProfile = {
-    displayName: displayName.value.trim(),
-    genres: [...selectedGenres.value],
-    favouriteSongs: favouriteSongs.value.trim()
-  }
-
-  try {
-    const { error } = await supabase.from('profiles').upsert({
-      id: userStore.user.id,
-      display_name: updatedProfile.displayName,
-      genres: updatedProfile.genres,
-      favourite_songs: updatedProfile.favouriteSongs,
-      onboarding_completed: true
-    }, { onConflict: 'id' })
-
-    if (error) throw error
-
-    userStore.updateDisplayName(updatedProfile.displayName)
-    profile.value = updatedProfile
-    isEditing.value = false
-    successMessage.value = 'Your profile has been updated.'
-
-    // Keep the navbar's current local copy in sync during migration
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updatedProfile))
-    } catch (cacheError) {
-      console.warn('Profile saved online, but local copy could not be updated:', cacheError)
-    }
-  } catch (error) {
-    errorMessage.value = 'Your changes could not be saved: ' + error.message
-  } finally {
-    saving.value = false
-  }
-}
 </script>
 
 <template>
@@ -382,7 +189,7 @@ async function saveProfile() {
 
     <template v-else>
       <!-- ============ view your profile ============ -->
-      <template v-if="!isEditing">
+      <div class="profile-content">
         <section class="hero-card">
           <div class="hero-banner" aria-hidden="true">
             <span class="note note--1"><i class="bi bi-music-note-beamed"></i></span>
@@ -549,82 +356,8 @@ async function saveProfile() {
             </section>
           </aside>
         </div>
-      </template>
-
-      <!-- ============ edit your profile ============ -->
-      <form v-else class="profile-box" @submit.prevent="saveProfile">
-        <h2>Edit your profile</h2>
-
-        <div class="mb-4">
-          <label for="profile-name">Display name</label>
-          <input id="profile-name" v-model.trim="displayName" class="text-input" type="text" maxlength="50" required>
-        </div>
-
-        <div class="row">
-          <section class="col-12 col-md-6 mb-3">
-            <h3>Favourite genres</h3>
-            <p>Select at least one genre.</p>
-            <div class="genre-options">
-              <label v-for="genre in genres" :key="genre" class="genre-option" :class="{ selected: selectedGenres.includes(genre) }">
-                <input v-model="selectedGenres" type="checkbox" :value="genre">
-                <span>{{ genre }}</span>
-              </label>
-            </div>
-          </section>
-
-          <section class="col-12 col-md-6 mb-3">
-            <h3>Favourite songs</h3>
-
-            <button class="profile-button mb-3" type="button" :disabled="connectingSpotify || saving" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
-            <label for="profile-song-search">Search Spotify</label>
-            <input id="profile-song-search" v-model="songQuery" class="text-input" type="text" placeholder="Enter a song or artist" @keydown.enter.prevent="searchForSongs">
-
-            <button class="profile-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">{{ songLoading ? 'Searching…' : 'Search' }}</button>
-
-            <p v-if="songError" class="error-message" role="alert">{{ songError }}</p>
-
-            <ul class="list-unstyled mt-3">
-              <li v-for="song in songResults" :key="song.id" class="mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                  <div>
-                    <strong>{{ song.name }}</strong>
-                    <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
-                  </div>
-                  <button v-if="!isSongAdded(song)" class="profile-button" type="button" @click="addSong(song)">+ Add</button>
-                  <button v-else class="cancel-button" type="button" @click="removeSong(song)">Remove</button>
-                </div>
-              </li>
-            </ul>
-
-            <div class="selected-song-section">
-              <h3>Your selected songs</h3>
-              <p v-if="selectedSongs.length === 0">No songs added yet. Search above and click + Add.</p>
-              <ul v-else class="selected-song-list">
-                <li v-for="(song, index) in selectedSongs" :key="index" class="selected-song-row">
-                  <span class="selected-song-icon" aria-hidden="true">♫</span>
-                  <div class="selected-song-info">
-                    <strong>{{ song.title }}</strong>
-                    <small v-if="song.artist">{{ song.artist }}</small>
-                  </div>
-                  <button class="remove-song-button" type="button" :disabled="saving || connectingSpotify" :aria-label="'Remove ' + song.title" @click="removeSelectedSong(song)">Remove</button>
-                </li>
-              </ul>
-              <p class="selected-song-count">{{ selectedSongs.length }} songs added</p>
-            </div>
-            <textarea id="profile-songs" v-model.trim="favouriteSongs" class="text-input" rows="6"></textarea>
-          </section>
-        </div>
-
-        <div class="actions">
-          <button class="profile-button" type="submit" :disabled="saving || connectingSpotify">{{ saving ? 'Saving…' : 'Save changes' }}</button>
-          <button class="cancel-button" type="button" :disabled="saving || connectingSpotify" @click="cancelEditing">Cancel</button>
-        </div>
-      </form>
-
-      <div v-if="isEditing" class="page-links">
-        <RouterLink to="/discover">Explore artists</RouterLink>
-        <RouterLink to="/onboarding">Return to onboarding</RouterLink>
       </div>
+
     </template>
   </main>
   <LoginPrompt v-else />
@@ -1324,6 +1057,174 @@ async function saveProfile() {
   }
   .stat-card {
     padding: 0.8rem;
+  }
+}
+
+.profile-page {
+  width: 100%;
+  max-width: 1200px;
+  padding-inline: 16px;
+}
+
+/* Keep the editing form from becoming excessively wide */
+form.profile-box {
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 32px);
+}
+
+.hero-info,
+.artist-link > span,
+.stat-card,
+.stat-card > div {
+  min-width: 0;
+}
+
+.hero-info h1,
+.hero-meta,
+.artist-link strong,
+.row-text,
+.genre-option span {
+  overflow-wrap: anywhere;
+}
+
+.stat-card > i {
+  flex-shrink: 0;
+}
+
+/* Allow artist cards to fit even on narrow phones */
+.artist-grid {
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+}
+
+.selected-song-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.selected-song-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.selected-song-info {
+  min-width: 0;
+}
+
+.selected-song-info strong,
+.selected-song-info small {
+  overflow-wrap: anywhere;
+}
+
+.profile-box label[for] {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.text-input {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.profile-button,
+.cancel-button,
+.remove-song-button,
+.tab-button {
+  min-height: 44px;
+}
+
+.page-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 24px;
+  margin-top: 20px;
+}
+
+.text-input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #7054dc;
+  outline-offset: 3px;
+}
+
+/* Stack editing sections before they become cramped */
+@media (max-width: 991.98px) {
+  form.profile-box > .row > .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .hero-body {
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .hero-info {
+    flex: 0 0 100%;
+  }
+
+  .hero-meta {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hero-actions > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat-card {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .stat-card > i {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .stat-card span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  .tab-bar {
+    gap: 16px;
+  }
+
+  .tab-button {
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+
+  .actions > button {
+    flex: 1;
   }
 }
 </style>

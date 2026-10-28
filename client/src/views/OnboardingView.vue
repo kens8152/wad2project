@@ -16,6 +16,9 @@ const userStore = useUserStore()
 
 const saving = ref(false)
 
+const hasSavedPreferences = ref(false)
+const songFeedback = ref('')
+
 
 const displayName = ref('')
 
@@ -76,6 +79,7 @@ onMounted(async () => {
     if (error) throw error
 
     if (data) {
+      hasSavedPreferences.value = true
       displayName.value = data.display_name || ''
       selectedGenres.value = Array.isArray(data.genres) ? genres.filter(genre => data.genres.includes(genre)) : []
       favouriteSongs.value = data.favourite_songs || ''
@@ -236,9 +240,17 @@ async function savePreferences() {
   <main v-if="userStore.isLoggedIn" class="onboarding-page">
 
     <header class="page-heading">
-      <h1>Let’s build your taste profile</h1>
-      <p>Pick your favourite genres and tell us which songs you enjoy.</p>
-
+      <span class="page-eyebrow">
+        <i class="bi bi-soundwave" aria-hidden="true"></i>
+        YOUR MUSIC, YOUR RIFFLE
+      </span>
+      <h1>
+        {{ hasSavedPreferences ? 'Fine-tune your taste' : 'Let’s find your sound' }}
+      </h1>
+      <p>
+        A few favourites help shape your journey through local music.
+        Pick the sounds that feel like you.
+      </p>
     </header>
 
 
@@ -271,7 +283,10 @@ async function savePreferences() {
     <form @submit.prevent="savePreferences">
 
       <div class="name-section">
-        <label for="display-name">Display name</label>
+        <label for="display-name" class="section-label">
+          <span class="section-number" aria-hidden="true">01</span>
+          What should we call you?
+        </label>
 
         <input id="display-name" v-model.trim="displayName" class="text-input" type="text" placeholder="What should we call you?" maxlength="50" required>
       </div>
@@ -279,8 +294,13 @@ async function savePreferences() {
       <div class="row">
           <div class="col-12 col-md-6 mb-3">
           <section class="preference-box">
-            <h2>Pick your genres</h2>
-            <p>Choose at least one genre you enjoy.</p>
+            <div class="section-heading">
+              <span class="section-number" aria-hidden="true">02</span>
+              <div>
+                <h2>Find your sound</h2>
+                <p>Pick at least one genre. There’s room for every mood.</p>
+              </div>
+            </div>
 
             <div class="genre-options">
               <label v-for="genre in genres" :key="genre" class="genre-option" :class="{selected: selectedGenres.includes(genre)}">
@@ -298,16 +318,28 @@ async function savePreferences() {
 
         <div class="col-12 col-md-6 mb-3">
           <section class="preference-box">
-            <h2>Pick your songs</h2>
-            <p>Tell us a few favourites. This is optional.</p>
+            <div class="section-heading">
+              <span class="section-number" aria-hidden="true">03</span>
+              <div>
+                <h2>Your on-repeat favourites</h2>
+                <p>Add the songs you keep coming back to. This is optional.</p>
+              </div>
+            </div>
             <!-- Search for songs -->
-            <label for="song-search">Search Spotify</label>
+            <label for="song-search" class="search-label">Search Spotify</label>
 
-            <input id="song-search" v-model="songQuery" class="text-input" type="text"placeholder="Enter a song or artist"@keydown.enter.prevent="searchForSongs">
+            <div class="song-search-bar">
+              <div class="song-search-input">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input id="song-search" v-model="songQuery" class="text-input" type="search" placeholder="Search a song or artist" @keydown.enter.prevent="searchForSongs">
+              </div>
+              <button class="connect-button search-button" type="button" :disabled="songLoading || saving || connectingSpotify" @click="searchForSongs">
+                <span v-if="songLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                {{ songLoading ? 'Searching…' : 'Search' }}
+              </button>
+            </div>
 
-            <button class="connect-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">
-            {{ songLoading ? 'Searching…' : 'Search' }}
-            </button>
+            <p class="song-feedback" role="status" aria-live="polite">{{ songFeedback }}</p>
 
             <p v-if="songError" role="alert">
               {{ songError }}
@@ -671,5 +703,142 @@ async function savePreferences() {
 .error-message {
   margin-top: 15px;
   color: #b42318;
+}
+
+/* Consistent page width and flexible spacing */
+.onboarding-page {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  padding: clamp(24px, 4vw, 40px) 0;
+}
+
+.page-heading h1 {
+  font-size: clamp(25px, 4vw, 34px);
+  line-height: 1.25;
+}
+
+.page-heading p {
+  line-height: 1.6;
+}
+
+/* Stop the genre card stretching to the song card's height */
+form > .row {
+  align-items: flex-start;
+}
+
+.preference-box {
+  height: auto;
+  padding: clamp(18px, 2.5vw, 28px);
+}
+
+/* Allow long genre names to wrap */
+.genre-option {
+  max-width: 100%;
+  min-height: 44px;
+}
+
+.genre-option input {
+  flex-shrink: 0;
+}
+
+.genre-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Keep song title, artist and Remove button inside the card */
+.selected-song-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.selected-song-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.selected-song-info {
+  min-width: 0;
+}
+
+.selected-song-info strong,
+.selected-song-info small {
+  overflow-wrap: anywhere;
+}
+
+.text-input {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.connect-button,
+.remove-song-button,
+.next-button {
+  min-height: 44px;
+}
+
+.text-input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #7054dc;
+  outline-offset: 3px;
+}
+
+.next-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Stack both connection cards and preference cards below 992px */
+@media (max-width: 991.98px) {
+  .onboarding-page > .row > .col-md-6,
+  form > .row > .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .page-heading {
+    text-align: left;
+  }
+
+  .connection-box {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .connection-box > div {
+    width: 100%;
+  }
+
+  .connection-box .connect-button {
+    width: 100%;
+  }
+
+  .taste-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .selected-genres {
+    width: 100%;
+  }
+
+  .genre-tag {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .next-button {
+    width: 100%;
+  }
+
+  .remove-song-button {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 }
 </style>
