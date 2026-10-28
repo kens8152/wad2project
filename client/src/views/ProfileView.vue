@@ -100,7 +100,7 @@ function splitSong(line) {
 async function loadSavedArtists() {
   try {
     const rows = await getSavedArtists()
-    const details = await getArtistDetails(rows.map(row => row.artist_id))
+    const details = await getArtistDetails(rows.map(row => row.artist_id), [])
     savedArtists.value = details
   } catch (error) {
     console.error('Could not load saved artists', error)
