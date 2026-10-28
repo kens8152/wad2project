@@ -1,36 +1,66 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch, effectScope } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { toast } from '@/composables/useToast'
 
-// Events the user has hearted / saved. Persisted locally for now; swap the
-// persistence for an API call when the backend exists.
-const STORAGE_KEY = 'riffle.savedEvents'
+const saved = ref(new Set())
+const savedIds = computed(() => [...saved.value])
 
-function read() {
+const savedEventsScope = effectScope(true)
+let started = false
+let currentUserId = ''
+
+function storageKey(userId) {
+  return 'riffle.savedEvents:' + userId
+}
+
+function read(userId) {
+  if (!userId) return new Set()
+
   try {
-    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+    const values = JSON.parse(localStorage.getItem(storageKey(userId)) || '[]')
+    return new Set(Array.isArray(values) ? values : [])
   } catch {
     return new Set()
   }
 }
 
-const saved = ref(read())
-
 function persist() {
+  if (!currentUserId) return
+
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...saved.value]))
+    localStorage.setItem(storageKey(currentUserId), JSON.stringify([...saved.value]))
   } catch {
-    /* private mode / quota: keep the in-memory copy */
+    // Keep the in-memory list if browser storage is unavailable.
   }
 }
 
 export function useSavedEvents() {
-  const isSaved = (id) => saved.value.has(id)
-  const savedIds = computed(() => [...saved.value]) // for lists such as the Profile page
+  const userStore = useUserStore()
 
-  /** Returns the new saved state. */
+  if (!started) {
+    started = true
+
+    savedEventsScope.run(() => {
+      watch(() => userStore.user.id, (userId) => {
+        currentUserId = userId || ''
+        saved.value = read(currentUserId)
+      }, { immediate: true, flush: 'sync' })
+    })
+  }
+
+  const isSaved = (id) => saved.value.has(id)
+
   function toggle(id) {
+    if (!userStore.isLoggedIn || !userStore.user.id) {
+      toast('Please log in to save events.')
+      return false
+    }
+
     const next = new Set(saved.value)
     const nowSaved = !next.delete(id)
+
     if (nowSaved) next.add(id)
+
     saved.value = next
     persist()
     return nowSaved

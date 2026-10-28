@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, watch, effectScope } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getSavedArtists, addSavedArtist, removeSavedArtist } from '@/services/matchmakingApi'
 import { toast } from '@/composables/useToast'
@@ -11,6 +11,7 @@ const pendingIds = ref([])
 let started = false
 let accountVersion = 0
 let loadPromise = null
+const favouritesScope = effectScope(true)
 
 export function useFavouriteArtists() {
   const userStore = useUserStore()
@@ -43,23 +44,26 @@ export function useFavouriteArtists() {
   }
 
   // Register one account watcher for this shared list.
+  // Keep the shared account watcher alive when navigating between pages.
   if (!started) {
     started = true
 
-    watch(() => userStore.user.id, () => {
-      accountVersion++
-      favourites.value = []
-      pendingIds.value = []
-      loading.value = false
-      loadPromise = null
+    favouritesScope.run(() => {
+      watch(() => userStore.user.id, () => {
+        accountVersion++
+        favourites.value = []
+        pendingIds.value = []
+        loading.value = false
+        loadPromise = null
 
-      if (userStore.isLoggedIn) {
-        loadFavourites().catch(error => {
-          console.error('Could not load saved artists:', error)
-          toast('Could not load your saved artists. Please refresh to try again.')
-        })
-      }
-    }, { immediate: true, flush: 'sync' })
+        if (userStore.isLoggedIn && userStore.user.id) {
+          loadFavourites().catch(error => {
+            console.error('Could not load saved artists:', error)
+            toast('Could not load your saved artists. Please refresh to try again.')
+          })
+        }
+      }, { immediate: true, flush: 'sync' })
+    })
   }
 
   async function toggleFavourite(artist) {
