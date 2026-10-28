@@ -326,11 +326,10 @@ async function savePreferences() {
               </div>
             </div>
             <!-- Search for songs -->
-            <label for="song-search" class="search-label">Search Spotify</label>
+            <label for="song-search" class="search-label"><i class="bi bi-search" aria-hidden="true"></i> Search Spotify</label>
 
             <div class="song-search-bar">
               <div class="song-search-input">
-                <i class="bi bi-search" aria-hidden="true"></i>
                 <input id="song-search" v-model="songQuery" class="text-input" type="search" placeholder="Search a song or artist" @keydown.enter.prevent="searchForSongs">
               </div>
               <button class="connect-button search-button" type="button" :disabled="songLoading || saving || connectingSpotify" @click="searchForSongs">
@@ -839,6 +838,44 @@ button:focus-visible {
   .remove-song-button {
     padding: 8px 10px;
     font-size: 13px;
+  }
+}
+
+.search-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.song-search-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.song-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-search-input .text-input {
+  margin: 0;
+  padding-left: 14px;
+}
+
+.search-button {
+  margin: 0;
+}
+
+@media (max-width: 575.98px) {
+  .song-search-bar {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .search-button {
+    width: 100%;
   }
 }
 </style>
