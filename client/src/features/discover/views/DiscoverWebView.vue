@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { supabase } from '@/services/supabase'
-import { addSavedArtist, getSavedArtists, removeSavedArtist } from '@/services/matchmakingApi'
+import { useFavouriteArtists } from '@/features/artists/composables/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import WebOfDots from '../components/WebOfDots.vue'
 import { GENRES, formatFans, getGraph, recommendedNodes, tasteSpot } from '../data/discoverGraph'
@@ -158,63 +158,18 @@ const tasteChips = computed(() =>
   }))
 )
 
-// ---- following ----
-const FOLLOW_KEY = 'riffle.discover.following'
-function readFollowing() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(FOLLOW_KEY))
-    return Array.isArray(saved) ? saved : []
-  } catch {
-    return []
-  }
-}
-const following = ref(readFollowing())
-
-function saveFollowing() {
-  try {
-    localStorage.setItem(FOLLOW_KEY, JSON.stringify(following.value))
-  } catch {
-    // private mode: keep it for this visit only
-  }
-}
-
-async function loadSavedArtists() {
-  if (!userStore.isLoggedIn) return
-
-  try {
-    const rows = await getSavedArtists()
-    const ids = rows.map(row => row.artist_id)
-    const merged = [...following.value]
-    for (const id of ids) {
-      if (!merged.includes(id)) merged.push(id)
-    }
-    following.value = merged
-  } catch (error) {
-    console.warn('Could not load your saved artists:', error)
-  }
-}
+// ---- following: shared with Artists and artist profiles ----
+const { favourites: following, toggleFavourite } = useFavouriteArtists()
 
 async function toggleFollow(node) {
   if (needsAccount()) return
 
-  const nowFollowing = !following.value.includes(node.id)
-  following.value = nowFollowing ? [...following.value, node.id] : following.value.filter(id => id !== node.id)
-  saveFollowing()
-  toast(nowFollowing ? 'Following ' + node.name : 'Unfollowed ' + node.name)
-
-  // artists with a real page are also saved to your account, so they show up on your profile
-  if (!node.real) return
-  try {
-    if (nowFollowing) await addSavedArtist(node.artistId)
-    else await removeSavedArtist(node.artistId)
-  } catch (error) {
-    // "already saved" is fine
-    if (error && error.code === '23505') return
-    console.error('Could not update saved artists', error)
-    following.value = nowFollowing ? following.value.filter(id => id !== node.id) : [...following.value, node.id]
-    saveFollowing()
-    toast('Could not update your saved artists. Please try again.')
+  if (!node.real || !node.artistId) {
+    toast('This is a demo artist. Saving is available for artists with a profile.')
+    return
   }
+
+  await toggleFavourite({ id: node.artistId, name: node.name })
 }
 
 function showRecommended(node) {
@@ -229,7 +184,6 @@ const insetBottom = computed(() => (userStore.isLoggedIn && tasteChips.value.len
 
 onMounted(() => {
   loadTaste()
-  loadSavedArtists()
 })
 </script>
 
