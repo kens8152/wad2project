@@ -1,10 +1,10 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSavedPosts } from '../../composables/forum/savedpost' 
+import { useSavedPosts } from '../../composables/forum/savedpost'
 import { useVote } from '../../composables/forum/usevote'
 import { useUserStore } from '@/stores/user'
-import { deletePost } from '../../services/forum/forumapi.js'
+import { deletePost } from '@/services/forum/forumapi'
 import VoteButtons from './votebuttons.vue'
 import OptionsMenu from './optionsmenu.vue'
 
@@ -24,6 +24,40 @@ const saved = computed(() => isSaved(props.post.id))
 
 
 const { userVote, upvotes, downvotes, vote } = useVote(() => props.post)
+
+const maxUpvotes = inject('maxUpvotes', null)
+
+const CURVE = 0.5
+const heat = computed(() => {
+  const up = Math.max(upvotes.value, 0)
+  if (!up) return 0
+  const top = Math.max(maxUpvotes ? maxUpvotes.value : 100, up)
+  return Math.pow(up / top, CURVE)
+})
+
+
+const SHADES = ['#b9b0e0', '#a78bfa', '#8b5cf6', '#7c3aed', '#c026d3', '#e11d9a', '#ff4d6d']
+const SHADES_RGB = SHADES.map((hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)))
+
+function shadeAt(t) {
+  const x = Math.min(1, Math.max(0, t)) * (SHADES_RGB.length - 1)
+  const i = Math.min(SHADES_RGB.length - 2, Math.floor(x))
+  const f = x - i
+  return SHADES_RGB[i].map((c, k) => Math.round(c + (SHADES_RGB[i + 1][k] - c) * f))
+}
+const rgba = ([r, g, b], a = 1) => `rgba(${r}, ${g}, ${b}, ${a})`
+
+
+const borderStyle = computed(() => {
+  const h = heat.value
+  if (!h) return {}
+  const to = shadeAt(h)
+  return {
+    '--from': rgba(shadeAt(h - 0.25)),
+    '--to': rgba(to),
+    '--glow': `0 0 ${(h * 22).toFixed(1)}px ${rgba(to, (h * 0.55).toFixed(2))}`,
+  }
+})
 
 const postRoute = computed(() => ({
   name: 'post-detail',
@@ -58,7 +92,7 @@ async function removePost() {
 </script>
 
 <template>
-  <article class="card mx-3">
+  <article class="card post-card mx-3 border border-3" :style="borderStyle">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-start mb-1">
         <p class="card-subtitle small text-body-secondary mb-0">
@@ -91,7 +125,7 @@ async function removePost() {
 
       <div class="d-flex flex-wrap gap-1 mb-3">
         <span v-for="tag in post.tags" :key="tag" class="badge rounded-pill text-bg-light border">
-          #{{ tag }}
+          <i class="bi bi-music-note-beamed"></i> {{ tag }}
         </span>
       </div>
 
@@ -102,3 +136,23 @@ async function removePost() {
     </div>
   </article>
 </template>
+
+<style scoped>
+.post-card {
+  --from: var(--bs-border-color);
+  --to: var(--bs-border-color);
+  --glow: none;
+  border-color: transparent !important;
+  background:
+    linear-gradient(var(--bs-card-bg, var(--bs-body-bg)), var(--bs-card-bg, var(--bs-body-bg))) padding-box,
+    linear-gradient(135deg, var(--from), var(--to)) border-box;
+  box-shadow: var(--glow);
+  transition: box-shadow 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-card {
+    transition: none;
+  }
+}
+</style>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import LinkCard from './linkcard.vue'
-import { catalog, loadCatalog, eventArtists } from '../../services/forum/forumlinks.js'
+import { catalog, loadCatalog, eventArtists } from '@/services/forum/forumlinks.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -21,7 +21,6 @@ const query = ref('')
 const selEvents = ref([])
 const selArtists = ref([])
 
-// Artists that were added automatically by selecting an event: artistId -> Set of event ids
 const via = new Map()
 
 const q = computed(() => query.value.trim().toLowerCase())

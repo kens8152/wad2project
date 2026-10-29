@@ -403,7 +403,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 
             <div v-if="!editingPost && post.tags?.length" class="d-flex flex-wrap gap-1 mb-3">
               <span v-for="tag in post.tags" :key="tag" class="badge rounded-pill text-bg-light border">
-                #{{ tag }}
+                <i class="bi bi-music-note-beamed"></i> {{ tag }}
               </span>
             </div>
 

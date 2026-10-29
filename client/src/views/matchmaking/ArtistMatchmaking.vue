@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watchEffect } from 'vue'
 import { getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
-import { useFavouriteArtists } from '@/features/artists/composables/useFavouriteArtists'
+import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';

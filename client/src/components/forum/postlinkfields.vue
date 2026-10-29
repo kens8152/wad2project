@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import LinkPicker from './linkpicker.vue'
-import { catalog, loadCatalog, getEvent, getArtist } from '../../services/forum/forumlinks.js'
+import { catalog, loadCatalog, getEvent, getArtist } from '@/services/forum/forumlinks.js'
 
 const props = defineProps({
   modelValue: { type: Object, default: () => ({ events: [], artists: [] }) },

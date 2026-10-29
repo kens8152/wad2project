@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, useRouter } from 'vue-router'
 import LinkCard from './linkcard.vue'
-import { detailRoute } from '../../services/forum/forumlinks.js'
+import { detailRoute } from '@/services/forum/forumlinks.js'
 
 defineProps({
   artists: { type: Array, default: () => [] },
@@ -10,7 +10,6 @@ defineProps({
 
 const router = useRouter()
 
-// Returns null if the details route isn't set up yet, so the card still shows without a link
 function routeFor(item) {
   const to = detailRoute(item)
   return router.hasRoute(to.name) ? to : null
