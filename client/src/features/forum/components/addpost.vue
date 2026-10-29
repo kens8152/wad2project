@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, watch, onBeforeUnmount } from 'vue'
+import PostLinksField from './postlinkfields.vue'
 
 const props = defineProps({
   tags: { type: Array, default: () => [] },
@@ -13,6 +14,7 @@ const title = ref('')
 const content = ref('')
 const tagInput = ref('')
 const tagList = ref([])
+const links = ref({ events: [], artists: [] })
 const titleEl = ref(null)
 
 const suggestions = computed(() => props.tags.map((t) => t.name ?? t))
@@ -54,6 +56,7 @@ function reset() {
   content.value = ''
   tagInput.value = ''
   tagList.value = []
+  links.value = { events: [], artists: [] }
 }
 
 function submit() {
@@ -64,6 +67,8 @@ function submit() {
     title: title.value.trim(),
     content: content.value.trim() || undefined, 
     tags: [...tagList.value],
+    events: [...links.value.events],
+    artists: [...links.value.artists],
   })
   reset()
   close()
@@ -192,6 +197,8 @@ onBeforeUnmount(() => {
                 </datalist>
                 <div class="form-text">Add at least one tag.</div>
               </div>
+
+              <PostLinksField v-model="links" />
             </div>
 
             <div class="modal-footer">

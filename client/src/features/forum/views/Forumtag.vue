@@ -56,9 +56,7 @@ watch(toggleDisplay, () => {
 
 <template>
     <div>
-
         <div class="d-flex flex-column flex-lg-row">
-
             <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
                 <div v-if="selectedTags.length>0" class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3">
                         <span v-for="s in selectedTags" :key="s" class="badge text-bg-primary fs-6 d-inline-flex align-items-center gap-2">
