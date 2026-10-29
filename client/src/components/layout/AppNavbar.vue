@@ -174,8 +174,8 @@ async function logoutUser() {
         </template>
 
         <template v-else>
-          <RouterLink to="/login" class="btn btn-sm btn-outline-secondary">Log in</RouterLink>
-          <RouterLink to="/signup" class="btn btn-sm btn-primary">Sign up</RouterLink>
+          <RouterLink to="/login" class="btn rounded-pill nav-login">Log in</RouterLink>
+          <RouterLink to="/signup" class="btn rounded-pill nav-signup">Sign up <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></RouterLink>
         </template>
 
         <span v-if="logoutError" role="alert">{{ logoutError }}</span>
@@ -481,6 +481,61 @@ async function logoutUser() {
   .riffle-nav__avatar {
     width: 36px;
     height: 36px;
+  }
+}
+
+.nav-login,
+.nav-signup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-login {
+  border: 1px solid #cbd2e5;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #14234b;
+}
+
+.nav-login:hover,
+.nav-login:active {
+  border-color: #7054dc;
+  background-color: #eee9ff;
+  color: #513ba0;
+}
+
+.nav-signup {
+  margin-left: 8px;
+  border: 1px solid #14234b;
+  background-color: #14234b;
+  color: white;
+  box-shadow: 0 4px 12px rgba(20, 35, 75, 0.12);
+}
+
+.nav-signup:hover,
+.nav-signup:active {
+  border-color: #304779;
+  background-color: #304779;
+  color: white;
+}
+
+.nav-login:focus-visible,
+.nav-signup:focus-visible {
+  outline: 3px solid #7054dc;
+  outline-offset: 3px;
+}
+
+@media (max-width: 575.98px) {
+  .nav-login,
+  .nav-signup {
+    padding: 8px 14px;
+    font-size: 12px;
   }
 }
 </style>
