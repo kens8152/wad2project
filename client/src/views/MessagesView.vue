@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/user'
 import { useMessagesStore } from '@/stores/messages'
 import { toast } from '@/composables/useToast'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
-import ArtistAvatar from '@/features/events/components/ArtistAvatar.vue'
+import ArtistAvatar from '@/components/events/ArtistAvatar.vue'
 
 const route = useRoute()
 const userStore = useUserStore()

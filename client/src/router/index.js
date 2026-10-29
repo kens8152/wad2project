@@ -9,19 +9,19 @@ const routes = [
   {
     path: '/events',
     name: 'events-map',
-    component: () => import('@/features/events/views/EventsMapView.vue'),
+    component: () => import('@/views/events/EventsMapView.vue'),
     meta: { title: 'Events', section: 'events' },
   },
   {
     path: '/events/list',
     name: 'events-list',
-    component: () => import('@/features/events/views/EventsListView.vue'),
+    component: () => import('@/views/events/EventsListView.vue'),
     meta: { title: 'Events', section: 'events' },
   },
   {
     path: '/events/:id',
     name: 'event-detail',
-    component: () => import('@/features/events/views/EventDetailView.vue'),
+    component: () => import('@/views/events/EventDetailView.vue'),
     props: true,
     meta: { title: 'Event', section: 'events' },
   },
@@ -30,13 +30,13 @@ const routes = [
   {
     path: '/discover',
     name: 'discover',
-    component: () => import('@/features/discover/views/DiscoverWebView.vue'),
+    component: () => import('@/views/discover/DiscoverWebView.vue'),
     meta: { title: 'Discover', section: 'discover', owner: 'Powell' },
   },
   {
     path: '/artists',
     name: 'artists',
-    component: () => import('@/features/artists/views/ArtistView.vue'),
+    component: () => import('@/views/artists/ArtistView.vue'),
     meta: { title: 'Artists', section: 'artists', owner: 'Powell' },
   },
   {
@@ -48,21 +48,21 @@ const routes = [
   {
     path: '/artists/:id',
     name: 'artist-detail',
-    component: () => import('@/features/artists/views/Artistprofileview.vue'),
+    component: () => import('@/views/artists/Artistprofileview.vue'),
     meta: { title: 'Artist', section: 'artists', owner: 'Powell' },
   },
   {
     path: '/forum',
     name: 'forum',
-    component: () => import('@/features/forum/views/Forum.vue'),
+    component: () => import('@/views/forum/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
     children: [
-    { path: 'trend', name: 'forum-trend', component: () => import('@/features/forum/views/Forumtrend.vue') },
-    { path: 'tags', name: 'forum-tags', component: () => import('@/features/forum/views/Forumtag.vue') },
-    { path: 'lfg', name: 'forum-lfg', component: () => import('@/features/forum/views/Forumlfg.vue') },
-    { path: 'saved', name: 'forum-saved', component: () => import('@/features/forum/views/Forumsaved.vue') },
-    { path: 'mypost', name: 'forum-mypost', component: () => import('@/features/forum/views/Forummypost.vue') },
-    { path: 'post/:id', name: 'post-detail', component: () => import('@/features/forum/views/Postdetail.vue') },
+    { path: 'trend', name: 'forum-trend', component: () => import('@/views/forum/Forumtrend.vue') },
+    { path: 'tags', name: 'forum-tags', component: () => import('@/views/forum/Forumtag.vue') },
+    { path: 'lfg', name: 'forum-lfg', component: () => import('@/views/forum/Forumlfg.vue') },
+    { path: 'saved', name: 'forum-saved', component: () => import('@/views/forum/Forumsaved.vue') },
+    { path: 'mypost', name: 'forum-mypost', component: () => import('@/views/forum/Forummypost.vue') },
+    { path: 'post/:id', name: 'post-detail', component: () => import('@/views/forum/Postdetail.vue') },
   ],
   },
 
