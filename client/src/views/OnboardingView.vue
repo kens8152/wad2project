@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchSongs } from '@/services/spotifyApi'
 
@@ -15,6 +15,9 @@ import { loginWithSpotify } from '@/services/spotifyAuth'
 const userStore = useUserStore()
 
 const saving = ref(false)
+
+const hasSavedPreferences = ref(false)
+const songFeedback = ref('')
 
 
 const displayName = ref('')
@@ -67,6 +70,12 @@ const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
 const connectingSpotify = ref(false)
 
+const previewPlayer = ref(null)
+const activePreviewId = ref('')
+const previewLoading = ref(false)
+const previewError = ref('')
+let previewRequest = 0
+
 onMounted(async () => {
   if (!userStore.isLoggedIn) return
 
@@ -76,6 +85,7 @@ onMounted(async () => {
     if (error) throw error
 
     if (data) {
+      hasSavedPreferences.value = true
       displayName.value = data.display_name || ''
       selectedGenres.value = Array.isArray(data.genres) ? genres.filter(genre => data.genres.includes(genre)) : []
       favouriteSongs.value = data.favourite_songs || ''
@@ -125,6 +135,11 @@ async function connectSpotify() {
 
 
 async function searchForSongs() {
+  if (songLoading.value || saving.value || connectingSpotify.value) return
+
+  stopPreview()
+  previewError.value = ''
+  songFeedback.value = ''
   songError.value = ''
   songResults.value = []
 
@@ -162,20 +177,11 @@ function isSongAdded(song) {
 }
 
 function addSong(song) {
-  if (isSongAdded(song)) return
+  if (isSongAdded(song) || saving.value || connectingSpotify.value) return
 
   const songText = getSongText(song)
-
-  if (favouriteSongs.value.trim()) {
-    favouriteSongs.value = favouriteSongs.value.trim() + '\n' + songText
-  } else {
-    favouriteSongs.value = songText
-  }
-}
-
-function removeSong(song) {
-  const songs = favouriteSongs.value.split('\n')
-  favouriteSongs.value = songs.filter(text => text !== getSongText(song)).join('\n')
+  favouriteSongs.value = favouriteSongs.value.trim() ? favouriteSongs.value.trim() + '\n' + songText : songText
+  songFeedback.value = 'Added ' + song.name + ' to your favourites.'
 }
 
 async function savePreferences() {
@@ -228,6 +234,61 @@ async function savePreferences() {
     saving.value = false
   }
 }
+
+
+function stopPreview() {
+  previewRequest++
+
+  if (previewPlayer.value) {
+    previewPlayer.value.pause()
+    previewPlayer.value.removeAttribute('src')
+    previewPlayer.value.load()
+  }
+
+  activePreviewId.value = ''
+  previewLoading.value = false
+}
+
+async function togglePreview(song) {
+  if (!song.preview_url || !previewPlayer.value) return
+
+  if (activePreviewId.value === song.id) {
+    stopPreview()
+    return
+  }
+
+  stopPreview()
+  previewError.value = ''
+
+  const request = previewRequest
+  activePreviewId.value = song.id
+  previewLoading.value = true
+  previewPlayer.value.src = song.preview_url
+
+  try {
+    await previewPlayer.value.play()
+
+    if (request === previewRequest) {
+      previewLoading.value = false
+    }
+  } catch {
+    if (request !== previewRequest) return
+
+    stopPreview()
+    previewError.value = 'This preview could not be played. Try opening the song in Spotify.'
+  }
+}
+
+function handlePreviewError() {
+  if (!activePreviewId.value) return
+
+  stopPreview()
+  previewError.value = 'This preview could not be loaded. Try opening the song in Spotify.'
+}
+
+onBeforeUnmount(() => {
+  stopPreview()
+})
 </script>
 
 
@@ -236,9 +297,17 @@ async function savePreferences() {
   <main v-if="userStore.isLoggedIn" class="onboarding-page">
 
     <header class="page-heading">
-      <h1>Let’s build your taste profile</h1>
-      <p>Pick your favourite genres and tell us which songs you enjoy.</p>
-
+      <span class="page-eyebrow">
+        <i class="bi bi-soundwave" aria-hidden="true"></i>
+        YOUR MUSIC, YOUR RIFFLE
+      </span>
+      <h1>
+        {{ hasSavedPreferences ? 'Fine-tune your taste' : 'Let’s find your sound' }}
+      </h1>
+      <p>
+        A few favourites help shape your journey through local music.
+        Pick the sounds that feel like you.
+      </p>
     </header>
 
 
@@ -271,7 +340,10 @@ async function savePreferences() {
     <form @submit.prevent="savePreferences">
 
       <div class="name-section">
-        <label for="display-name">Display name</label>
+        <label for="display-name" class="section-label">
+          <span class="section-number" aria-hidden="true">01</span>
+          What should we call you?
+        </label>
 
         <input id="display-name" v-model.trim="displayName" class="text-input" type="text" placeholder="What should we call you?" maxlength="50" required>
       </div>
@@ -279,8 +351,13 @@ async function savePreferences() {
       <div class="row">
           <div class="col-12 col-md-6 mb-3">
           <section class="preference-box">
-            <h2>Pick your genres</h2>
-            <p>Choose at least one genre you enjoy.</p>
+            <div class="section-heading">
+              <span class="section-number" aria-hidden="true">02</span>
+              <div>
+                <h2>Find your sound</h2>
+                <p>Pick at least one genre. There’s room for every mood.</p>
+              </div>
+            </div>
 
             <div class="genre-options">
               <label v-for="genre in genres" :key="genre" class="genre-option" :class="{selected: selectedGenres.includes(genre)}">
@@ -298,34 +375,66 @@ async function savePreferences() {
 
         <div class="col-12 col-md-6 mb-3">
           <section class="preference-box">
-            <h2>Pick your songs</h2>
-            <p>Tell us a few favourites. This is optional.</p>
+            <div class="section-heading">
+              <span class="section-number" aria-hidden="true">03</span>
+              <div>
+                <h2>Your on-repeat favourites</h2>
+                <p>Add the songs you keep coming back to. This is optional.</p>
+              </div>
+            </div>
             <!-- Search for songs -->
-            <label for="song-search">Search Spotify</label>
+            <label for="song-search" class="search-label"><i class="bi bi-search" aria-hidden="true"></i> Search Spotify</label>
 
-            <input id="song-search" v-model="songQuery" class="text-input" type="text"placeholder="Enter a song or artist"@keydown.enter.prevent="searchForSongs">
+            <div class="song-search-bar">
+              <div class="song-search-input">
+                <input id="song-search" v-model="songQuery" class="text-input" type="search" placeholder="Search a song or artist" @keydown.enter.prevent="searchForSongs">
+              </div>
+              <button class="connect-button search-button" type="button" :disabled="songLoading || saving || connectingSpotify" @click="searchForSongs">
+                <span v-if="songLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                {{ songLoading ? 'Searching…' : 'Search' }}
+              </button>
+            </div>
 
-            <button class="connect-button mt-2" type="button" :disabled="songLoading" @click="searchForSongs">
-            {{ songLoading ? 'Searching…' : 'Search' }}
-            </button>
+            <p class="song-feedback" role="status" aria-live="polite">{{ songFeedback }}</p>
 
             <p v-if="songError" role="alert">
               {{ songError }}
             </p>
 
             <!-- Search results -->
-            <ul class="list-unstyled mt-3">
-              <li v-for="song in songResults" :key="song.id" class="mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-center">
-                  <div>
-                    <strong>{{ song.name }}</strong>
-                    <div>{{ song.artists.map(artist => artist.name).join(', ') }}</div>
+            <div v-if="songResults.length" class="search-results">
+              <p class="results-label">SEARCH RESULTS · {{ songResults.length }}</p>
+
+              <ul class="song-result-list">
+                <li v-for="song in songResults" :key="song.id" class="song-result-row">
+                  <div class="song-cover" :class="{ 'is-playing': activePreviewId === song.id }">
+                    <img v-if="song.album?.images?.length" :src="song.album.images[0].url" :alt="song.album.name + ' album cover'" loading="lazy">
+                    <span v-else class="cover-placeholder"><i class="bi bi-music-note-beamed" aria-hidden="true"></i></span>
+
+                    <button v-if="song.preview_url" class="preview-button" type="button" :aria-label="activePreviewId === song.id ? 'Stop preview of ' + song.name : 'Play preview of ' + song.name" :aria-pressed="activePreviewId === song.id" @click="togglePreview(song)">
+                      <span v-if="activePreviewId === song.id && previewLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                      <i v-else class="bi" :class="activePreviewId === song.id ? 'bi-pause-fill' : 'bi-play-fill'" aria-hidden="true"></i>
+                    </button>
                   </div>
-                  <button v-if="!isSongAdded(song)" class="connect-button" type="button" @click="addSong(song)">+ Add</button>
-                  <button v-else class="connect-button" type="button" @click="removeSong(song)">Remove</button>
-                </div>
-              </li>
-            </ul>
+
+                  <div class="result-info">
+                    <strong>{{ song.name }}</strong>
+                    <small>{{ song.artists.map(artist => artist.name).join(', ') }}</small>
+                    <small v-if="activePreviewId === song.id" class="preview-status">{{ previewLoading ? 'Loading preview…' : 'Playing preview' }}</small>
+                    <small v-else-if="!song.preview_url" class="preview-unavailable">Preview unavailable</small>
+                    <a v-if="song.external_urls?.spotify" :href="song.external_urls.spotify" target="_blank" rel="noopener noreferrer" class="spotify-track-link">Open in Spotify <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                  </div>
+
+                  <button class="song-add-button" :class="{ 'is-added': isSongAdded(song) }" type="button" :disabled="isSongAdded(song) || saving || connectingSpotify" :aria-label="isSongAdded(song) ? song.name + ' already added' : 'Add ' + song.name" @click="addSong(song)">
+                    <i class="bi" :class="isSongAdded(song) ? 'bi-check2' : 'bi-plus-lg'" aria-hidden="true"></i>
+                    {{ isSongAdded(song) ? 'Added' : 'Add' }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <audio ref="previewPlayer" preload="none" @ended="stopPreview" @error="handlePreviewError"></audio>
+            <p v-if="previewError" class="error-message" role="alert">{{ previewError }}</p>
 
             <div class="selected-song-section">
               <h3>Your selected songs</h3>
@@ -671,5 +780,370 @@ async function savePreferences() {
 .error-message {
   margin-top: 15px;
   color: #b42318;
+}
+
+/* Consistent page width and flexible spacing */
+.onboarding-page {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  padding: clamp(24px, 4vw, 40px) 0;
+}
+
+.page-heading h1 {
+  font-size: clamp(25px, 4vw, 34px);
+  line-height: 1.25;
+}
+
+.page-heading p {
+  line-height: 1.6;
+}
+
+/* Stop the genre card stretching to the song card's height */
+form > .row {
+  align-items: flex-start;
+}
+
+.preference-box {
+  height: auto;
+  padding: clamp(18px, 2.5vw, 28px);
+}
+
+/* Allow long genre names to wrap */
+.genre-option {
+  max-width: 100%;
+  min-height: 44px;
+}
+
+.genre-option input {
+  flex-shrink: 0;
+}
+
+.genre-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Keep song title, artist and Remove button inside the card */
+.selected-song-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.selected-song-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.selected-song-info {
+  min-width: 0;
+}
+
+.selected-song-info strong,
+.selected-song-info small {
+  overflow-wrap: anywhere;
+}
+
+.text-input {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.connect-button,
+.remove-song-button,
+.next-button {
+  min-height: 44px;
+}
+
+.text-input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #7054dc;
+  outline-offset: 3px;
+}
+
+.next-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Stack both connection cards and preference cards below 992px */
+@media (max-width: 991.98px) {
+  .onboarding-page > .row > .col-md-6,
+  form > .row > .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .page-heading {
+    text-align: left;
+  }
+
+  .connection-box {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .connection-box > div {
+    width: 100%;
+  }
+
+  .connection-box .connect-button {
+    width: 100%;
+  }
+
+  .taste-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .selected-genres {
+    width: 100%;
+  }
+
+  .genre-tag {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .next-button {
+    width: 100%;
+  }
+
+  .remove-song-button {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+.search-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.song-search-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.song-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-search-input .text-input {
+  margin: 0;
+  padding-left: 14px;
+}
+
+.search-button {
+  margin: 0;
+}
+
+@media (max-width: 575.98px) {
+  .song-search-bar {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+}
+
+.search-results {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid #e6e9f3;
+  border-radius: 16px;
+  background: #f8f9fd;
+}
+
+.results-label {
+  margin: 0 0 8px;
+  font-size: 11px !important;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.song-result-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.song-result-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.song-result-row + .song-result-row {
+  border-top: 1px solid #e6e9f3;
+}
+
+/* Album cover */
+.song-cover {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #eee7ff;
+}
+
+.song-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #7054dc;
+  font-size: 22px;
+}
+
+/* Play button appears over the cover */
+.preview-button {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: rgba(20, 35, 75, 0.65);
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.song-cover:hover .preview-button,
+.song-cover:focus-within .preview-button,
+.song-cover.is-playing .preview-button {
+  opacity: 1;
+}
+
+.preview-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: -4px;
+}
+
+/* Song details */
+.result-info {
+  min-width: 0;
+}
+
+.result-info strong,
+.result-info small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.result-info strong {
+  font-size: 13px;
+}
+
+.result-info small {
+  margin-top: 3px;
+  color: #64708a;
+  font-size: 12px;
+}
+
+.preview-status {
+  color: #18754a !important;
+}
+
+.preview-unavailable {
+  font-size: 11px !important;
+}
+
+.spotify-track-link {
+  display: inline-block;
+  margin-top: 5px;
+  color: #513ba0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Add / Added button */
+.song-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #d8ccef;
+  border-radius: 12px;
+  background: white;
+  color: #513ba0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.song-add-button.is-added {
+  border-color: #cae7d9;
+  background: #edfaf5;
+  color: #18754a;
+}
+
+.song-add-button:disabled {
+  cursor: default;
+}
+
+.song-feedback {
+  color: #18754a !important;
+  font-size: 12px !important;
+}
+
+.song-feedback:empty {
+  display: none;
+}
+
+/* Keep playback visible on touchscreens */
+@media (hover: none), (pointer: coarse) {
+  .preview-button {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .search-results {
+    padding: 10px;
+  }
+
+  .song-result-row {
+    gap: 8px;
+  }
+
+  .song-add-button {
+    min-width: 64px;
+    padding: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-button {
+    transition: none;
+  }
 }
 </style>
