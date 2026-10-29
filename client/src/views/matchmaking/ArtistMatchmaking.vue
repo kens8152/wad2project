@@ -1,15 +1,18 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import {
-  getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction,
-  getSavedArtists, addSavedArtist, removeSavedArtist,
-} from '@/services/matchmakingApi';
+import { ref, onMounted, computed, watchEffect } from 'vue'
+import { getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
+import { useFavouriteArtists } from '@/features/artists/composables/useFavouriteArtists'
+import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
 import FlashMessage from '@/components/layout/FlashMessage.vue';
 import SongPreview from '@/components/matchmaking/SongPreview.vue';
 
 const userStore = useUserStore();
+
+const { favourites, loadFavourites, toggleFavourite } = useFavouriteArtists()
+const actionBusy = ref(false)
+const saveFlash = ref(0)
 
 const DISPLAY_COUNT = 5;
 
@@ -60,35 +63,68 @@ function finishSwiping() {
   }, (FLY_UP_DURATIONS[2] + 0.2)*1000); // Second index is the longest
 }
 
-// Save the current artist's choice to Supabase
+// Set a specific saved state instead of blindly toggling it.
+async function setSharedSaved(artist, shouldSave) {
+  const accountId = userStore.user.id
+
+  await loadFavourites()
+
+  if (!userStore.isLoggedIn || userStore.user.id !== accountId) {
+    throw new Error('Your account changed. Please try again.')
+  }
+
+  const alreadySaved = favourites.value.includes(artist.id)
+
+  if (alreadySaved !== shouldSave) {
+    await toggleFavourite(artist)
+  }
+
+  if (!userStore.isLoggedIn || userStore.user.id !== accountId) {
+    throw new Error('Your account changed. Please try again.')
+  }
+
+  // toggleFavourite handles its own errors, so verify the result.
+  if (favourites.value.includes(artist.id) !== shouldSave) {
+    throw new Error('The saved artist could not be updated.')
+  }
+}
+
 async function updateArtistAction(action) {
-  const artist = artists.value[current.value];
-  if (!artist || artistsFinished.value || !userStore.isLoggedIn) return;
+  const artist = artists.value[current.value]
+  if (!artist || artistsFinished.value || !userStore.isLoggedIn || actionBusy.value) return
+
+  actionBusy.value = true
 
   try {
-    // Unsure simply removes the artist without updates
-    if (action === 'unsure') {
-      await removeArtistAction(artist.id);
-    } else {
-      // Skip or follow updates the db
-      await setArtistAction(artist.id, action);
+    if (action === 'follow') {
+      await setSharedSaved(artist, true)
     }
-  } catch (err) {
-    console.error('Could not save action', err);
+
+    if (action === 'unsure') {
+      await removeArtistAction(artist.id)
+    } else {
+      await setArtistAction(artist.id, action)
+    }
+
+    nextArtist()
+  } catch (error) {
+    console.error('Could not save matchmaking action:', error)
+    toast('Could not complete this action. Please try again.')
+  } finally {
+    actionBusy.value = false
   }
 }
 
 function skip() {
-  updateArtistAction('skip');
-  nextArtist();
+  return updateArtistAction('skip')
 }
+
 function follow() {
-  updateArtistAction('follow');
-  nextArtist();
+  return updateArtistAction('follow')
 }
+
 function unsure() {
-  updateArtistAction('unsure');
-  nextArtist();
+  return updateArtistAction('unsure')
 }
 
 // Saved / unsaved message at the top of the page
@@ -101,23 +137,36 @@ function showSaveMessage(artist) {
 }
 
 async function toggleSave() {
-  const artist = artists.value[current.value];
-  if (!artist) return;
+  const artist = artists.value[current.value]
+  if (!artist || artistsFinished.value || !userStore.isLoggedIn || actionBusy.value) return
 
-  artist.saved = !artist.saved;
-  showSaveMessage(artist);
+  actionBusy.value = true
 
   try {
-    if (artist.saved) {
-      await addSavedArtist(artist.id);
-    } else {
-      await removeSavedArtist(artist.id);
-    }
-  } catch (err) {
-    artist.saved = !artist.saved;  // Supabase failed: put the button back
-    console.error('Could not save artist', err);
+    await loadFavourites()
+
+    const shouldSave = !favourites.value.includes(artist.id)
+    await setSharedSaved(artist, shouldSave)
+
+    artist.saved = shouldSave
+    saveFlash.value++
+    showSaveMessage(artist)
+  } catch (error) {
+    console.error('Could not update saved artist:', error)
+    toast('Could not update this artist. Please try again.')
+  } finally {
+    actionBusy.value = false
   }
 }
+
+// Keep the card bookmarks consistent with the shared saved list.
+watchEffect(() => {
+  const savedIds = favourites.value
+
+  artists.value.forEach(artist => {
+    artist.saved = savedIds.includes(artist.id)
+  })
+})
 
 // Mark which of the loaded artists are already saved
 async function markSavedArtists() {
@@ -160,8 +209,8 @@ onMounted(async () => {
   if (!userStore.isLoggedIn) return;
 
   try {
-    await loadTodaysArtists();
-    await markSavedArtists();
+    await loadTodaysArtists()
+    await loadFavourites()
     return;
   } catch (err) {
     console.error("Could not load today's artists", err);
@@ -204,10 +253,7 @@ onMounted(async () => {
         :class="{ 'fly-up': artistsFinished }"
         :style="{ animationDuration: '0.55s' }"
       >
-        <button 
-          class="btn btn-light rounded-circle shadow action-btn fs-2" aria-label="Skip"
-          @click="skip()"
-        >
+        <button class="btn btn-light rounded-circle shadow action-btn fs-2" aria-label="Skip" :disabled="actionBusy || artistsFinished || !artists.length" @click="skip()">
           <i class="bi bi-x-lg text-secondary"></i>
         </button>
         <div class="fw-semibold small mt-2">Skip</div>
@@ -243,24 +289,12 @@ onMounted(async () => {
             <!-- Text sits on top of the image, pushed to the bottom of the card -->
             <div class="card-img-overlay d-flex flex-column justify-content-end px-0 pb-0 pt-5">
               <!-- Save button -->
-              <button
-                v-if="slot.offset === 0"
-                :key="'save-' + saveFlash"
-                class="btn shadow rounded-circle position-absolute top-0 start-0 m-2"
-                :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 }]"
-                :aria-pressed="!!slot.artist.saved"
-                :aria-label="slot.artist.saved ? 'Unsave' : 'Save'"
-                @click="toggleSave()"
-              >
+              <button v-if="slot.offset === 0" :key="'save-' + saveFlash" class="btn shadow rounded-circle position-absolute top-0 start-0 m-2" :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 }]" :aria-pressed="!!slot.artist.saved" :aria-label="slot.artist.saved ? 'Unsave' : 'Save'" :disabled="actionBusy || artistsFinished || !artists.length" @click="toggleSave()">
                 <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
               </button>
 
               <!-- Unsure button -->
-              <button
-                v-if="slot.offset === 0"
-                class="unsure-btn btn btn-sm bg-black bg-opacity-50 text-white border-0 rounded-pill position-absolute top-0 start-50 translate-middle-x mt-2"
-                @click="unsure()"
-              >
+              <button v-if="slot.offset === 0" class="unsure-btn btn btn-sm bg-black bg-opacity-50 text-white border-0 rounded-pill position-absolute top-0 start-50 translate-middle-x mt-2" :disabled="actionBusy || artistsFinished || !artists.length" @click="unsure()">
                 <i class="bi bi-question-circle"></i> &nbsp; Unsure
               </button>
 
@@ -385,10 +419,7 @@ onMounted(async () => {
         :class="{ 'fly-up': artistsFinished }"
         :style="{ animationDuration: '0.75s' }"
       >
-        <button
-          class="btn btn-light rounded-circle shadow action-btn" aria-label="Follow"
-          @click="follow()"
-        >
+        <button class="btn btn-light rounded-circle shadow action-btn" aria-label="Follow" :disabled="actionBusy || artistsFinished || !artists.length" @click="follow()">
           <i class="bi bi-heart-fill text-danger"></i>
         </button>
         <div class="fw-semibold small mt-2">Follow</div>
