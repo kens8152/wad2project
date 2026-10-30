@@ -1,11 +1,18 @@
 <script setup>
 import { onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ToastHost from '@/components/layout/ToastHost.vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 const subscription = userStore.startAuth()
+
+const router = useRouter()
+router.afterEach(() => {
+  const main = document.querySelector('.app-main')
+  if (main) main.scrollTop = 0
+})
 
 onBeforeUnmount(() => {
   subscription.unsubscribe()

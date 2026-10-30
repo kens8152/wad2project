@@ -118,6 +118,7 @@ function openArtist(artist) {
 .artists-shell {
   padding-top: 1.1rem;
   padding-bottom: 2.5rem;
+  overflow: visible;
 }
 
 .artists-shell__head {
@@ -169,9 +170,11 @@ function openArtist(artist) {
   gap: 1.4rem;
   align-items: start;
 }
+
 .artists-shell__sidebar {
   display: none;
 }
+
 .artists-shell__sidebar.is-open {
   display: block;
 }
@@ -202,6 +205,7 @@ function openArtist(artist) {
 @media (min-width: 992px) {
   .artists-shell__body {
     grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
   }
   .artists-shell__head {
     display: grid;
@@ -214,13 +218,12 @@ function openArtist(artist) {
     justify-content: flex-end;
   }
   .artists-shell__sidebar {
-    display: block;
+    display: block !important;
     position: sticky;
-    top: calc(var(--navbar-height) + 16px);
-  }
-  .artists-shell__sidebar .filters {
+    top: 16px;
     max-height: calc(100vh - var(--navbar-height) - 32px);
     overflow-y: auto;
+    align-self: start;
   }
 }
 

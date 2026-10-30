@@ -180,7 +180,7 @@ async function onShare() {
               <h2 class="event-section__title mt-4">Line-up</h2>
               <ul class="lineup">
                 <li v-for="l in event.lineup" :key="l.artist.id" class="lineup__item">
-                  <RouterLink :to="{ name: 'artist-detail', params: { slug: l.artist.id } }" class="lineup__link">
+                  <RouterLink :to="{ name: 'artist-detail', params: { id: l.artist.id } }" class="lineup__link">
                     <ArtistAvatar :name="l.artist.name" :hue="l.artist.hue" :size="62" />
                     <span>
                       <strong>{{ l.artist.name }}</strong>
