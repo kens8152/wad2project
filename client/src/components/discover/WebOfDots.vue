@@ -1,10 +1,13 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { formatFans, getGraph } from '../../data/discover/discoverGraph'
+import { pictureOf } from '@/utils/discover/dotPicture'
 
 // The web of dots: one dot per artist, a line between two artists who share fans.
 //   drag to move · scroll or the + / - buttons to zoom · hover a dot to see who it is
-//   click a dot to open its card (who shares their fans, follow, gigs, artist page)
+//   click a dot: it grows into the artist's picture, the artists who share their fans pop out around it on lines
+//   that draw themselves, and its card (follow, gigs, artist page) opens on the right
 //
 // props:  dimmed (ids of dots that the filters have faded), following (ids), signedIn,
 //         tasteSpot ({ x, y } or null), insetLeft / insetRight / insetBottom (space covered by panels),
@@ -23,10 +26,13 @@ const props = defineProps({
 })
 const emit = defineEmits(['pick', 'follow', 'taste-click'])
 
+const router = useRouter()
 const graph = getGraph()
 const nodes = graph.nodes
 
 const MAX_NEIGHBOURS_SHOWN = 5
+const CARD_WIDTH = 290
+const SIDE_CARD_MIN = 760 // when the map has this much room beside the panels, the opened card sits on its right; otherwise along the bottom
 
 // ---- the lines, drawn as one path ----
 const edgesPath = graph.edges
@@ -76,9 +82,12 @@ function fittedView() {
   const z = Math.min(freeWidth() / webWidth, freeHeight() / webHeight, 1.7)
   const centreX = (bounds.minX + bounds.maxX) / 2
   const centreY = (bounds.minY + bounds.maxY) / 2
+  // the middle of the free space; with no right panel open, the middle of the whole screen if the web still clears the left panel
+  let middle = props.insetLeft + freeWidth() / 2
+  if (props.insetRight === 0 && boxWidth.value / 2 - (webWidth * z) / 2 >= props.insetLeft) middle = boxWidth.value / 2
   return {
     z: z,
-    x: props.insetLeft + freeWidth() / 2 - centreX * z - 160,
+    x: middle - centreX * z,
     y: freeHeight() / 2 - centreY * z,
   }
 }
@@ -99,7 +108,7 @@ function recentre() {
 
 function zoomAt(factor, screenX, screenY) {
   const current = view.value
-  const z = Math.min(fitZoom * 4, Math.max(fitZoom * 0.55, current.z * factor))
+  const z = Math.min(fitZoom * 5, Math.max(fitZoom * 0.55, current.z * factor))
   view.value = {
     x: screenX - ((screenX - current.x) / current.z) * z,
     y: screenY - ((screenY - current.y) / current.z) * z,
@@ -107,26 +116,63 @@ function zoomAt(factor, screenX, screenY) {
   }
 }
 
-// the + and - buttons zoom around the middle of the free space
-function zoomStep(factor) {
-  measure()
-  glide()
-  zoomAt(factor, props.insetLeft + freeWidth() / 2, freeHeight() / 2)
-}
+// zoom around the middle of the free space; when the user has a taste profile circle, zoom towards it instead
+function zoomCentre(factor) {
+  const middleX = props.insetLeft + freeWidth() / 2
+  const middleY = freeHeight() / 2
+  if (!props.tasteSpot) {
+    zoomAt(factor, middleX, middleY)
+    return
+  }
 
-// move so this dot is in the middle of the free space
-function focusNode(id) {
-  const node = nodeById(id)
-  if (!node) return
-
-  measure()
-  glide()
-  const z = Math.min(fitZoom * 4, Math.max(view.value.z, fitZoom * 1.6))
+  const z = Math.min(fitZoom * 5, Math.max(fitZoom * 0.55, view.value.z * factor))
   view.value = {
-    x: props.insetLeft + freeWidth() / 2 - node.x * z,
-    y: freeHeight() / 2 - node.y * z,
+    x: middleX - props.tasteSpot.x * z,
+    y: middleY - props.tasteSpot.y * z,
     z: z,
   }
+}
+
+// the + and - buttons
+function zoomStep(factor) {
+  closeForZoom()
+  measure()
+  glide()
+  zoomCentre(factor)
+}
+
+// When the window changes size (a browser window dragged, a phone turned) the web follows it live, frame by frame, so
+// it stays in the middle instead of sliding behind the edge and then catching up.
+// A web that is in its fitted view is fitted again; one the user zoomed or moved keeps its place relative to the middle.
+let resizeFrame = 0
+let resizing = false
+let resizeDone = null
+
+function onResize() {
+  resizing = true
+  clearTimeout(resizeDone)
+  resizeDone = setTimeout(() => (resizing = false), 250)
+
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = requestAnimationFrame(() => {
+    const oldWidth = boxWidth.value
+    const oldHeight = boxHeight.value
+    const wasFitted = Math.abs(view.value.z - fitZoom) < 0.01
+
+    measure()
+    smooth.value = false
+
+    if (props.pickedId) {
+      frameCluster(props.pickedId, false)
+    } else if (wasFitted) {
+      const next = fittedView()
+      fitZoom = next.z
+      view.value = next
+    } else {
+      fitZoom = fittedView().z
+      view.value = { x: view.value.x + (boxWidth.value - oldWidth) / 2, y: view.value.y + (boxHeight.value - oldHeight) / 2, z: view.value.z }
+    }
+  })
 }
 
 onMounted(() => {
@@ -134,24 +180,103 @@ onMounted(() => {
   const next = fittedView()
   fitZoom = next.z
   view.value = next
+  window.addEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  cancelAnimationFrame(resizeFrame)
+  clearTimeout(resizeDone)
 })
 
 // when a panel opens or closes, move the web into the free space
-watch(() => props.insetLeft + props.insetBottom, refit)
+watch(() => props.insetLeft + props.insetBottom, () => {
+  // while the window is being resized the resize handler already keeps the web in place
+  if (!resizing) refit()
+})
 
-// when a dot is picked from outside the map (search, recommended list) and it is not near the middle, bring it there
-watch(() => props.pickedId, id => {
-  const node = id ? nodeById(id) : null
+// the camera: when a dot is picked (click, search, the card's list), glide so it sits in the middle of the
+// space that is left of the card, zoomed in until the linked artists have room
+// does the opened card sit on the right of the map? (only when the panels leave enough room)
+function cardOnSide() {
+  return boxWidth.value - props.insetLeft - props.insetRight >= SIDE_CARD_MIN
+}
+
+// how tall the card along the bottom of a small screen is
+function sheetHeight() {
+  // a phone held sideways has hardly any height: the card gets small so the map stays visible
+  if (boxHeight.value < 520) return 150
+  return Math.min(330, boxHeight.value * 0.4)
+}
+
+function frameCluster(id, animate = true) {
+  const node = nodeById(id)
   if (!node) return
 
-  const screenX = node.x * view.value.z + view.value.x
-  const screenY = node.y * view.value.z + view.value.y
-  const nearMiddle =
-    screenX > props.insetLeft + freeWidth() * 0.15 &&
-    screenX < props.insetLeft + freeWidth() * 0.85 &&
-    screenY > freeHeight() * 0.15 &&
-    screenY < freeHeight() * 0.85
-  if (!nearMiddle) focusNode(id)
+  measure()
+  if (animate) glide()
+  else smooth.value = false
+
+  const group = [node, ...graph.neighbours[node.index].map(index => nodes[index])]
+  let minX = node.x
+  let maxX = node.x
+  let minY = node.y
+  let maxY = node.y
+  let zoomToSeparate = 0 // the zoom at which every picture and name has room
+
+  for (let i = 0; i < group.length; i++) {
+    minX = Math.min(minX, group[i].x)
+    maxX = Math.max(maxX, group[i].x)
+    minY = Math.min(minY, group[i].y)
+    maxY = Math.max(maxY, group[i].y)
+    for (let j = i + 1; j < group.length; j++) {
+      const distance = Math.hypot(group[i].x - group[j].x, group[i].y - group[j].y)
+      // the opened artist and its name need a little more room than two linked artists
+      const needed = compact.value ? (i === 0 ? 82 : 78) : (i === 0 ? 105 : 100)
+      zoomToSeparate = Math.max(zoomToSeparate, needed / Math.max(distance, 1))
+    }
+  }
+
+  // the card is on the right on a wide screen, along the bottom on a small one
+  const wide = cardOnSide()
+  const side = compact.value ? 56 : 50
+  const left = props.insetLeft + side
+  const right = boxWidth.value - props.insetRight - (wide ? CARD_WIDTH + 40 : 0) - side
+  // on a small screen the search bar and Help button are over the top of the map, and the card covers the bottom
+  // (with the left panel open the search bar is inside it, so the top of the map is free)
+  const top = wide || props.insetLeft > 0 ? 64 : boxHeight.value < 520 ? 96 : 150
+  const bottom = boxHeight.value - props.insetBottom - (wide ? 0 : sheetHeight()) - 52
+  const roomWidth = Math.max(200, right - left)
+  const roomHeight = Math.max(200, bottom - top)
+
+  // zoom in until nothing touches, but never past what fits on the screen
+  const zoomToFit = Math.min(roomWidth / Math.max(maxX - minX, 40), roomHeight / Math.max(maxY - minY, 40))
+  const z = Math.min(fitZoom * 4.5, Math.max(fitZoom * 1.2, Math.min(zoomToSeparate, zoomToFit)))
+  view.value = {
+    x: left + roomWidth / 2 - ((minX + maxX) / 2) * z,
+    y: top + roomHeight / 2 - ((minY + maxY) / 2) * z,
+    z: z,
+  }
+}
+
+// zooming by hand closes the opened dot, and the view stays where the user put it
+let closedByZoom = false
+function closeForZoom() {
+  if (props.pickedId === null) return
+  closedByZoom = true
+  emit('pick', null)
+}
+
+watch(() => props.pickedId, id => {
+  hoverId.value = null
+  if (id) {
+    frameCluster(id)
+  } else if (closedByZoom) {
+    closedByZoom = false
+  } else if (view.value.z > fitZoom * 1.15) {
+    // closing the card: go back to the whole web instead of staying zoomed in
+    refit()
+  }
 })
 
 // ---- dragging and the wheel ----
@@ -190,11 +315,12 @@ function onBackgroundClick() {
   emit('pick', null)
 }
 
-// the wheel zooms around the middle of the free space
+// the wheel zooms the same way as the buttons
 function onWheel(event) {
+  closeForZoom()
   smooth.value = false
   const factor = event.deltaY < 0 ? 1.08 : 1 / 1.08
-  zoomAt(factor, props.insetLeft + freeWidth() / 2, freeHeight() / 2)
+  zoomCentre(factor)
 }
 
 // ---- hover, click and the lit-up neighbours ----
@@ -204,7 +330,15 @@ function nodeById(id) {
   return nodes.find(node => node.id === id) || null
 }
 
-const focusId = computed(() => (hoverId.value !== null ? hoverId.value : props.pickedId))
+// an opened dot wins over hovering; hovering only previews a dot while nothing is open
+const focusId = computed(() => (props.pickedId !== null ? props.pickedId : hoverId.value))
+
+function hover(id) {
+  hoverId.value = id
+}
+function unhover(id) {
+  if (hoverId.value === id) hoverId.value = null
+}
 const focusNodeData = computed(() => (focusId.value ? nodeById(focusId.value) : null))
 const pickedNode = computed(() => (props.pickedId ? nodeById(props.pickedId) : null))
 
@@ -232,7 +366,7 @@ function dotClasses(node) {
   const focused = focusId.value !== null
   return {
     'is-filtered': props.dimmed[node.id] === true,
-    'is-faded': focused && !litIds.value[node.id],
+    'is-faded': focused && (props.pickedId !== null ? node.id !== props.pickedId : !litIds.value[node.id]),
     'is-focus': focused && focusId.value === node.id,
     'is-neighbour': focused && focusId.value !== node.id && litIds.value[node.id] === true,
     'is-following': props.following.includes(node.id),
@@ -247,6 +381,7 @@ function clickDot(node) {
 // the card of the dot that is hovered (small) or opened (large)
 const cardNode = computed(() => focusNodeData.value)
 const cardIsOpen = computed(() => cardNode.value !== null && props.pickedId === cardNode.value.id)
+const docked = computed(() => cardIsOpen.value && cardOnSide())
 
 const neighbourNodes = computed(() => {
   const node = cardNode.value
@@ -258,18 +393,128 @@ const cardStyle = computed(() => {
   const node = cardNode.value
   if (!node) return {}
 
+  // the opened card stays put (right side of the map, or along the bottom on a small screen) so it never covers the artists around the dot
+  if (cardIsOpen.value) {
+    if (docked.value) {
+      return { left: boxWidth.value - props.insetRight - CARD_WIDTH - 24 + 'px', top: '84px', width: CARD_WIDTH + 'px', maxHeight: Math.max(240, boxHeight.value - 84 - 180) + 'px' }
+    }
+    const room = boxWidth.value - props.insetLeft - props.insetRight - 16
+    const width = Math.min(560, room)
+    return { left: props.insetLeft + 8 + (room - width) / 2 + 'px', width: width + 'px', bottom: '12px', maxHeight: sheetHeight() + 'px' }
+  }
+
   const screenX = node.x * view.value.z + view.value.x
   const screenY = node.y * view.value.z + view.value.y
   const radius = node.r * view.value.z
-  const width = cardIsOpen.value ? 290 : 230
+  const width = 230
   const roomRight = screenX + radius + 16 + width < boxWidth.value - 8
   const left = roomRight ? screenX + radius + 16 : Math.max(8, screenX - radius - 16 - width)
-  const top = Math.min(Math.max(12, screenY - 30), Math.max(12, boxHeight.value - (cardIsOpen.value ? 330 : 120)))
+  const top = Math.min(Math.max(12, screenY - 30), Math.max(12, boxHeight.value - 120))
   return { left: left + 'px', top: top + 'px', width: width + 'px' }
 })
 
-function initialsOf(name) {
-  return name.replace(/[^\p{L}\p{N}\s]/gu, '').split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0].toUpperCase()).join('')
+// ---- the opened dot: its picture, and the artists linked to it ----
+// Every artist stays exactly where it is on the map. The picture of the opened dot and of each linked artist is
+// drawn at a fixed size on the screen (the group is drawn with scale(1 / zoom)); the camera zooms in until none of
+// them touch, so the lines are long and the names are all readable.
+// phones get smaller pictures and names so a cluster still fits
+const compact = computed(() => boxWidth.value < 600)
+const heroPx = computed(() => (compact.value ? 32 : 40))
+const pickedNeighbours = computed(() => (pickedNode.value ? graph.neighbours[pickedNode.value.index].map(index => nodes[index]) : []))
+
+// the radius (screen pixels) of a linked artist's picture: bigger fan base, a little bigger picture
+function bubbleRadius(node) {
+  return (compact.value ? 17 : 22) + Math.min(4, node.fans / 1000)
+}
+
+// seconds: when the line to the linked artist starts drawing, and when its picture arrives
+function lineDelay(position) {
+  return 0.2 + position * 0.08
+}
+function popDelay(position) {
+  return lineDelay(position) + 0.3
+}
+
+// Which names are written. A name only shows when it has room: it must not touch another picture or name, and it must be
+// on the screen. The biggest fan bases are checked first. (Every name is also in the card's list.)
+const shownNames = computed(() => {
+  const hero = pickedNode.value
+  const shown = {}
+  if (!hero) return shown
+
+  const z = view.value.z
+  const letter = compact.value ? 6.2 : 6.8
+  const spots = [hero].concat(pickedNeighbours.value).map(node => ({
+    node: node,
+    x: node.x * z + view.value.x,
+    y: node.y * z + view.value.y,
+    r: node === hero ? heroPx.value : bubbleRadius(node),
+  }))
+
+  // the opened artist's own name is always written; it is the first thing in the way
+  const taken = [{ x1: spots[0].x - spots[0].node.name.length * 4.2, x2: spots[0].x + spots[0].node.name.length * 4.2, y1: spots[0].y + heroPx.value + 8, y2: spots[0].y + heroPx.value + 34 }]
+  const byFans = spots.slice(1).sort((a, b) => b.node.fans - a.node.fans)
+
+  for (const spot of byFans) {
+    const half = (spot.node.name.length * letter) / 2
+    const box = { x1: spot.x - half, x2: spot.x + half, y1: spot.y + spot.r + 6, y2: spot.y + spot.r + 22 }
+
+    let free = box.x1 > 4 && box.x2 < boxWidth.value - 4 && box.y2 < boxHeight.value - 4
+    for (const other of taken) {
+      if (box.x1 < other.x2 && box.x2 > other.x1 && box.y1 < other.y2 && box.y2 > other.y1) free = false
+    }
+    // not on top of any picture
+    for (const other of spots) {
+      if (other === spot) continue
+      const nearestX = Math.max(box.x1, Math.min(other.x, box.x2))
+      const nearestY = Math.max(box.y1, Math.min(other.y, box.y2))
+      if (Math.hypot(nearestX - other.x, nearestY - other.y) < other.r + 4) free = false
+    }
+
+    if (free) {
+      shown[spot.node.id] = true
+      taken.push(box)
+    }
+  }
+  return shown
+})
+
+// at a fixed size on the screen: the place of a dot on the map, drawn with scale(1 / zoom)
+function pinTransform(node) {
+  return 'translate(' + node.x + ' ' + node.y + ') scale(' + 1 / view.value.z + ')'
+}
+
+// a linked artist flies out from the opened dot: how far away it starts (screen pixels)
+function flyFrom(node) {
+  const hero = pickedNode.value
+  return { '--x': (node.x - hero.x) * view.value.z, '--y': (node.y - hero.y) * view.value.z }
+}
+
+// only the opened dot's own circle is hidden (the stage draws its picture there)
+function isPictured(node) {
+  return props.pickedId === node.id
+}
+
+// The map turns off the browser's own touch scrolling (so a finger can drag the map), which would also stop the
+// opened card's list from scrolling. So the card scrolls itself: it follows the finger.
+let touchY = 0
+function cardTouchStart(event) {
+  touchY = event.touches[0].clientY
+}
+function cardTouchMove(event) {
+  const y = event.touches[0].clientY
+  event.currentTarget.scrollTop += touchY - y
+  touchY = y
+}
+
+function clickBubble(node) {
+  if (dragged) return
+  emit('pick', node.id)
+}
+
+function openArtistPage(node) {
+  if (dragged) return
+  router.push('/artists/' + node.artistId)
 }
 
 function genreOf(node) {
@@ -303,42 +548,104 @@ const tastePillStyle = computed(() => {
       <g class="web__world" :class="{ 'is-smooth': smooth }" :style="worldStyle">
 
         <!-- the lines between artists who share fans -->
-        <path class="web__edges" :class="{ 'is-quiet': focusId !== null }" :d="edgesPath" fill="none" />
-        <path v-if="focusEdgesPath" :key="focusId" class="web__edges web__edges--focus" :d="focusEdgesPath" fill="none" />
+        <path class="web__edges" :class="{ 'is-quiet': focusId !== null, 'is-blurred': pickedNode !== null }" :d="edgesPath" fill="none" />
+        <path v-if="focusEdgesPath && !pickedNode" :key="focusId" class="web__edges web__edges--focus" :d="focusEdgesPath" fill="none" />
 
         <!-- your taste profile -->
         <g v-if="tasteSpot" class="web__taste" :transform="'translate(' + tasteSpot.x + ' ' + tasteSpot.y + ')'">
           <circle class="web__taste-glow" r="105" />
           <circle class="web__taste-ring" r="105" />
-          <circle class="web__taste-core" r="7" />
         </g>
 
-        <!-- a ring that pulses around the opened dot -->
-        <circle v-if="pickedNode" :key="pickedNode.id" class="web__pulse" :cx="pickedNode.x" :cy="pickedNode.y" :r="pickedNode.r + 4" :stroke="pickedNode.color" fill="none" />
+        <!-- the artists (blurred while a dot is open) -->
+        <g class="web__dots" :class="{ 'is-blurred': pickedNode !== null }">
+          <g v-for="node in nodes" :key="node.id">
+            <circle
+              class="dot"
+              :class="[dotClasses(node), { 'is-pictured': isPictured(node) }]"
+              :cx="node.x"
+              :cy="node.y"
+              :r="node.r"
+              :fill="node.color"
+              :style="{ '--i': node.index }"
+            />
+          </g>
+        </g>
 
-        <!-- the artists -->
-        <g v-for="node in nodes" :key="node.id">
+        <!-- the opened dot: lines that draw themselves to the artists linked to it, and their pictures -->
+        <g v-if="pickedNode" :key="pickedNode.id" class="stage">
+          <g v-for="(other, position) in pickedNeighbours" :key="'line-' + other.id">
+            <line
+              class="stage__line"
+              pathLength="1"
+              :x1="pickedNode.x" :y1="pickedNode.y" :x2="other.x" :y2="other.y"
+              :stroke="other.color"
+              :stroke-width="2.5 / view.z"
+              :style="{ animationDelay: lineDelay(position) + 's' }"
+            />
+            <line
+              class="stage__spark"
+              pathLength="1"
+              :x1="pickedNode.x" :y1="pickedNode.y" :x2="other.x" :y2="other.y"
+              :stroke-width="3.5 / view.z"
+              :style="{ '--wait': popDelay(position) + 's' }"
+            />
+          </g>
+
+          <!-- linked artists: they fly out from the opened dot to their own place on the map -->
+          <g v-for="(other, position) in pickedNeighbours" :key="'bubble-' + other.id" :transform="pinTransform(other)">
+            <g class="bubble" :style="{ ...flyFrom(other), animationDelay: popDelay(position) + 's' }">
+              <g class="bubble__body" role="button" :aria-label="other.name" @pointerdown.stop @click.stop="clickBubble(other)">
+                <title>{{ other.name }}</title>
+                <circle :r="bubbleRadius(other) + 3" fill="#fff" />
+                <circle :r="bubbleRadius(other) + 3" fill="none" :stroke="other.color" stroke-width="2" />
+                <clipPath :id="'clip-' + other.id"><circle :r="bubbleRadius(other)" /></clipPath>
+                <image
+                  :href="pictureOf(other)"
+                  :x="-bubbleRadius(other)" :y="-bubbleRadius(other)" :width="bubbleRadius(other) * 2" :height="bubbleRadius(other) * 2"
+                  preserveAspectRatio="xMidYMid slice"
+                  :clip-path="'url(#clip-' + other.id + ')'"
+                />
+              </g>
+              <text v-if="shownNames[other.id]" class="bubble__name" :y="bubbleRadius(other) + 17">{{ other.name }}</text>
+            </g>
+          </g>
+
+          <!-- the opened artist, the biggest of all -->
+          <g :transform="pinTransform(pickedNode)">
+            <g class="hero">
+              <circle :r="heroPx + 4" fill="#fff" />
+              <circle :r="heroPx + 4" fill="none" :stroke="pickedNode.color" stroke-width="3" />
+              <clipPath :id="'clip-' + pickedNode.id"><circle :r="heroPx" /></clipPath>
+              <image
+                :href="pictureOf(pickedNode)"
+                :x="-heroPx" :y="-heroPx" :width="heroPx * 2" :height="heroPx * 2"
+                preserveAspectRatio="xMidYMid slice"
+                :clip-path="'url(#clip-' + pickedNode.id + ')'"
+              />
+              <text class="hero__name" :y="heroPx + 26">{{ pickedNode.name }}</text>
+              <g v-if="pickedNode.real" class="hero__page" role="button" :aria-label="'Open the page of ' + pickedNode.name" :transform="'translate(' + heroPx * 0.72 + ' ' + -heroPx * 0.72 + ')'" @pointerdown.stop @click.stop="openArtistPage(pickedNode)">
+                <circle r="13" />
+                <text y="5">↗</text>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <!-- a bigger, invisible circle on every dot so small dots are easy to hover and click -->
+        <g v-for="node in nodes" :key="'hit-' + node.id">
           <circle
-            class="dot"
-            :class="dotClasses(node)"
-            :cx="node.x"
-            :cy="node.y"
-            :r="node.r"
-            :fill="node.color"
-            :style="{ '--i': node.index }"
-          />
-          <!-- a bigger, invisible circle so small dots are easy to hover and click -->
-          <circle
+            v-if="!isPictured(node)"
             class="dot-hit"
             :cx="node.x"
             :cy="node.y"
             :r="Math.max(node.r + 3, 10)"
             fill="transparent"
-            :tabindex="node.real ? 0 : undefined"
-            :role="node.real ? 'button' : undefined"
-            :aria-label="node.real ? node.name + ', ' + genreOf(node).label : undefined"
-            @mouseenter="hoverId = node.id"
-            @mouseleave="hoverId = hoverId === node.id ? null : hoverId"
+            tabindex="0"
+            role="button"
+            :aria-label="node.name + ', ' + genreOf(node).label"
+            @mouseenter="hover(node.id)"
+            @mouseleave="unhover(node.id)"
             @click.stop="clickDot(node)"
             @keydown.enter="clickDot(node)"
           />
@@ -352,7 +659,7 @@ const tastePillStyle = computed(() => {
     </button>
 
     <!-- recentre and zoom -->
-    <div class="map-controls" @pointerdown.stop @click.stop>
+    <div class="map-controls" :class="{ 'is-hidden': cardIsOpen && !docked }" @pointerdown.stop @click.stop>
       
       <div class="control-card zoom">
         <button type="button" aria-label="Zoom in" @click="zoomStep(1.4)"><i class="bi bi-plus-lg"></i></button>
@@ -372,9 +679,12 @@ const tastePillStyle = computed(() => {
       :style="cardStyle"
       @pointerdown.stop
       @click.stop
+      @wheel.stop
+      @touchstart="cardTouchStart"
+      @touchmove="cardTouchMove"
     >
       <div class="card-head">
-        <span class="card-avatar" :style="{ background: cardNode.color }">{{ initialsOf(cardNode.name) }}</span>
+        <img class="card-avatar" :src="pictureOf(cardNode)" alt="" :style="{ borderColor: cardNode.color }" />
         <div class="card-title">
           <strong>{{ cardNode.name }}</strong>
           <span><i class="card-dot" :style="{ background: genreOf(cardNode).color }"></i>{{ genreOf(cardNode).label }} · {{ formatFans(cardNode.fans) }} fans</span>
@@ -397,7 +707,7 @@ const tastePillStyle = computed(() => {
         <ul v-if="neighbourNodes.length" class="card-links list-unstyled">
           <li v-for="other in neighbourNodes.slice(0, MAX_NEIGHBOURS_SHOWN)" :key="other.id">
             <button type="button" class="card-link" @click="emit('pick', other.id)">
-              <i class="card-dot" :style="{ background: other.color }"></i>
+              <img class="card-thumb" :src="pictureOf(other)" alt="" :style="{ borderColor: other.color }" />
               <span>{{ other.name }}</span>
               <small>{{ formatFans(other.fans) }}</small>
             </button>
@@ -428,6 +738,7 @@ const tastePillStyle = computed(() => {
         <RouterLink v-if="cardNode.real" :to="'/artists/' + cardNode.artistId" class="card-profile">
           Go to artist page <i class="bi bi-arrow-right"></i>
         </RouterLink>
+        <p v-else class="card-demo">A rising local act. They don't have an artist page yet.</p>
       </template>
     </div>
   </div>
@@ -441,8 +752,8 @@ const tastePillStyle = computed(() => {
   cursor: grab;
   user-select: none;
   touch-action: none;
-  background-color: #fbfaf8;
-  background-image: radial-gradient(#e6e3ee 1.2px, transparent 1.2px);
+  background-color: var(--riffle-bg);
+  background-image: radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px);
   background-size: 30px 30px;
 }
 .web.is-dragging {
@@ -477,6 +788,9 @@ const tastePillStyle = computed(() => {
 .web__edges.is-quiet {
   opacity: 0.1;
 }
+.web__edges.is-blurred {
+  filter: blur(2px);
+}
 .web__edges--focus {
   stroke: #0f1f4b;
   stroke-width: 2px;
@@ -503,6 +817,15 @@ const tastePillStyle = computed(() => {
   transition: opacity 0.25s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1), stroke 0.2s;
   animation: dot-in 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
   animation-delay: calc(var(--i) * 8ms);
+}
+.web__dots {
+  transition: filter 0.45s ease;
+}
+.web__dots.is-blurred {
+  filter: blur(2.5px);
+}
+.dot.is-pictured {
+  opacity: 0;
 }
 .dot.is-filtered {
   opacity: 0.1;
@@ -547,23 +870,138 @@ const tastePillStyle = computed(() => {
   }
 }
 
-.web__pulse {
-  stroke-width: 2px;
-  vector-effect: non-scaling-stroke;
+/* ---- the opened dot ---- */
+.stage {
   pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pulse 1.6s ease-out infinite;
 }
-@keyframes pulse {
+
+/* a line draws itself from the opened artist to each linked artist, then a soft spark keeps running along it */
+.stage__line {
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  opacity: 0.85;
+  animation: line-draw 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) backwards;
+}
+@keyframes line-draw {
   from {
-    opacity: 0.9;
-    transform: scale(1);
+    stroke-dashoffset: 1;
   }
   to {
-    opacity: 0;
-    transform: scale(3.2);
+    stroke-dashoffset: 0;
   }
+}
+.stage__spark {
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-dasharray: 0.04 0.96;
+  opacity: 0;
+  animation: spark-run 2.2s linear infinite var(--wait), spark-show 0.3s ease forwards var(--wait);
+}
+@keyframes spark-run {
+  from {
+    stroke-dashoffset: 0.04;
+  }
+  to {
+    stroke-dashoffset: -0.96;
+  }
+}
+@keyframes spark-show {
+  to {
+    opacity: 0.8;
+  }
+}
+
+/* the linked artists glide out from the opened dot and settle */
+.bubble {
+  animation: bubble-fly 0.7s cubic-bezier(0.2, 1.15, 0.35, 1) backwards;
+}
+@keyframes bubble-fly {
+  from {
+    opacity: 0;
+    transform: translate(calc(var(--x) * -1px), calc(var(--y) * -1px)) scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+.bubble__body {
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: 0 0;
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+  filter: drop-shadow(0 4px 8px rgba(20, 35, 90, 0.3));
+}
+.bubble__body:hover {
+  transform: scale(1.1);
+}
+.bubble__name,
+.hero__name {
+  fill: var(--riffle-ink);
+  font-weight: 800;
+  text-anchor: middle;
+  stroke: #fff;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  pointer-events: none;
+}
+.bubble__name {
+  font-size: 12px;
+  stroke-width: 4px;
+}
+@media (max-width: 599.98px) {
+  .bubble__name {
+    font-size: 11px;
+  }
+  .hero__name {
+    font-size: 13px;
+  }
+}
+
+/* the opened artist */
+.hero {
+  transform-origin: 0 0;
+  filter: drop-shadow(0 8px 16px rgba(20, 35, 90, 0.3));
+  animation: hero-pop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+}
+@keyframes hero-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.hero__name {
+  font-size: 15px;
+  stroke-width: 5px;
+  animation: label-in 0.4s ease 0.5s backwards;
+}
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.hero__page {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hero__page circle {
+  fill: var(--riffle-navy);
+  stroke: #fff;
+  stroke-width: 2.5px;
+}
+.hero__page text {
+  fill: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.hero__page:hover circle {
+  fill: #e0245e;
 }
 
 /* your taste profile */
@@ -585,11 +1023,6 @@ const tastePillStyle = computed(() => {
   transform-box: fill-box;
   transform-origin: center;
   animation: spin 40s linear infinite;
-}
-.web__taste-core {
-  fill: #e0245e;
-  stroke: #fff;
-  stroke-width: 2px;
 }
 @keyframes spin {
   to {
@@ -649,8 +1082,16 @@ const tastePillStyle = computed(() => {
   transform-origin: left top;
 }
 .web__card.is-open {
+  overflow-y: auto;
   pointer-events: auto;
   cursor: default;
+  animation: card-slide 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) 0.25s backwards;
+}
+@keyframes card-slide {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
 }
 @keyframes card-pop {
   from {
@@ -668,15 +1109,28 @@ const tastePillStyle = computed(() => {
   gap: 0.65rem;
 }
 .card-avatar {
-  display: grid;
-  place-items: center;
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
+  border: 2.5px solid;
   border-radius: 50%;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 800;
+  object-fit: cover;
+  background: #15123a center / cover;
+}
+.card-thumb {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-right: 0.55rem;
+  border: 2px solid;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #15123a center / cover;
+}
+.card-demo {
+  margin: 0.7rem 0 0;
+  color: var(--riffle-faint);
+  font-size: 0.78rem;
 }
 .card-title {
   display: flex;
@@ -816,15 +1270,24 @@ const tastePillStyle = computed(() => {
   text-align: center;
 }
 .card-profile {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   margin-top: 0.65rem;
-  color: var(--riffle-blue);
-  font-size: 0.82rem;
-  font-weight: 700;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e0245e, #7b2a9e);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
   text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 .card-profile:hover {
-  text-decoration: underline;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(224, 36, 94, 0.35);
 }
 
 /* ---- recentre and zoom ---- */
@@ -883,6 +1346,9 @@ const tastePillStyle = computed(() => {
 }
 .zoom button:hover {
   background: #eef1fb;
+}
+.map-controls.is-hidden {
+  display: none;
 }
 @media (max-width: 991.98px) {
   .map-controls {
