@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watchEffect } from 'vue'
-import { getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
+import { getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
@@ -202,7 +202,7 @@ async function loadTodaysArtists() {
     showFinishedMessage.value = true;
     return;
   }
-  artists.value = await getArtistDetails(pending.map(row => row.artist_id));
+  artists.value = await addSongs(await getArtistDetails(pending.map(row => row.artist_id)));
 }
 
 onMounted(async () => {
