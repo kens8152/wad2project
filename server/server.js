@@ -46,7 +46,8 @@ server.get("/matchmaking", async (req, res) => {
     try {
         let data = await fs.readFile(ARTISTS_DATA, "utf-8");
         data = JSON.parse(data);
-        const ids = Object.keys(data);
+        // only artists with songs of their own can be matched, so a card never plays someone else's music
+        const ids = Object.keys(data).filter(id => (data[id].tracks || []).length > 0);
         let randomizedArtists = [];
 
         for (let i=0; i<returnCount && ids.length; i++) {

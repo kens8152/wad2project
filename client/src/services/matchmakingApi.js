@@ -88,6 +88,41 @@ export async function removeArtistAction(artistId) {
   if (error) throw error;
 }
 
+// Artists the user liked in matchmaking (stored as the "follow" action), newest first, each artist once
+export async function getLikedArtistIds() {
+  const { data, error } = await supabase
+    .from('matchmaking_actions')
+    .select('artist_id, created_at')
+    .eq('action', 'follow')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  const ids = [];
+  data.forEach(row => {
+    if (!ids.includes(row.artist_id)) ids.push(row.artist_id);
+  });
+  return ids;
+}
+
+// Takes an artist out of the liked list
+export async function removeLikedArtist(artistId) {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .delete()
+    .eq('artist_id', artistId)
+    .eq('action', 'follow');
+  if (error) throw error;
+}
+
+// Wipes all of the user's matchmaking data (liked, skipped and the batches), so matchmaking starts from zero
+export async function resetMatchmaking() {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .delete()
+    .gte('id', 0);
+  if (error) throw error;
+}
+
 // Saved artists, newest first
 export async function getSavedArtists() {
   const { data, error } = await supabase
