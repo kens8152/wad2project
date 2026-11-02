@@ -310,7 +310,7 @@ async function savePreferences() {
 
 
     <div class="row">
-      <div class="col-12 col-md-6 mb-3">
+      <div class="col-12 mb-3">
         <div class="connection-box spotify-box">
           <div>
             <h2>Connect Spotify</h2>
@@ -321,18 +321,6 @@ async function savePreferences() {
         </div>
       </div>
 
-      <div class="col-12 col-md-6 mb-3">
-        <div class="connection-box apple-box">
-          <div>
-            <h2>Connect Apple Music</h2>
-            <p>Bring your favourite music into Riffle.</p>
-          </div>
-
-          <button class="connect-button" type="button" disabled>
-            Coming soon
-          </button>
-        </div>
-      </div>
     </div>
 
     <form @submit.prevent="savePreferences">
@@ -560,10 +548,6 @@ async function savePreferences() {
 
 .spotify-box {
   background-color: #edfaf5;
-}
-
-.apple-box {
-  background-color: #fff0f7;
 }
 
 .connection-box h2 {

@@ -161,16 +161,26 @@ async function loadTaste() {
 const spot = computed(() => (userStore.isLoggedIn ? tasteSpot(userGenreIds.value) : null))
 const recommended = computed(() => recommendedNodes(userGenreIds.value, 6))
 
-// sample percentages for the top genres (there is no listening data yet)
-const SAMPLE_MATCH = [78, 67, 35]
-const tasteChips = computed(() =>
-  userGenreIds.value.slice(0, 3).map((genreId, index) => ({
-    id: genreId,
-    percent: SAMPLE_MATCH[index],
-    label: graph.genreById[genreId].label,
-    color: graph.genreById[genreId].color,
-  }))
-)
+// Genre breakdown of saved artists represented in the discovery graph.
+const tasteChips = computed(() => {
+  const savedArtists = graph.nodes.filter(node => node.real && following.value.includes(node.artistId))
+
+  if (savedArtists.length === 0) return []
+
+  return GENRES.map(genre => {
+    const count = savedArtists.filter(artist => artist.genre === genre.id).length
+
+    return {
+      id: genre.id,
+      percent: Math.round((count / savedArtists.length) * 100),
+      label: genre.label,
+      color: genre.color,
+      count
+    }
+  })
+    .filter(genre => genre.count > 0)
+    .sort((a, b) => b.count - a.count)
+})
 
 // ---- following: shared with Artists and artist profiles ----
 const { favourites: following, toggleFavourite } = useFavouriteArtists()
@@ -377,6 +387,7 @@ onBeforeUnmount(() => {
 
     <!-- bottom: your taste -->
     <div v-if="userStore.isLoggedIn && tasteChips.length" class="taste-bar panel-card">
+      <span class="small text-secondary">Saved artists by genre:</span>
       <span v-for="chip in tasteChips" :key="chip.id" class="taste-chip">
         <i class="dot" :style="{ background: chip.color }"></i>{{ chip.percent }}% {{ chip.label }}
       </span>
