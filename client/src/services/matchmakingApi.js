@@ -56,10 +56,11 @@ export async function addSongs(artists) {
 
 // A random batch of artists, with songs
 export async function getArtists() {
-  const { data, error } = await supabase.from('artists').select('id');
+  const { data, error } = await supabase.from('artists').select('id, tracks');
   if (error) throw error;
 
-  const ids = data.map(row => row.id);
+  // only artists that have songs to play
+  const ids = data.filter(row => (row.tracks || []).length > 0).map(row => row.id);
   const randomIds = [];
   while (randomIds.length < BATCH_SIZE && ids.length) {
     randomIds.push(ids.splice(Math.floor(Math.random() * ids.length), 1)[0]);
