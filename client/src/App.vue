@@ -35,6 +35,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+/* Only .app-main scrolls, never the whole page */
+html,
+body {
+  overflow: hidden;
+}
+
 #app {
   height: 100vh;
   display: flex;

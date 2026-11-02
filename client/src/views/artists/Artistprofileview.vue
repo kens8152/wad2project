@@ -1,8 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
+import { useUserStore } from '@/stores/user'
 import { toast } from '@/composables/useToast'
+import { getSavedArtists, addSavedArtist, removeSavedArtist } from '@/services/matchmakingApi'
 import ProfileEventCard from '../../components/artists/ProfileEventCard.vue'
 import { useArtistProfile } from '../../composables/artists/useArtistProfile.js'
 import { useFavouriteArtists } from '../../composables/artists/useFavouriteArtists'
@@ -51,6 +53,48 @@ function goBack() {
 
 function onFavourite() {
   toggleFavourite(artist.value)
+}
+
+// ----- save (a separate bookmark list, not the same as following) -----
+const userStore = useUserStore()
+const isSaved = ref(false)
+const savingArtist = ref(false)
+
+async function loadSaved() {
+  isSaved.value = false
+  if (!userStore.isLoggedIn) return
+
+  try {
+    const rows = await getSavedArtists()
+    isSaved.value = rows.some(row => row.artist_id === artistId.value)
+  } catch (error) {
+    console.error('Could not load saved artists', error)
+  }
+}
+watch(artistId, loadSaved, { immediate: true })
+
+async function onSave() {
+  if (!userStore.isLoggedIn) {
+    toast('Please log in to save artists.')
+    return
+  }
+  if (savingArtist.value) return
+
+  savingArtist.value = true
+  try {
+    if (isSaved.value) {
+      await removeSavedArtist(artistId.value)
+    } else {
+      await addSavedArtist(artistId.value)
+    }
+    isSaved.value = !isSaved.value
+    toast(isSaved.value ? 'Artist saved' : 'Artist removed from saved')
+  } catch (error) {
+    console.error('Could not update saved artist', error)
+    toast('Could not update this artist. Please try again.')
+  } finally {
+    savingArtist.value = false
+  }
 }
 
 async function onShare() {
@@ -156,7 +200,11 @@ const emptyMessage = computed(() => {
           <div class="hero__actions">
             <button type="button" class="glass-pill" :aria-pressed="isFavourite" @click="onFavourite">
               <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
-              {{ isFavourite ? 'Favourited' : 'Favourite' }}
+              {{ isFavourite ? 'Following' : 'Follow' }}
+            </button>
+            <button type="button" class="glass-pill" :aria-pressed="isSaved" :disabled="savingArtist" @click="onSave">
+              <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+              {{ isSaved ? 'Saved' : 'Save' }}
             </button>
             <button type="button" class="glass-pill" @click="onShare">
               <i class="bi bi-share"></i>
