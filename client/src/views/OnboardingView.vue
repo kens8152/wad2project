@@ -2,7 +2,9 @@
 
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { searchSongs } from '@/services/spotifyApi'
+
+import { searchSongs, fetchTopArtists } from '@/services/spotifyApi'
+import { getTopGenres } from '@/services/lastFM'
 
 import { useUserStore } from '@/stores/user.js'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
@@ -11,12 +13,13 @@ import { findApplePreview } from '@/services/applePreviewApi'
 
 import { supabase } from '@/services/supabase.js'
 
-import { loginWithSpotify } from '@/services/spotifyAuth'
+import { loginWithSpotify, refreshAccessToken } from '@/services/spotifyAuth'
 
 
 const userStore = useUserStore()
 
 const saving = ref(false)
+const connectingSpotify = ref(false)
 
 const hasSavedPreferences = ref(false)
 const songFeedback = ref('')
@@ -117,7 +120,10 @@ const errorMessage = ref('')
 const router = useRouter()
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
-const connectingSpotify = ref(false)
+
+const importingGenres = ref(false)
+const genreImportMessage = ref('')
+const genreImportError = ref('')
 
 // The song whose player is open (only one plays at a time). Search results use "result:<id>",
 // songs you have already added use "saved:<text>".
@@ -188,7 +194,7 @@ async function connectSpotify() {
 
 
 async function searchForSongs() {
-  if (songLoading.value || saving.value || connectingSpotify.value) return
+  if (!userStore.isLoggedIn || saving.value || importingGenres.value || connectingSpotify.value) return
 
   openSongId.value = ''
   songFeedback.value = ''
@@ -287,6 +293,79 @@ async function savePreferences() {
     saving.value = false
   }
 }
+
+// Only map tags that reasonably match Riffle's available categories.
+const genreAliases = {
+  'Indie Rock': ['indie rock', 'indie pop', 'alternative rock'],
+  'Pop Music': ['pop', 'dance pop', 'synthpop', 'synth pop', 'electropop'],
+  'Contemporary Mandopop': ['mandopop', 'mandarin pop', 'chinese pop', 'c pop', 'cpop'],
+  'Electronic': ['electronic', 'electronica', 'edm', 'house', 'techno', 'trance', 'ambient', 'dubstep', 'drum and bass'],
+  'Hip-hop': ['hip hop', 'hiphop', 'rap', 'trap'],
+  'Traditional Ethnic Music': ['traditional ethnic music', 'traditional chinese music', 'chinese traditional', 'chinese folk', 'malay traditional', 'indian classical']
+}
+
+function normaliseGenre(tag) {
+  return tag.toLowerCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+async function importSpotifyGenres() {
+  if (!userStore.isLoggedIn || importingGenres.value || saving.value || connectingSpotify.value) return
+
+  genreImportMessage.value = ''
+  genreImportError.value = ''
+
+  const accountId = userStore.user.id
+  importingGenres.value = true
+
+  try {
+    let token = localStorage.getItem('access_token')
+
+    if (!token) {
+      genreImportError.value = 'Connect Spotify first, then click Import Spotify genres.'
+      return
+    }
+
+    const expiresAt = Number(localStorage.getItem('token_expires_at') || 0)
+
+    if (Date.now() >= expiresAt - 10000) {
+      token = await refreshAccessToken()
+    }
+
+    const topArtists = await fetchTopArtists(token)
+
+    if (!topArtists.length) {
+      genreImportMessage.value = 'Spotify returned no top artists yet. You can select your genres manually.'
+      return
+    }
+
+    const tags = await getTopGenres(topArtists)
+
+    if (!userStore.isLoggedIn || userStore.user.id !== accountId) return
+
+    const normalisedTags = tags.map(normaliseGenre)
+    const matches = genres.filter(genre => genreAliases[genre].some(alias => normalisedTags.includes(normaliseGenre(alias))))
+
+    if (!matches.length) {
+      genreImportMessage.value = 'No matching genre suggestions were found. Your selections are unchanged; you can choose manually.'
+      return
+    }
+
+    selectedGenres.value = [...new Set([...selectedGenres.value, ...matches])]
+    genreImportMessage.value = 'Suggested genres: ' + matches.join(', ') + '. Review your selections below, then save.'
+  } catch (error) {
+    console.error('Could not import Spotify genres:', error)
+
+    const status = error.response?.status
+
+    if (status === 401 || status === 403) {
+      genreImportError.value = 'Spotify access was denied or expired. Reconnect Spotify, then try importing again.'
+    } else {
+      genreImportError.value = 'Genres could not be imported. Please try again or select them manually.'
+    }
+  } finally {
+    importingGenres.value = false
+  }
+}
 </script>
 
 
@@ -314,13 +393,18 @@ async function savePreferences() {
         <div class="connection-box spotify-box">
           <div>
             <h2>Connect Spotify</h2>
-            <p>Use your music preferences to build your profile.</p>
+            <p>Connect your account, then import suggested genres from your top artists.</p>
           </div>
 
-          <button class="connect-button" type="button" :disabled="connectingSpotify || saving" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
+            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="importSpotifyGenres">{{ importingGenres ? 'Importing genres…' : 'Import Spotify genres' }}</button>
+          </div>
         </div>
-      </div>
 
+        <p v-if="genreImportMessage" class="mt-2 small text-success" role="status">{{ genreImportMessage }}</p>
+        <p v-if="genreImportError" class="mt-2 error-message" role="alert">{{ genreImportError }}</p>
+      </div>
     </div>
 
     <form @submit.prevent="savePreferences">
@@ -499,7 +583,7 @@ async function savePreferences() {
 
 
     <div class="actions">
-      <button class="next-button" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Next →' }}</button>
+      <button class="next-button" type="submit" :disabled="saving || importingGenres || connectingSpotify">{{ saving ? 'Saving…' : 'Next →' }}</button>
     </div>
     </form>
   </main>
