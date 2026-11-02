@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
+import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Forumsort from '../../components/forum/forumsort.vue'
 import Postcard from '../../components/forum/postcard.vue'
+import WheelList from '../../components/forum/WheelList.vue'
 
 const props = defineProps({
   posts: { type: Array, default: () => [] },
@@ -44,18 +46,14 @@ const results = computed(() => {
 <template>
   <div class="vstack gap-3">
     <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
-      <Forumsearch @search="searchTerm = $event" />
+      <ForumMenuButton />
+      <Forumsearch v-model="searchTerm" />
       <Forumsort v-model="sort" />
     </div>
 
-    <p v-if="searchTerm" class="text-body-secondary mb-0 mx-3">
-      Results for "{{ searchTerm }}"
-      <button type="button" class="btn btn-link btn-sm p-0 ms-2" @click="searchTerm = ''">
-        Clear
-      </button>
-    </p>
-
-    <Postcard v-for="r in results" :key="r.id" :post="r" />
+    <WheelList :items="results" v-slot="{ item }">
+      <Postcard :post="item" />
+    </WheelList>
 
     <p v-if="!results.length" class="text-body-secondary mx-3">
       {{ searchTerm ? 'No group posts match your search.' : 'No look-for-group posts yet.' }}

@@ -169,10 +169,10 @@ const formatDate = (iso) =>
           <VoteButtons :up="upvotes" :down="downvotes" :current="userVote" @vote="vote" />
           <button
             type="button"
-            class="btn btn-sm btn-link p-0 text-decoration-none text-body-secondary"
+            class="forum-icon-btn btn btn-sm btn-link p-0 text-decoration-none"
             @click="toggleReply"
           >
-            <i class="bi bi-reply me-1"></i>Reply
+            <i class="bi bi-reply forum-icon"></i>Reply
           </button>
         </div>
 

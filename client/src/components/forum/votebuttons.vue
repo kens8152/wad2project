@@ -13,9 +13,9 @@ const emit = defineEmits(['vote'])
 const ARROW = 'M12 3.4 L20.6 12.2 H15.4 V20.6 H8.6 V12.2 H3.4 Z'
 
 const upArrow = ref(null)
-const downArrow = ref(null)
-const upFx = ref(null) 
+const upFx = ref(null)
 const upGlow = ref(null)
+const downFx = ref(null)
 
 
 const reduceMotion = () =>
@@ -93,7 +93,7 @@ function celebrate() {
       },
     )
 
-    if (animation) animation.onfinish = () => note.remove()
+    if (animation) animation.onfinish = animation.oncancel = () => note.remove()
     else note.remove()
   }
 
@@ -102,18 +102,66 @@ function celebrate() {
   for (let i = 0; i < notes.length - MAX_NOTES_ON_SCREEN; i++) notes[i].remove()
 }
 
+
+const SOUR_NOTES = ['♭', '♭', '♪', '♩']
+const SOUR_COLORS = ['#ec1c24', '#ec1c24', '#d63a3a', '#b42318', '#6b7694', '#5b6478']
+const SOUR_COUNT = 12
+const SINK_MS = 1800
+
 function sink() {
   if (reduceMotion()) return
-  play(
-    downArrow.value,
-    [
-      { transform: 'translateY(0) scale(1)' },
-      { transform: 'translateY(5px) scale(1.15)', offset: 0.35 },
-      { transform: 'translateY(-1px) scale(0.95)', offset: 0.65 },
-      { transform: 'translateY(0) scale(1)' },
-    ],
-    { duration: 380, easing: 'ease-out' },
-  )
+
+  const fx = downFx.value
+  if (!fx) return
+
+  
+  const layer = fx.closest('.wheel-item')
+  if (layer) {
+    layer.style.zIndex = '6'
+    clearTimeout(layer._sinkTimer)
+    layer._sinkTimer = setTimeout(() => (layer.style.zIndex = ''), SINK_MS)
+  }
+
+  for (let i = 0; i < SOUR_COUNT; i++) {
+    const note = document.createElement('span')
+    const symbol = pick(SOUR_NOTES)
+    note.className = 'note'
+    note.textContent = symbol
+    note.style.color = pick(SOUR_COLORS)
+    note.style.fontSize = `${rand(18, 32)}px`
+    fx.appendChild(note)
+
+    const dx = rand(-70, 90)
+    const hop = rand(10, 26)
+    const fall = rand(110, 190)
+    
+    const startTurn = symbol === '♭' ? rand(-15, 15) : rand(160, 200)
+    const tumble = rand(-90, 90)
+    const at = (x, y, scale, rot) =>
+      `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale}) rotate(${rot}deg)`
+
+    const animation = play(
+      note,
+      [
+        { transform: at(0, 0, 0.4, startTurn), opacity: 0 },
+        { transform: at(dx * 0.2, -hop, 1, startTurn + tumble * 0.15), opacity: 0.95, offset: 0.2 },
+        { transform: at(dx * 0.6, fall * 0.4, 0.95, startTurn + tumble * 0.6), opacity: 0.8, offset: 0.6 },
+        { transform: at(dx, fall, 0.85, startTurn + tumble), opacity: 0 },
+      ],
+      {
+        duration: rand(1200, 1600),
+        delay: i * 30 + rand(0, 80),
+        easing: 'cubic-bezier(0.5, 0, 0.85, 0.5)',
+        fill: 'both',
+      },
+    )
+
+    if (animation) animation.onfinish = animation.oncancel = () => note.remove()
+    else note.remove()
+  }
+
+  const notes = fx.querySelectorAll('.note')
+  for (let i = 0; i < notes.length - MAX_NOTES_ON_SCREEN; i++) notes[i].remove()
 }
 
 
@@ -156,12 +204,13 @@ function onDown() {
     aria-label="Downvote"
     @click="onDown"
   >
-    <span ref="downArrow" class="arrow-wrap">
+    <span class="arrow-wrap">
       <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path :d="ARROW" /></svg>
     </span>
     <span class="count">
       <Transition name="roll-down" mode="out-in"><span :key="down">{{ down }}</span></Transition>
     </span>
+    <span ref="downFx" class="fx" aria-hidden="true"></span>
   </button>
 </template>
 

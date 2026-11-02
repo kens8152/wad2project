@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watchEffect } from 'vue'
-import { getArtists, getArtistDetails, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
+import { getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
@@ -287,12 +287,12 @@ async function loadTodaysArtists() {
   // Remember what was already liked or skipped today, so the last screen is right after a refresh
   const likedIds = rows.filter(row => row.action === 'follow').map(row => row.artist_id);
   const skippedIds = rows.filter(row => row.action === 'skip').map(row => row.artist_id);
-  likedThisBatch.value = await getArtistDetails(likedIds, []);
-  skippedThisBatch.value = await getArtistDetails(skippedIds, []);
+  likedThisBatch.value = await addSongs(await getArtistDetails(likedIds));
+  skippedThisBatch.value = await addSongs(await getArtistDetails(skippedIds));
 
   // Batch exists: show the ones without an action (only artists that have songs to play)
   const pending = rows.filter(row => row.action === null);
-  const pendingArtists = pending.length ? await getArtistDetails(pending.map(row => row.artist_id)) : [];
+  const pendingArtists = pending.length ? await addSongs(await getArtistDetails(pending.map(row => row.artist_id))) : [];
   artists.value = pendingArtists.filter(artist => artist.tracks.length);
 
   if (artists.value.length === 0) {
@@ -318,7 +318,8 @@ async function startNewBatch() {
       console.error('Could not save the new batch', err);
     }
 
-    artists.value = newArtists;
+    // only artists with a song to play get a card
+    artists.value = newArtists.filter(artist => artist.tracks.length);
     current.value = 0;
     openSong.value = 0;
     hasSwipedCards.value = false;

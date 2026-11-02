@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import Postcard from '../../components/forum/postcard.vue'
 import TagDrums from '../../components/forum/TagDrums.vue'
+import WheelList from '../../components/forum/WheelList.vue'
+import { topTags as trendingTags } from '../../composables/forum/trendingTags.js'
 
 const props = defineProps({
   posts: { type: Array, default: () => [] },
@@ -12,23 +14,7 @@ const selectedTag = ref(null)
 
 const byUpvotes = (a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0)
 
-const topTags = computed(() => {
-  const map = new Map()
-  for (const post of props.posts) {
-    const seen = new Set()
-    for (const raw of post.tags ?? []) {
-      const key = raw.toLowerCase()
-      if (seen.has(key)) continue
-      seen.add(key)
-      const entry = map.get(key) ?? { key, name: raw, count: 0 }
-      entry.count++
-      map.set(key, entry)
-    }
-  }
-  return [...map.values()]
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 5)
-})
+const topTags = computed(() => trendingTags(props.posts))
 
 const topPosts = computed(() => [...props.posts].sort(byUpvotes).slice(0, 10))
 
@@ -60,7 +46,9 @@ const shownPosts = computed(() => {
       {{ selectedTag ? `Posts tagged #${selectedTag}` : 'Trending posts' }}
     </h5>
 
-    <Postcard v-for="r in shownPosts" :key="r.id" :post="r" />
+    <WheelList :items="shownPosts" v-slot="{ item }">
+      <Postcard :post="item" />
+    </WheelList>
 
     <p v-if="!shownPosts.length" class="text-body-secondary mx-3 mb-0">Nothing to show yet.</p>
   </div>

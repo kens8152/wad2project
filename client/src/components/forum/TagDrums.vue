@@ -55,7 +55,7 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
 <template>
   <section class="drums px-3">
     <div class="d-flex align-items-center justify-content-between mb-1">
-      <h2 class="h6 text-body-secondary mb-0">{{ title }}</h2>
+      <h2 class="drums__title h5 mb-0">{{ title }}</h2>
       <button
         type="button"
         class="btn btn-sm btn-link text-body-secondary p-0"
@@ -107,6 +107,10 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
 </template>
 
 <style scoped>
+.drums__title {
+  color: var(--riffle-ink);
+  font-weight: 800;
+}
 .podium {
   --u: clamp(0.4px, 0.085vw, 0.85px);
   --k: 1;

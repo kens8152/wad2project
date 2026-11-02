@@ -14,7 +14,8 @@
   --riffle-blue: #2563eb;
   --riffle-coral: #f0483e;
   --riffle-coral-soft: #ff6b5e;
-  --riffle-bg: #f6f7fc;
+  --riffle-bg: #fbfaf8; /* the warm off-white of the Discover page, used behind every page */
+  --riffle-dots: #e6e3ee; /* the colour of the faint dot grid on top of it */
   --riffle-surface: #ffffff;
   --riffle-border: #e6e9f4;
   --riffle-radius: 16px;

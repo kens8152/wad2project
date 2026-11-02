@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { supabase } from '@/services/supabase'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
@@ -18,8 +18,22 @@ const graph = getGraph()
 const pickedId = ref(null)
 
 // panels float over the map on a wide screen and become drawers on a small one
+// (the width is a ref, so everything that depends on it follows when the window is resized or the phone is turned)
+const screenWidth = ref(window.innerWidth)
 function isWide() {
-  return window.innerWidth >= 992
+  return screenWidth.value >= 992
+}
+
+const resizing = ref(false) // true while the window is being resized: the panels jump to their new place instead of sliding
+let resizeDone = null
+
+function onResize() {
+  resizing.value = true
+  clearTimeout(resizeDone)
+  resizeDone = setTimeout(() => (resizing.value = false), 250)
+  screenWidth.value = window.innerWidth
+  // a side panel only fits on a wide screen
+  if (!isWide()) rightPanel.value = ''
 }
 
 // ---- filters ----
@@ -172,6 +186,12 @@ async function toggleFollow(node) {
   await toggleFavourite({ id: node.artistId, name: node.name })
 }
 
+// opening a dot: on a screen too narrow for the side panel, the card and the artists around the dot, the side panel makes way
+function onPick(id) {
+  pickedId.value = id
+  if (id !== null && screenWidth.value < 1450) rightPanel.value = ''
+}
+
 function showRecommended(node) {
   pickedId.value = node.id
   if (!isWide()) rightPanel.value = ''
@@ -184,11 +204,17 @@ const insetBottom = computed(() => (userStore.isLoggedIn && tasteChips.value.len
 
 onMounted(() => {
   loadTaste()
+  window.addEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  clearTimeout(resizeDone)
 })
 </script>
 
 <template>
-  <div class="discover">
+  <div class="discover" :class="{ 'has-card': pickedId !== null, 'is-resizing': resizing }">
     <WebOfDots
       :dimmed="dimmed"
       :following="following"
@@ -198,7 +224,7 @@ onMounted(() => {
       :inset-right="insetRight"
       :inset-bottom="insetBottom"
       :picked-id="pickedId"
-      @pick="pickedId = $event"
+      @pick="onPick"
       @follow="toggleFollow"
       @taste-click="openPanel('recommended')"
     />
@@ -957,6 +983,39 @@ onMounted(() => {
   }
   .taste-bar {
     bottom: 70px;
+  }
+}
+/* no sliding or fading of the panels while the window is being resized */
+.is-resizing .side-panel,
+.is-resizing .top-right,
+.is-resizing .top-right *,
+.is-resizing .legend-bar,
+.is-resizing .taste-bar,
+.is-resizing .drawer-backdrop {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* on tablets and phones the legend shrinks to the count, so it never sits under the taste profile bar */
+@media (max-width: 991.98px) {
+  .legend-bar__item {
+    display: none;
+  }
+  .legend-bar {
+    bottom: 16px;
+    left: 12px;
+  }
+  .legend-bar__count {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}
+/* below 992px (no side panel) the opened artist's card can sit along the bottom, so what lives there steps aside */
+@media (max-width: 991.98px) {
+  .has-card .legend-bar,
+  .has-card .taste-bar {
+    display: none;
   }
 }
 @keyframes fade {

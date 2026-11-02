@@ -1,50 +1,71 @@
-import axios from 'axios'
 import { supabase } from '@/services/supabase'
-import { useEventsStore } from '@/stores/events'
 
-// Artist data comes from the Express server (server/server.js -> server/stores/artists.json).
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BATCH_SIZE = 7;
 
-// Profiles (bio, hometown, formed, socials, tracks) for specific artists
-async function getArtistProfiles(artistIds) {
+// Full artist details for a list of ids, in the same order as the ids
+export async function getArtistDetails(artistIds) {
   if (!artistIds.length) return [];
-  const res = await axios.get(`${API_BASE_URL}/matchmaking/artists`, { params: { ids: artistIds.join(',') } });
-  return res.data;
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select('id, name, tag, bio, hometown, formed, socials, image_url, tracks, genre:genres(name, color)')
+    .in('id', artistIds);
+  if (error) throw error;
+
+  return artistIds
+    .map(id => data.find(row => row.id === id))
+    .filter(Boolean)
+    .map(row => ({
+      id: row.id,
+      name: row.name,
+      genre: row.genre?.name || '',
+      genreColor: row.genre?.color || '#6c757d',
+      tag: row.tag || '',
+      image: row.image_url || '/images/Artists/' + row.id + '.svg',
+      bio: row.bio || '',
+      hometown: row.hometown || '',
+      formed: row.formed || '',
+      socials: row.socials || {},
+      tracks: row.tracks || [],   // [{ id: Apple track id, title }]
+    }));
 }
 
-// Full artist details for a list of ids:
-// name, genre and tag from the events data, everything else from the server's artists.json
-// (pass profiles in if you already have them, to skip the extra request)
-export async function getArtistDetails(artistIds, profiles = null) {
-  const eventsStore = useEventsStore();
-  await eventsStore.fetchEvents();
-  if (!profiles) profiles = await getArtistProfiles(artistIds);
+// Apple Music 30s previews for each artist's tracks
+export async function addSongs(artists) {
+  const trackIds = artists.flatMap(artist => artist.tracks.map(track => track.id));
+  if (!trackIds.length) return artists;
 
-  return artistIds.map(id => {
-    const base = eventsStore.artists.find(artist => artist.id === id) || {};
-    const genre = eventsStore.genres.find(g => g.id === base.genreId) || {};
-    const profile = profiles.find(p => p.id === id) || {};
+  let songs = [];
+  try {
+    const res = await fetch(`https://itunes.apple.com/lookup?id=${trackIds.join(',')}&country=sg`);
+    songs = (await res.json()).results;
+  } catch (err) {
+    console.error('Could not load Apple previews', err);
+  }
 
-    return {
-      id,
-      name: base.name || id,
-      genre: genre.name || '',
-      genreColor: genre.color || '#6c757d',
-      tag: base.tag || '',
-      image: '/images/Artists/' + id + '.svg',
-      bio: profile.bio || '',
-      hometown: profile.hometown || '',
-      formed: profile.formed || '',
-      socials: profile.socials || {},
-      tracks: profile.tracks || [],   // [{ id: Apple track id, title, preview, url, artwork }]
-    };
-  });
+  return artists.map(artist => ({
+    ...artist,
+    tracks: artist.tracks
+      .map(track => {
+        const song = songs.find(s => s.trackId === track.id) || {};
+        return { ...track, preview: song.previewUrl, url: song.trackViewUrl, artwork: song.artworkUrl100 };
+      })
+      .filter(track => track.preview),
+  }));
 }
 
-// A random batch of artists
+// A random batch of artists, with songs
 export async function getArtists() {
-  const res = await axios.get(`${API_BASE_URL}/matchmaking`);
-  return getArtistDetails(res.data.map(artist => artist.id), res.data);
+  const { data, error } = await supabase.from('artists').select('id');
+  if (error) throw error;
+
+  const ids = data.map(row => row.id);
+  const randomIds = [];
+  while (randomIds.length < BATCH_SIZE && ids.length) {
+    randomIds.push(ids.splice(Math.floor(Math.random() * ids.length), 1)[0]);
+  }
+
+  return addSongs(await getArtistDetails(randomIds));
 }
 
 // Today's matchmaking rows for the logged-in user (action is null until they Skip / Follow)

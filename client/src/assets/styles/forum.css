@@ -1,0 +1,80 @@
+
+.forum-icon-btn {
+  --bs-btn-color: var(--bs-secondary-color);
+  --bs-btn-hover-color: var(--bs-secondary-color);
+  --bs-btn-active-color: var(--bs-secondary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.forum-icon-btn .forum-icon {
+  display: inline-block;
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.forum-icon-btn:hover .forum-icon {
+  transform: scale(1.12);
+}
+.forum-icon-btn:active .forum-icon {
+  transform: scale(0.9);
+}
+
+
+
+.forum-tag {
+  --tag: var(--riffle-blue);
+  background: color-mix(in srgb, var(--tag) 18%, var(--riffle-surface));
+  border: 1px solid color-mix(in srgb, var(--tag) 45%, transparent);
+  color: color-mix(in srgb, var(--tag) 50%, var(--riffle-ink)); /* darkened so light colours like amber stay readable */
+}
+
+
+
+
+a.forum-tag {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+a.forum-tag:hover,
+a.forum-tag:focus-visible {
+  background: color-mix(in srgb, var(--tag) 30%, var(--riffle-surface));
+  border-color: var(--tag);
+  color: color-mix(in srgb, var(--tag) 50%, var(--riffle-ink));
+}
+
+
+
+
+
+
+.forum-fire {
+  display: inline-block;
+  margin-left: 0.2em;
+  color: #ff6a1a;
+  transform-origin: 50% 90%;
+  animation: forum-flicker 1.6s ease-in-out infinite;
+}
+
+@keyframes forum-flicker {
+  0%,
+  100% {
+    transform: rotate(-4deg) scale(1, 1);
+    color: #ff6a1a;
+    filter: drop-shadow(0 0 1px rgba(255, 106, 26, 0.5));
+  }
+  25% {
+    transform: rotate(3deg) scale(0.95, 1.08);
+    color: #ff9f1c;
+    filter: drop-shadow(0 0 3px rgba(255, 159, 28, 0.75));
+  }
+  50% {
+    transform: rotate(-2deg) scale(1.05, 0.96);
+    color: #ff4d2e;
+    filter: drop-shadow(0 0 2px rgba(255, 77, 46, 0.6));
+  }
+  75% {
+    transform: rotate(4deg) scale(0.97, 1.1);
+    color: #ffb020;
+    filter: drop-shadow(0 0 4px rgba(255, 176, 32, 0.8));
+  }
+}
