@@ -1,15 +1,22 @@
 <script setup>
 import { ref, computed, watch, provide, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchPost, fetchReplies, createReply, updateReply, deleteReply, updatePost, deletePost, fetchTags } from '@/services/forum/forumapi.js'
+import { fetchPost, fetchReplies, createReply, updateReply, deleteReply, updatePost, deletePost, fetchTags, uploadPostImage, deletePostImages } from '@/services/forum/forumapi.js'
 import { catalog, loadCatalog, getArtist, getEvent } from '@/services/forum/forumlinks.js'
 import { useUserStore } from '@/stores/user'
 import { useSavedPosts } from '../../composables/forum/savedpost.js'
 import { useVote } from '../../composables/forum/usevote.js'
+import { tagStyle } from '../../composables/forum/tagColor.js'
+import { useTrendingTags } from '../../composables/forum/trendingTags.js'
 import VoteButtons from '../../components/forum/votebuttons.vue'
 import ReplyItem from '../../components/forum/replyitem.vue'
+import SaveButton from '../../components/forum/savebutton.vue'
 import OptionsMenu from '../../components/forum/optionsmenu.vue'
+import PostImages from '../../components/forum/postimages.vue'
 import PostLinksField from '../../components/forum/postlinkfields.vue'
+import PhotoPicker from '../../components/forum/photopicker.vue'
+import SongPicker from '../../components/forum/songpicker.vue'
+import SongEmbed from '../../components/forum/songembed.vue'
 import PostLinkedPanel from '../../components/forum/postlinkedpanel.vue'
 
 const route = useRoute()
@@ -33,6 +40,12 @@ function syncReplies() {
 const { isSaved, toggleSave } = useSavedPosts()
 const saved = computed(() => (post.value ? isSaved(post.value.id) : false))
 const { userVote, upvotes, downvotes, vote } = useVote(post)
+const isTrending = useTrendingTags()
+
+function goBack() {
+  if (router.options.history.state.back) router.back()
+  else router.push({ name: 'forum' })
+}
 
 const currentUserId = computed(() => userStore.user?.id ?? null)
 const isPostOwner = computed(
@@ -86,7 +99,7 @@ async function load(id) {
 }
 
 const editingPost = ref(false)
-const postDraft = ref({ title: '', content: '', tags: [], links: { events: [], artists: [] } })
+const postDraft = ref({ title: '', content: '', tags: [], links: { events: [], artists: [] }, photos: [], song: null })
 const postSaving = ref(false)
 const postActionError = ref('')
 
@@ -130,6 +143,8 @@ function startEditPost() {
       events: [...(post.value.event_ids ?? [])],
       artists: [...(post.value.artist_ids ?? [])],
     },
+    photos: (post.value.images ?? []).map((url) => ({ url })),
+    song: post.value.song ?? null,
   }
   postActionError.value = ''
   editingPost.value = true
@@ -151,20 +166,27 @@ async function savePostEdit() {
   postActionError.value = ''
   try {
     const tags = postDraft.value.tags
+    const images = await Promise.all(
+      postDraft.value.photos.map((p) => (p.file ? uploadPostImage(p.file) : p.url)),
+    )
+    const removedImages = (post.value.images ?? []).filter((url) => !images.includes(url))
     const changes = {
       title,
       content,
       tags,
       event_ids: postDraft.value.links.events,
       artist_ids: postDraft.value.links.artists,
+      ...(images.length || post.value.images?.length ? { images } : {}),
+      ...(postDraft.value.song || post.value.song ? { song: postDraft.value.song } : {}),
     }
     await updatePost(post.value.id, changes)
+    deletePostImages(removedImages)
     post.value = { ...post.value, ...changes }
     forumPosts?.patch(post.value.id, changes)
     editingPost.value = false
   } catch (err) {
     console.error('Post update failed:', err.message)
-    postActionError.value = 'Could not save your changes. Please try again.'
+    postActionError.value = `Could not save your changes: ${err.message}`
   } finally {
     postSaving.value = false
   }
@@ -281,8 +303,15 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 
 <template>
   <div class="py-3 mx-3">
-    <RouterLink :to="{ name: 'forum' }" class="btn btn-sm btn-link text-decoration-none ps-0 mb-2">
-      <i class="bi bi-arrow-left me-1"></i>Back to forum
+    <RouterLink
+      v-if="loading || errorMessage"
+      :to="{ name: 'forum' }"
+      @click.prevent="goBack"
+      class="back-btn btn btn-sm btn-link p-0 mb-2"
+      aria-label="Back to forum"
+      title="Back to forum"
+    >
+      <i class="bi bi-arrow-left back-arrow"></i>
     </RouterLink>
 
     <div v-if="loading" class="text-center text-body-secondary py-5">
@@ -292,30 +321,32 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
     <div v-else-if="errorMessage" class="alert alert-warning">{{ errorMessage }}</div>
 
     <div v-else class="row g-4">
-      <div :class="hasLinks ? 'col-lg-8' : 'col-12'" style="min-width: 0">
+      <div :class="hasLinks && !editingPost ? 'col-lg-8' : 'col-12'" style="min-width: 0">
         <article>
           <div class="d-flex justify-content-between align-items-start mb-1">
             <p class="small text-body-secondary mb-0 d-flex align-items-center">
+              <RouterLink
+                :to="{ name: 'forum' }"
+                @click.prevent="goBack"
+                class="back-btn btn btn-sm btn-link p-0"
+                aria-label="Back to forum"
+                title="Back to forum"
+              >
+                <i class="bi bi-arrow-left back-arrow"></i>
+              </RouterLink>
               <span class="icon-slot"><i class="bi bi-person-circle"></i></span>
               {{ post.username }}
             </p>
 
             <div class="d-flex align-items-center gap-2">
-              <button
-                type="button"
-                class="btn btn-sm btn-link p-0"
-                :class="saved ? 'text-primary' : 'text-body-secondary'"
-                @click="toggleSave(post.id)"
-              >
-                <i class="bi fs-5" :class="saved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
-              </button>
+              <SaveButton :saved="saved" @toggle="toggleSave(post.id)" />
 
               <OptionsMenu v-if="isPostOwner && !editingPost" @edit="startEditPost" @delete="removePost" />
             </div>
           </div>
 
-          <div class="indented">
-            <form v-if="editingPost" class="mb-3" @submit.prevent="savePostEdit">
+          <div class="indented with-back">
+            <form v-if="editingPost" class="edit-form mb-3" @submit.prevent="savePostEdit">
               <input
                 v-model="postDraft.title"
                 type="text"
@@ -333,21 +364,29 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
                 @keydown.esc="cancelEditPost"
               ></textarea>
 
+              <PhotoPicker v-model="postDraft.photos" class="mt-3" />
+
+              <SongPicker v-model="postDraft.song" class="mt-3" />
+
               <div class="mt-2">
                 <p class="small text-body-secondary mb-1">Tags</p>
-                <div class="d-flex flex-wrap gap-1">
-                  <button
-                    v-for="tag in tagOptions"
+                <div v-if="postDraft.tags.length" class="d-flex flex-wrap gap-2">
+                  <span
+                    v-for="tag in postDraft.tags"
                     :key="tag"
-                    type="button"
-                    class="badge rounded-pill border tag-chip"
-                    :class="postDraft.tags.includes(tag) ? 'text-bg-primary' : 'text-bg-light'"
-                    :disabled="postSaving"
-                    @click="toggleTag(tag)"
+                    class="badge rounded-pill forum-tag d-inline-flex align-items-center fw-normal px-3 py-2"
+                    :style="tagStyle(tag)"
                   >
                     #{{ tag }}
-                  </button>
-                  <span v-if="!tagOptions.length" class="small text-body-secondary">No tags available.</span>
+                    <button
+                      type="button"
+                      class="btn-close ms-2"
+                      style="font-size: 0.55rem"
+                      :aria-label="`Remove #${tag}`"
+                      :disabled="postSaving"
+                      @click="toggleTag(tag)"
+                    ></button>
+                  </span>
                 </div>
 
                 <div class="input-group input-group-sm mt-2">
@@ -357,7 +396,8 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
                     type="text"
                     class="form-control"
                     maxlength="30"
-                    placeholder="Add your own tag"
+                    list="edit-post-tag-list"
+                    placeholder="Type a tag, then press Enter"
                     :disabled="postSaving"
                     @keydown.enter.prevent="addCustomTag"
                   />
@@ -370,6 +410,9 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
                     Add
                   </button>
                 </div>
+                <datalist id="edit-post-tag-list">
+                  <option v-for="tag in tagOptions" :key="tag" :value="tag"></option>
+                </datalist>
 
                 <p v-if="!postDraft.tags.length && !newTag.trim()" class="text-danger small mt-1 mb-0">
                   Select at least one tag.
@@ -397,26 +440,41 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
             <template v-else>
               <h1 class="h3">{{ post.title }}</h1>
               <p v-if="post.content" style="white-space: pre-wrap">{{ post.content }}</p>
+
+              <PostImages :images="post.images ?? []" linked class="mb-3" />
             </template>
 
             <p v-if="postActionError" class="text-danger small">{{ postActionError }}</p>
 
-            <div v-if="!editingPost && post.tags?.length" class="d-flex flex-wrap gap-1 mb-3">
-              <span v-for="tag in post.tags" :key="tag" class="badge rounded-pill text-bg-light border">
-                <i class="bi bi-music-note-beamed"></i> {{ tag }}
-              </span>
-            </div>
+            <div class="d-flex flex-wrap align-items-start column-gap-3 row-gap-2">
+              <div class="flex-grow-1" style="min-width: 0">
+                <div v-if="!editingPost && post.tags?.length" class="d-flex flex-wrap gap-1 mb-3">
+                  <RouterLink
+                    v-for="tag in post.tags"
+                    :key="tag"
+                    :to="{ name: 'forum-tags', query: { tag } }"
+                    class="badge rounded-pill forum-tag text-decoration-none"
+                    :style="tagStyle(tag)"
+                    :title="`See all #${tag} posts`"
+                  >
+                    <i class="bi bi-music-note-beamed"></i> {{ tag }}
+                    <i v-if="isTrending(tag)" class="bi bi-fire forum-fire" title="Trending tag"></i>
+                  </RouterLink>
+                </div>
 
-            <div class="d-flex align-items-center gap-3 small">
-              <VoteButtons :up="upvotes" :down="downvotes" :current="userVote" @vote="vote" />
-              <button
-                type="button"
-                class="btn btn-sm btn-link p-0 text-decoration-none text-body-secondary"
-                aria-label="Jump to replies"
-                @click="scrollToReplies"
-              >
-                <i class="bi bi-chat me-1"></i>{{ replies.length }}
-              </button>
+                <div class="d-flex align-items-center gap-3 small">
+                  <VoteButtons :up="upvotes" :down="downvotes" :current="userVote" @vote="vote" />
+                  <button
+                    type="button"
+                    class="forum-icon-btn btn btn-sm btn-link p-0 text-decoration-none"
+                    aria-label="Jump to replies"
+                    @click="scrollToReplies"
+                  >
+                    <i class="bi bi-chat forum-icon"></i>{{ replies.length }}
+                  </button>
+                </div>
+              </div>
+              <SongEmbed v-if="post.song?.id && !editingPost" :song="post.song" class="ms-auto" />
             </div>
           </div>
         </article>
@@ -463,7 +521,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
         </section>
       </div>
 
-      <aside v-if="hasLinks" class="col-lg-4" style="min-width: 0">
+      <aside v-if="hasLinks && !editingPost" class="col-lg-4" style="min-width: 0">
         <div class="linked-sticky">
           <PostLinkedPanel v-if="catalog.loaded" :artists="linkedArtists" :events="linkedEvents" />
           <p v-else-if="catalog.error" class="text-body-secondary small mb-0">{{ catalog.error }}</p>
@@ -477,6 +535,39 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 </template>
 
 <style scoped>
+.back-btn {
+  --bs-btn-color: var(--bs-secondary-color);
+  --bs-btn-hover-color: var(--bs-secondary-color);
+  --bs-btn-active-color: var(--bs-secondary-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 50%;
+  background: var(--riffle-bg);
+}
+.back-btn:hover,
+.back-btn:active {
+  border-color: var(--riffle-border);
+  background: var(--riffle-bg);
+}
+.back-arrow {
+  display: inline-block;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.back-btn:hover .back-arrow {
+  transform: scale(1.12);
+}
+.back-btn:active .back-arrow {
+  transform: scale(0.9);
+}
+
 .icon-slot {
   display: inline-block;
   width: 1.5rem;
@@ -485,10 +576,12 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 .indented {
   padding-left: 1.5rem;
 }
+.indented.with-back {
+  padding-left: 4rem;
+}
 
-.tag-chip {
-  cursor: pointer;
-  font-weight: normal;
+.edit-form {
+  --bs-border-color: var(--riffle-faint);
 }
 
 .reply-box {

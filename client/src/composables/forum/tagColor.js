@@ -1,11 +1,13 @@
+
 const COLORS = [
-  '--bs-primary',
-  '--bs-success',
-  '--bs-danger',
-  '--bs-purple',
-  '--bs-pink',
-  '--bs-teal',
-  '--bs-indigo',
+  'var(--genre-pop)',
+  'var(--genre-mandopop)',
+  'var(--genre-electronic)',
+  'var(--genre-hip-hop)',
+  'var(--genre-traditional)',
+  '#7c4dff',
+  '#2bbf2b',
+  '#22c1e8',
 ]
 
 function hashOf(key) {
@@ -15,4 +17,7 @@ function hashOf(key) {
 }
 
 
-export const tagColor = (key) => `var(${COLORS[hashOf(key) % COLORS.length]})`
+export const tagColor = (key) => COLORS[hashOf(String(key).toLowerCase()) % COLORS.length]
+
+
+export const tagStyle = (key) => ({ '--tag': tagColor(key) })

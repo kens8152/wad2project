@@ -53,10 +53,10 @@ const routes = [
   },
   {
     path: '/forum',
-    name: 'forum',
     component: () => import('@/views/forum/Forum.vue'),
     meta: { title: 'Forum', section: 'forum', owner: 'Justin' },
     children: [
+    { path: '', name: 'forum', component: () => import('@/views/forum/Forumhome.vue') },
     { path: 'trend', name: 'forum-trend', component: () => import('@/views/forum/Forumtrend.vue') },
     { path: 'tags', name: 'forum-tags', component: () => import('@/views/forum/Forumtag.vue') },
     { path: 'lfg', name: 'forum-lfg', component: () => import('@/views/forum/Forumlfg.vue') },

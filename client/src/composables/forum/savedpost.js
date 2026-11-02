@@ -1,9 +1,10 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { fetchSavedPostIds, savePost, unsavePost } from '../../services/forum/forumapi.js'
 
 
 const savedIds = ref(new Set())
+let loadedFor = null
 
 export function useSavedPosts() {
   const userStore = useUserStore()
@@ -11,25 +12,40 @@ export function useSavedPosts() {
   const isSaved = (postId) => savedIds.value.has(postId)
 
   async function loadSaved() {
+    const userId = userStore.user?.id
+    loadedFor = userId
+    if (!userStore.isLoggedIn || !userId) {
+      savedIds.value = new Set()
+      return
+    }
     try {
-      savedIds.value = new Set(await fetchSavedPostIds())
+      const ids = await fetchSavedPostIds()
+      if (loadedFor === userId) savedIds.value = new Set(ids)
     } catch (e) {
       console.error(e)
     }
   }
 
+  watch(
+    () => (userStore.isLoggedIn ? userStore.user?.id : null),
+    (userId) => {
+      if (userId !== loadedFor) loadSaved()
+    },
+    { immediate: true },
+  )
+
   async function toggleSave(postId) {
-    if (!userStore.user) return 
+    if (!userStore.isLoggedIn) return
 
     const wasSaved = isSaved(postId)
-    setSaved(postId, !wasSaved) 
+    setSaved(postId, !wasSaved)
 
     try {
       if (wasSaved) await unsavePost(postId)
       else await savePost(postId)
     } catch (e) {
       console.error(e)
-      setSaved(postId, wasSaved) 
+      setSaved(postId, wasSaved)
     }
   }
 

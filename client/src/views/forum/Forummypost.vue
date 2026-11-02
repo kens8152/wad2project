@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
+import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Forumsort from '../../components/forum/forumsort.vue'
 import Postcard from '../../components/forum/postcard.vue'
+import WheelList from '../../components/forum/WheelList.vue'
 
 const props = defineProps({
   posts: { type: Array, default: () => [] },
@@ -40,21 +42,17 @@ const myPosts = computed(() => {
 <template>
   <div class="vstack gap-3">
     <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
-      <Forumsearch @search="searchTerm = $event" />
+      <ForumMenuButton />
+      <Forumsearch v-model="searchTerm" />
       <Forumsort v-model="sort" />
     </div>
-
-    <p v-if="searchTerm" class="text-body-secondary mb-0 mx-3">
-      Results for "{{ searchTerm }}"
-      <button type="button" class="btn btn-link btn-sm p-0 ms-2" @click="searchTerm = ''">
-        Clear
-      </button>
-    </p>
 
     <p v-if="!userStore.user" class="text-body-secondary mx-3">Sign in to see your posts.</p>
 
     <template v-else>
-      <Postcard v-for="p in myPosts" :key="p.id" :post="p" />
+      <WheelList :items="myPosts" v-slot="{ item }">
+        <Postcard :post="item" />
+      </WheelList>
 
       <p v-if="!myPosts.length" class="text-body-secondary mx-3">
         {{ searchTerm ? 'No posts match your search.' : "You haven't posted anything yet." }}

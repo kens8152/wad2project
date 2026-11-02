@@ -22,10 +22,19 @@ export async function fetchPost(id) {
   return data
 }
 
-export async function createPost({ title, content, tags, username }) {
+export async function createPost({ title, content, tags, username, events = [], artists = [], images = [], song = null }) {
   const { data, error } = await supabase
     .from('posts')
-    .insert({ title, content, tags, username })
+    .insert({
+      title,
+      content,
+      tags,
+      username,
+      event_ids: events,
+      artist_ids: artists,
+      ...(images.length ? { images } : {}),
+      ...(song ? { song } : {}),
+    })
     .select(POST_WITH_REPLIES)
     .single()
   if (error) throw error
@@ -114,18 +123,49 @@ export async function fetchTags() {
 }
 
 
+async function currentUserId() {
+  const { data } = await supabase.auth.getUser()
+  if (!data.user) throw new Error('Please sign in to save posts.')
+  return data.user.id
+}
+
 export async function fetchSavedPostIds() {
-  const { data, error } = await supabase.from('saved_posts').select('post_id')
+  const userId = await currentUserId()
+  const { data, error } = await supabase.from('saved_posts').select('post_id').eq('user_id', userId)
   if (error) throw error
   return data.map((r) => r.post_id)
 }
 
 export async function savePost(postId) {
-  const { error } = await supabase.from('saved_posts').insert({ post_id: postId })
-  if (error) throw error
+  const userId = await currentUserId()
+  const { error } = await supabase.from('saved_posts').insert({ user_id: userId, post_id: postId })
+  if (error && error.code !== '23505') throw error
 }
 
 export async function unsavePost(postId) {
-  const { error } = await supabase.from('saved_posts').delete().eq('post_id', postId)
+  const userId = await currentUserId()
+  const { error } = await supabase.from('saved_posts').delete().eq('user_id', userId).eq('post_id', postId)
   if (error) throw error
+}
+
+
+const POST_IMAGES_BUCKET = 'post-images'
+
+export async function uploadPostImage(file) {
+  const userId = await currentUserId()
+  const fromName = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
+  const ext = fromName || file.type.split('/')[1] || 'jpg'
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`
+  const bucket = supabase.storage.from(POST_IMAGES_BUCKET)
+  const { error } = await bucket.upload(path, file, { contentType: file.type })
+  if (error) throw error
+  return bucket.getPublicUrl(path).data.publicUrl
+}
+
+export async function deletePostImages(urls) {
+  const marker = `/object/public/${POST_IMAGES_BUCKET}/`
+  const paths = urls.map((url) => url.split(marker)[1]).filter(Boolean)
+  if (!paths.length) return
+  const { error } = await supabase.storage.from(POST_IMAGES_BUCKET).remove(paths)
+  if (error) console.warn('Could not delete old post photos:', error.message)
 }

@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import PostLinksField from './postlinkfields.vue'
+import PhotoPicker from './photopicker.vue'
+import SongPicker from './songpicker.vue'
+import { tagStyle } from '../../composables/forum/tagColor.js'
 
 const props = defineProps({
   tags: { type: Array, default: () => [] },
@@ -16,6 +19,8 @@ const tagInput = ref('')
 const tagList = ref([])
 const links = ref({ events: [], artists: [] })
 const titleEl = ref(null)
+const photos = ref([])
+const song = ref(null)
 
 const suggestions = computed(() => props.tags.map((t) => t.name ?? t))
 const canSubmit = computed(
@@ -57,6 +62,9 @@ function reset() {
   tagInput.value = ''
   tagList.value = []
   links.value = { events: [], artists: [] }
+  photos.value.forEach((p) => URL.revokeObjectURL(p.url))
+  photos.value = []
+  song.value = null
 }
 
 function submit() {
@@ -69,6 +77,8 @@ function submit() {
     tags: [...tagList.value],
     events: [...links.value.events],
     artists: [...links.value.artists],
+    files: photos.value.map((p) => p.file),
+    song: song.value,
   })
   reset()
   close()
@@ -95,11 +105,11 @@ onBeforeUnmount(() => {
   
   <button
     type="button"
-    class="btn btn-primary rounded-pill shadow position-fixed bottom-0 end-0 m-4 d-inline-flex align-items-center gap-2 px-3 py-2"
+    class="btn create-post-btn rounded-pill border-0 position-fixed bottom-0 end-0 m-4 d-inline-flex align-items-center gap-2 px-3 py-2"
     style="z-index: 1020"
     @click="openModal"
   >
-    <i class="bi bi-plus-lg"></i>
+    <i class="bi bi-pencil-square"></i>
     <span class="d-none d-sm-inline">Create a post</span>
   </button>
 
@@ -150,6 +160,10 @@ onBeforeUnmount(() => {
                 ></textarea>
               </div>
 
+              <PhotoPicker v-model="photos" />
+
+              <SongPicker v-model="song" />
+
               <div>
                 <label for="post-tags" class="form-label">
                   Tags <span class="text-body-secondary small">(up to {{ MAX_TAGS }})</span>
@@ -159,12 +173,13 @@ onBeforeUnmount(() => {
                   <span
                     v-for="t in tagList"
                     :key="t"
-                    class="badge rounded-pill text-bg-primary d-inline-flex align-items-center fw-normal px-3 py-2"
+                    class="badge rounded-pill forum-tag d-inline-flex align-items-center fw-normal px-3 py-2"
+                    :style="tagStyle(t)"
                   >
                     #{{ t }}
                     <button
                       type="button"
-                      class="btn-close btn-close-white ms-2"
+                      class="btn-close ms-2"
                       style="font-size: 0.55rem"
                       @click="removeTag(t)"
                     ></button>
@@ -211,3 +226,24 @@ onBeforeUnmount(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.create-post-btn {
+  background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(124, 77, 255, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.create-post-btn:hover,
+.create-post-btn:focus-visible {
+  color: #fff;
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(124, 77, 255, 0.45);
+}
+.create-post-btn:active {
+  color: #fff;
+  transform: translateY(0) scale(0.97);
+}
+</style>

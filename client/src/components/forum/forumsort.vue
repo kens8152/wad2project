@@ -56,8 +56,11 @@ onBeforeUnmount(() => {
       class="btn d-flex align-items-center gap-2 text-body-secondary bg-body-tertiary border rounded-pill px-3 py-2"
       @click="open = !open"
     >
-      <i class="bi" :class="dir === 'desc' ? 'bi-sort-down' : 'bi-sort-up'"></i>
+      <span class="sort-badge" aria-hidden="true">
+        <span class="eq" :class="{ 'is-playing': open }"><i></i><i></i><i></i><i></i></span>
+      </span>
       <span class="d-none d-sm-inline">{{ current.label }}</span>
+      <i class="bi bi-chevron-down sort-chevron" :class="{ 'is-open': open }" aria-hidden="true"></i>
     </button>
 
     <div v-if="open" class="menu border rounded-3 shadow-sm py-1" role="menu" aria-label="Sort posts">
@@ -100,6 +103,70 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.sort-chevron {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+.sort-chevron.is-open {
+  transform: rotate(180deg);
+}
+.sort-badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: -0.15rem 0 -0.15rem -0.6rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
+  box-shadow: 0 2px 6px rgba(124, 77, 255, 0.4);
+}
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.eq i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: #fff;
+  transform: scaleY(0.4);
+  transform-origin: bottom;
+}
+.eq i:nth-child(2) {
+  height: 70%;
+}
+.eq i:nth-child(3) {
+  height: 90%;
+}
+.eq.is-playing i,
+.forumsort > .btn:hover .eq i {
+  animation: eq-dance 0.9s ease-in-out infinite;
+}
+.eq.is-playing i:nth-child(2),
+.forumsort > .btn:hover .eq i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.eq.is-playing i:nth-child(3),
+.forumsort > .btn:hover .eq i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+.eq.is-playing i:nth-child(4),
+.forumsort > .btn:hover .eq i:nth-child(4) {
+  animation-delay: -0.15s;
+}
+@keyframes eq-dance {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
 .forumsort {
   position: relative;
 }

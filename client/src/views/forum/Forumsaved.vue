@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
+import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Forumsort from '../../components/forum/forumsort.vue'
 import Postcard from '../../components/forum/postcard.vue'
+import WheelList from '../../components/forum/WheelList.vue'
 import { useSavedPosts } from '../../composables/forum/savedpost.js'
 
 const props = defineProps({
@@ -41,18 +43,14 @@ const savedPosts = computed(() => {
 <template>
   <div class="vstack gap-3">
     <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
-      <Forumsearch @search="searchTerm = $event" />
+      <ForumMenuButton />
+      <Forumsearch v-model="searchTerm" />
       <Forumsort v-model="sort" />
     </div>
 
-    <p v-if="searchTerm" class="text-body-secondary mb-0 mx-3">
-      Results for "{{ searchTerm }}"
-      <button type="button" class="btn btn-link btn-sm p-0 ms-2" @click="searchTerm = ''">
-        Clear
-      </button>
-    </p>
-
-    <Postcard v-for="p in savedPosts" :key="p.id" :post="p" />
+    <WheelList :items="savedPosts" v-slot="{ item }">
+      <Postcard :post="item" />
+    </WheelList>
 
     <p v-if="!savedPosts.length" class="text-body-secondary mx-3">
       {{ searchTerm ? 'No saved posts match your search.' : "You haven't saved any posts yet." }}

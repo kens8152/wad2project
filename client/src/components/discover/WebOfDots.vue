@@ -46,6 +46,7 @@ const boxHeight = ref(0)
 const smooth = ref(false) // glide to the new view (buttons), but not while dragging
 const dragging = ref(false)
 let fitZoom = 1
+const MIN_ZOOM_OUT = 1 // how far past the fitted view the user may zoom out
 let smoothTimer = null
 
 const worldStyle = computed(() => ({
@@ -108,7 +109,7 @@ function recentre() {
 
 function zoomAt(factor, screenX, screenY) {
   const current = view.value
-  const z = Math.min(fitZoom * 5, Math.max(fitZoom * 0.55, current.z * factor))
+  const z = Math.min(fitZoom * 5, Math.max(fitZoom * MIN_ZOOM_OUT, current.z * factor))
   view.value = {
     x: screenX - ((screenX - current.x) / current.z) * z,
     y: screenY - ((screenY - current.y) / current.z) * z,
@@ -125,7 +126,7 @@ function zoomCentre(factor) {
     return
   }
 
-  const z = Math.min(fitZoom * 5, Math.max(fitZoom * 0.55, view.value.z * factor))
+  const z = Math.min(fitZoom * 5, Math.max(fitZoom * MIN_ZOOM_OUT, view.value.z * factor))
   view.value = {
     x: middleX - props.tasteSpot.x * z,
     y: middleY - props.tasteSpot.y * z,
