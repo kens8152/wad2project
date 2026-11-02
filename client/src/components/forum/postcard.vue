@@ -80,13 +80,13 @@ async function removePost() {
 
       <p v-if="actionError" class="text-danger small mb-1">{{ actionError }}</p>
 
-      <h5 class="card-title forum-title">
+      <h5 class="card-title">
         <RouterLink :to="postRoute" class="stretched-link text-reset text-decoration-none">
           {{ post.title }}
         </RouterLink>
       </h5>
 
-      <p v-if="post.content && !post.images?.length" class="card-text forum-caption">{{ post.content }}</p>
+      <p v-if="post.content && !post.images?.length" class="card-text">{{ post.content }}</p>
 
       <PostImages :images="post.images ?? []" :max="4" class="mb-3" />
 
