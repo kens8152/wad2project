@@ -54,13 +54,28 @@ export async function addSongs(artists) {
   }));
 }
 
-// A random batch of artists, with songs
+// Artists already swiped (like / skip), so they are not shown again
+async function getSeenArtistIds() {
+  const { data, error } = await supabase
+    .from('matchmaking_actions')
+    .select('artist_id')
+    .not('action', 'is', null);
+  if (error) throw error;
+
+  return data.map(row => row.artist_id);
+}
+
+// A random batch of artists not seen yet, with songs
 export async function getArtists() {
   const { data, error } = await supabase.from('artists').select('id, tracks');
   if (error) throw error;
 
-  // only artists that have songs to play
-  const ids = data.filter(row => (row.tracks || []).length > 0).map(row => row.id);
+  // only artists that have songs to play, and have not been seen yet
+  const seenIds = await getSeenArtistIds();
+  const ids = data
+    .filter(row => (row.tracks || []).length > 0)
+    .map(row => row.id)
+    .filter(id => !seenIds.includes(id));
   const randomIds = [];
   while (randomIds.length < BATCH_SIZE && ids.length) {
     randomIds.push(ids.splice(Math.floor(Math.random() * ids.length), 1)[0]);
@@ -142,6 +157,58 @@ export async function resetMatchmaking() {
     .from('matchmaking_actions')
     .delete()
     .gte('id', 0);
+  if (error) throw error;
+}
+
+// Followed / skipped artists, newest first
+export async function getMatchHistory() {
+  const { data, error } = await supabase
+    .from('matchmaking_actions')
+    .select('artist_id, action, created_at')
+    .not('action', 'is', null)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+// History: change a swipe to skip or follow
+export async function changeMatchAction(artistId, action) {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .update({ action })
+    .eq('artist_id', artistId)
+    .not('action', 'is', null);
+  if (error) throw error;
+}
+
+// History: undo a swipe, so the artist can show up in matchmaking again
+export async function undoMatchAction(artistId) {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .delete()
+    .eq('artist_id', artistId)
+    .not('action', 'is', null);
+  if (error) throw error;
+}
+
+// Followed artists, newest first
+export async function getFollowedArtists() {
+  const { data, error } = await supabase
+    .from('followed_artists')
+    .select('artist_id, followed_at')
+    .order('followed_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addFollowedArtist(artistId) {
+  const { error } = await supabase.from('followed_artists').insert({ artist_id: artistId });
+  if (error) throw error;
+}
+
+export async function removeFollowedArtist(artistId) {
+  const { error } = await supabase.from('followed_artists').delete().eq('artist_id', artistId);
   if (error) throw error;
 }
 

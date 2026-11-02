@@ -5,6 +5,7 @@ import { useEventsStore } from '@/stores/events'
 import SortDropdown from '../../components/events/SortDropdown.vue'
 import ArtistCard from '../../components/artists/ArtistCard.vue'
 import ArtistFilterSidebar from '../../components/artists/ArtistFilterSidebar.vue'
+import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
 import { ARTIST_SORTS, useArtistFilters } from '../../composables/artists/useArtistFilters'
 import { useFavouriteArtists } from '../../composables/artists/useFavouriteArtists'
 import { favouritesFirst } from '../../utils/artists/artists'
@@ -47,8 +48,8 @@ function openArtist(artist) {
 
       <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
         <!-- Match with artists -->
-        <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle text-nowrap">
-          <i class="bi bi-stars me-1"></i> Discover artists
+        <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle match-trigger text-nowrap">
+          <MatchCardsIcon fill="#0c1e4a" class="me-2" /> I'm feeling lucky
         </RouterLink>
         <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
       </div>
