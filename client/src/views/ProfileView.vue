@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import { useUserStore } from '@/stores/user.js'
 import { useNotificationsStore } from '@/stores/notifications'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 import ArtistAvatar from '@/components/events/ArtistAvatar.vue'
 
-import { getSavedArtists, getArtistDetails } from '@/services/matchmakingApi'
+import { getSavedArtists, getArtistDetails, getLikedArtistIds, removeLikedArtist, resetMatchmaking } from '@/services/matchmakingApi'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { useEventsData } from '@/composables/events/useEventsData'
 import { useSavedEvents } from '@/composables/events/useSavedEvents'
@@ -20,6 +20,7 @@ import { supabase } from '@/services/supabase.js'
 
 const userStore = useUserStore()
 const router = useRouter()
+const route = useRoute()
 const notifications = useNotificationsStore()
 const { favourites, loadFavourites, toggleFavourite } = useFavouriteArtists()
 
@@ -41,8 +42,10 @@ const errorMessage = ref('')
 const successMessage = ref('')
 
 // ---- the new profile page: saved artists, saved events, tabs ------------------------
-const activeTab = ref('artists')
+// matchmaking links here with ?tab=liked
+const activeTab = ref(route.query.tab === 'liked' ? 'liked' : 'artists')
 const savedArtists = ref([])
+const likedArtists = ref([])
 const joinedLabel = ref('')
 
 const { events: allEvents, load: loadEvents } = useEventsData()
@@ -77,6 +80,7 @@ const stats = computed(() => [
 
 const tabs = computed(() => [
   { key: 'artists', label: 'Artists', count: savedArtists.value.length },
+  { key: 'liked', label: 'Liked', count: likedArtists.value.length },
   { key: 'events', label: 'Events', count: savedEvents.value.length },
   { key: 'songs', label: 'Songs', count: songList.value.length },
   { key: 'taste', label: 'Taste', count: profile.value ? profile.value.genres.length : 0 }
@@ -106,6 +110,59 @@ async function loadSavedArtists() {
     savedArtists.value = details
   } catch (error) {
     console.error('Could not load saved artists', error)
+  }
+}
+
+// artists you liked while swiping in matchmaking
+async function loadLikedArtists() {
+  try {
+    const ids = await getLikedArtistIds()
+    likedArtists.value = await getArtistDetails(ids, [])
+  } catch (error) {
+    console.error('Could not load liked artists', error)
+  }
+}
+
+// ---- reset taste profile (asks for a confirmation first) ----
+const showReset = ref(false)
+const resetSure = ref(false) // the "I understand" tick box
+const resetting = ref(false)
+
+function openReset() {
+  resetSure.value = false
+  showReset.value = true
+}
+
+async function confirmReset() {
+  if (!resetSure.value || resetting.value) return
+  resetting.value = true
+  try {
+    await resetMatchmaking()
+    likedArtists.value = []
+    showReset.value = false
+    toast('Your taste profile was reset. Matchmaking starts fresh.')
+  } catch (error) {
+    console.error('Could not reset the taste profile', error)
+    toast('Could not reset your taste profile. Please try again.')
+  } finally {
+    resetting.value = false
+  }
+}
+
+// the artist being removed right now (its button is disabled meanwhile)
+const removingId = ref('')
+
+async function unlikeArtist(artist) {
+  removingId.value = artist.id
+  try {
+    await removeLikedArtist(artist.id)
+    await loadLikedArtists()
+    toast('Removed ' + artist.name + ' from your liked artists')
+  } catch (error) {
+    console.error('Could not remove the liked artist', error)
+    toast('Could not update your liked artists. Please try again.')
+  } finally {
+    removingId.value = ''
   }
 }
 
@@ -143,6 +200,7 @@ onMounted(async () => {
 
   loadEvents()
   loadSavedArtists()
+  loadLikedArtists()
   loadJoinDate()
 
   try {
@@ -276,6 +334,43 @@ function startEditing() {
               <RouterLink v-if="savedArtists.length" :to="{ name: 'saved-artists' }" class="manage-link">Manage saved artists <i class="bi bi-arrow-right"></i></RouterLink>
             </div>
 
+            <!-- artists liked in matchmaking -->
+            <div v-else-if="activeTab === 'liked'" class="tab-panel">
+              <p v-if="likedArtists.length" class="liked-intro"><i class="bi bi-stars"></i> These artists are shaping your taste profile.</p>
+              <div v-if="likedArtists.length" class="artist-grid">
+                <article v-for="artist in likedArtists" :key="artist.id" class="artist-tile liked-tile" :style="{ '--accent': artist.genreColor }">
+                  <RouterLink :to="'/artists/' + artist.id" class="artist-link">
+                    <ArtistAvatar :name="artist.name" :image="artist.image" :size="52" />
+                    <span>
+                      <strong>{{ artist.name }}</strong>
+                      <small>{{ artist.genre }}</small>
+                    </span>
+                  </RouterLink>
+                  <div class="liked-footer">
+                    <span v-if="artist.tag" class="tag">#{{ artist.tag }}</span>
+                    <button type="button" class="unlike-button" :disabled="removingId === artist.id" :aria-label="'Remove ' + artist.name + ' from liked artists'" @click="unlikeArtist(artist)">
+                      <i class="bi bi-heartbreak"></i> {{ removingId === artist.id ? 'Removing…' : 'Remove' }}
+                    </button>
+                  </div>
+                </article>
+              </div>
+              <div v-else class="empty-panel">
+                <i class="bi bi-balloon-heart"></i>
+                <p>No liked artists yet. Swipe through matchmaking and tap Like on the ones you love.</p>
+                <RouterLink to="/matchmaking" class="profile-button">Start matchmaking</RouterLink>
+              </div>
+
+              <div class="danger-zone">
+                <div>
+                  <strong><i class="bi bi-exclamation-triangle-fill"></i> Danger zone</strong>
+                  <p>Erase your liked artists and all of your matchmaking history, and start from the beginning.</p>
+                </div>
+                <button type="button" class="reset-button" @click="openReset">
+                  <i class="bi bi-arrow-counterclockwise"></i> Reset taste profile
+                </button>
+              </div>
+            </div>
+
             <!-- saved events -->
             <div v-else-if="activeTab === 'events'" class="tab-panel">
               <ul v-if="savedEvents.length" class="row-list list-unstyled">
@@ -363,6 +458,36 @@ function startEditing() {
       </div>
 
     </template>
+
+    <Teleport to="body">
+      <Transition name="reset-fade">
+        <div v-if="showReset" class="reset-backdrop" @click.self="showReset = false">
+          <div class="reset-dialog" role="alertdialog" aria-labelledby="reset-title" aria-describedby="reset-text">
+            <span class="reset-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            <h2 id="reset-title">Reset your taste profile?</h2>
+            <p id="reset-text">This will permanently erase your taste profile from Riffle:</p>
+            <ul>
+              <li>All of your <b>liked artists</b> are removed</li>
+              <li>All <b>matchmaking history</b> (likes, skips and today's artists) is deleted</li>
+              <li>Matchmaking will start again as if you had never used it</li>
+            </ul>
+            <p class="reset-keep">Your saved artists, saved events, favourite songs and account stay as they are. <b>This cannot be undone.</b></p>
+
+            <label class="reset-check">
+              <input v-model="resetSure" type="checkbox" />
+              I understand my taste profile will be erased
+            </label>
+
+            <div class="reset-actions">
+              <button type="button" class="reset-cancel" :disabled="resetting" @click="showReset = false">Keep my taste profile</button>
+              <button type="button" class="reset-confirm" :disabled="!resetSure || resetting" @click="confirmReset">
+                {{ resetting ? 'Erasing…' : 'Yes, erase it' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </main>
   <LoginPrompt v-else />
 </template>
@@ -636,6 +761,57 @@ function startEditing() {
 }
 .artist-tile .tag {
   align-self: flex-start;
+}
+
+.liked-intro {
+  margin: 0 0 1rem;
+  color: var(--riffle-muted);
+  font-weight: 600;
+}
+.liked-intro i {
+  color: #e0245e;
+}
+.liked-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.9rem;
+}
+.unlike-button {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #ffc9dc;
+  border-radius: 999px;
+  background: #fff5f9;
+  color: #c2185b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.unlike-button:hover:not(:disabled) {
+  background: #e0245e;
+  border-color: #e0245e;
+  color: #fff;
+}
+.unlike-button:disabled {
+  opacity: 0.6;
+}
+.liked-tile {
+  animation: liked-in 0.4s ease backwards;
+}
+@keyframes liked-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .manage-link {
@@ -1230,5 +1406,149 @@ a:focus-visible {
   .actions > button {
     flex: 1;
   }
+}
+
+/* ---- reset taste profile ---- */
+.danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px dashed #f0a5b5;
+  border-radius: var(--riffle-radius);
+  background: #fff8f9;
+}
+.danger-zone strong {
+  color: #b3173f;
+}
+.danger-zone p {
+  margin: 0.2rem 0 0;
+  color: var(--riffle-muted);
+  font-size: 0.9rem;
+}
+.reset-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border: 2px solid #d6264f;
+  border-radius: 999px;
+  background: #fff;
+  color: #d6264f;
+  font-weight: 800;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+}
+.reset-button:hover {
+  background: #d6264f;
+  color: #fff;
+}
+
+.reset-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(20, 24, 40, 0.6);
+  backdrop-filter: blur(4px);
+}
+.reset-dialog {
+  width: min(480px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  text-align: left;
+}
+.reset-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 0.8rem;
+  border-radius: 50%;
+  background: #ffe3e9;
+  color: #d6264f;
+  font-size: 1.5rem;
+}
+.reset-dialog h2 {
+  margin: 0 0 0.5rem;
+  color: #14234b;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.reset-dialog p {
+  margin: 0 0 0.5rem;
+  color: var(--riffle-muted);
+}
+.reset-dialog ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  color: #14234b;
+}
+.reset-keep {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.75rem;
+  background: #f4f6fb;
+  font-size: 0.9rem;
+}
+.reset-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.9rem 0 1.1rem;
+  color: #14234b;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reset-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #d6264f;
+}
+.reset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+.reset-cancel,
+.reset-confirm {
+  padding: 0.55rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+.reset-cancel {
+  border: 1px solid var(--riffle-border);
+  background: #fff;
+  color: #14234b;
+}
+.reset-cancel:hover:not(:disabled) {
+  background: #eef1fb;
+}
+.reset-confirm {
+  border: 0;
+  background: #d6264f;
+  color: #fff;
+}
+.reset-confirm:disabled {
+  background: #e9b9c4;
+  cursor: not-allowed;
+}
+.reset-fade-enter-active,
+.reset-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.reset-fade-enter-from,
+.reset-fade-leave-to {
+  opacity: 0;
 }
 </style>
