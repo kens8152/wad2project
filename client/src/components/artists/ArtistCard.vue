@@ -44,7 +44,7 @@ function handleHeartClick() {
         class="artist-card__heart"
         :class="{ 'is-saved': isFavourite }"
         :aria-pressed="isFavourite"
-        :aria-label="isFavourite ? 'Remove from favourites' : 'Add to favourites'"
+        :aria-label="isFavourite ? 'Unfollow' : 'Follow'"
         @click.stop="handleHeartClick"
       >
         <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>

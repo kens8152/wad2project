@@ -8,7 +8,7 @@ import { useNotificationsStore } from '@/stores/notifications'
 import LoginPrompt from '@/components/layout/LoginPrompt.vue'
 import ArtistAvatar from '@/components/events/ArtistAvatar.vue'
 
-import { getSavedArtists, getArtistDetails, getLikedArtistIds, removeLikedArtist, resetMatchmaking } from '@/services/matchmakingApi'
+import { getFollowedArtists, getArtistDetails, getLikedArtistIds, removeLikedArtist, resetMatchmaking } from '@/services/matchmakingApi'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { useEventsData } from '@/composables/events/useEventsData'
 import { useSavedEvents } from '@/composables/events/useSavedEvents'
@@ -41,10 +41,10 @@ const loadingProfile = ref(true) // true until the saved profile has been fetche
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// ---- the new profile page: saved artists, saved events, tabs ------------------------
+// ---- the new profile page: followed artists, saved events, tabs ------------------------
 // matchmaking links here with ?tab=liked
 const activeTab = ref(route.query.tab === 'liked' ? 'liked' : 'artists')
-const savedArtists = ref([])
+const followedArtists = ref([])
 const likedArtists = ref([])
 const joinedLabel = ref('')
 
@@ -72,14 +72,14 @@ const shownTags = computed(() => (showAllTags.value ? genreTags.value : genreTag
 const handle = computed(() => '@' + userStore.user.name.toLowerCase().replace(/[^a-z0-9]/g, ''))
 
 const stats = computed(() => [
-  { value: savedArtists.value.length, label: 'Saved artists', icon: 'bi-person-heart' },
+  { value: followedArtists.value.length, label: 'Following', icon: 'bi-person-heart' },
   { value: savedEvents.value.length, label: 'Saved events', icon: 'bi-calendar-heart' },
   { value: songList.value.length, label: 'Favourite songs', icon: 'bi-music-note-list' },
   { value: profile.value ? profile.value.genres.length : 0, label: 'Genres', icon: 'bi-vinyl' }
 ])
 
 const tabs = computed(() => [
-  { key: 'artists', label: 'Artists', count: savedArtists.value.length },
+  { key: 'artists', label: 'Artists', count: followedArtists.value.length },
   { key: 'liked', label: 'Liked', count: likedArtists.value.length },
   { key: 'events', label: 'Events', count: savedEvents.value.length },
   { key: 'songs', label: 'Songs', count: songList.value.length },
@@ -103,13 +103,13 @@ function splitSong(line) {
   return { title: parts[0], artist: parts.slice(1).join(' — ') }
 }
 
-async function loadSavedArtists() {
+async function loadFollowedArtists() {
   try {
-    const rows = await getSavedArtists()
+    const rows = await getFollowedArtists()
     const details = await getArtistDetails(rows.map(row => row.artist_id), [])
-    savedArtists.value = details
+    followedArtists.value = details
   } catch (error) {
-    console.error('Could not load saved artists', error)
+    console.error('Could not load followed artists', error)
   }
 }
 
@@ -155,8 +155,14 @@ const removingId = ref('')
 async function unlikeArtist(artist) {
   removingId.value = artist.id
   try {
-    await removeLikedArtist(artist.id)
-    await loadLikedArtists()
+    // a liked artist is also followed: unfollowing removes the like (the matchmaking swipe) too
+    await loadFavourites()
+    if (favourites.value.includes(artist.id)) {
+      await toggleFavourite(artist)
+    } else {
+      await removeLikedArtist(artist.id)
+    }
+    await Promise.all([loadLikedArtists(), loadFollowedArtists()])
     toast('Removed ' + artist.name + ' from your liked artists')
   } catch (error) {
     console.error('Could not remove the liked artist', error)
@@ -166,7 +172,7 @@ async function unlikeArtist(artist) {
   }
 }
 
-async function unsaveArtist(artist) {
+async function unfollowArtist(artist) {
   try {
     await loadFavourites()
 
@@ -174,10 +180,11 @@ async function unsaveArtist(artist) {
       await toggleFavourite(artist)
     }
 
-    await loadSavedArtists()
+    // unfollowing also removes the matchmaking like
+    await Promise.all([loadFollowedArtists(), loadLikedArtists()])
   } catch (error) {
-    console.error('Could not refresh saved artists:', error)
-    toast('Could not refresh your saved artists. Please try again.')
+    console.error('Could not refresh followed artists:', error)
+    toast('Could not refresh the artists you follow. Please try again.')
   }
 }
 
@@ -199,7 +206,7 @@ onMounted(async () => {
   if (!userStore.isLoggedIn) return
 
   loadEvents()
-  loadSavedArtists()
+  loadFollowedArtists()
   loadLikedArtists()
   loadJoinDate()
 
@@ -309,10 +316,10 @@ function startEditing() {
               </button>
             </nav>
 
-            <!-- saved artists -->
+            <!-- followed artists -->
             <div v-if="activeTab === 'artists'" class="tab-panel">
-              <div v-if="savedArtists.length" class="artist-grid">
-                <article v-for="artist in savedArtists" :key="artist.id" class="artist-tile" :style="{ '--accent': artist.genreColor }">
+              <div v-if="followedArtists.length" class="artist-grid">
+                <article v-for="artist in followedArtists" :key="artist.id" class="artist-tile" :style="{ '--accent': artist.genreColor }">
                   <RouterLink :to="'/artists/' + artist.id" class="artist-link">
                     <ArtistAvatar :name="artist.name" :image="artist.image" :size="52" />
                     <span>
@@ -320,7 +327,7 @@ function startEditing() {
                       <small>{{ artist.genre }}</small>
                     </span>
                   </RouterLink>
-                  <button type="button" class="heart-button" :aria-label="'Remove ' + artist.name + ' from saved artists'" @click="unsaveArtist(artist)">
+                  <button type="button" class="heart-button" :aria-label="'Unfollow ' + artist.name" @click="unfollowArtist(artist)">
                     <i class="bi bi-heart-fill"></i>
                   </button>
                   <span v-if="artist.tag" class="tag">#{{ artist.tag }}</span>
@@ -328,10 +335,13 @@ function startEditing() {
               </div>
               <div v-else class="empty-panel">
                 <i class="bi bi-person-heart"></i>
-                <p>You have not saved any artists yet.</p>
+                <p>You are not following any artists yet.</p>
                 <RouterLink to="/matchmaking" class="profile-button">Find artists</RouterLink>
               </div>
-              <RouterLink v-if="savedArtists.length" :to="{ name: 'saved-artists' }" class="manage-link">Manage saved artists <i class="bi bi-arrow-right"></i></RouterLink>
+              <div class="d-flex flex-wrap column-gap-4">
+                <RouterLink :to="{ name: 'saved-artists' }" class="manage-link">Saved artists <i class="bi bi-bookmark"></i></RouterLink>
+                <RouterLink :to="{ name: 'match-history' }" class="manage-link">Artist Matchmaking history <i class="bi bi-clock-history"></i></RouterLink>
+              </div>
             </div>
 
             <!-- artists liked in matchmaking -->

@@ -1,6 +1,9 @@
 <script setup>
-import { ref, onMounted, computed, watchEffect } from 'vue'
-import { getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction } from '@/services/matchmakingApi'
+import { ref, onMounted, computed } from 'vue'
+import {
+  getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction,
+  getSavedArtists, addSavedArtist, removeSavedArtist,
+} from '@/services/matchmakingApi'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
@@ -26,6 +29,7 @@ const FLY_UP_DURATIONS = [0.5, 0.3, 0.7, 0.4, 0.6];
 const hasSwipedCards = ref(false);
 const artistsFinished = ref(false); // True after users has swiped all cards
 const showFinishedMessage = ref(false);
+const noArtistsLeft = ref(false); // True when every artist has been swiped or followed
 
 // Swipe animation: which way the main card is flying and which reaction burst is showing
 const swipeDir = ref(''); // 'left' (skip), 'right' (like), 'up' (unsure)
@@ -159,8 +163,8 @@ function finishSwiping() {
   }, (FLY_UP_DURATIONS[2] + 0.2)*1000); // Second index is the longest
 }
 
-// Set a specific saved state instead of blindly toggling it.
-async function setSharedSaved(artist, shouldSave) {
+// Set a specific followed state instead of blindly toggling it.
+async function setFollowed(artist, shouldFollow) {
   const accountId = userStore.user.id
 
   await loadFavourites()
@@ -169,9 +173,9 @@ async function setSharedSaved(artist, shouldSave) {
     throw new Error('Your account changed. Please try again.')
   }
 
-  const alreadySaved = favourites.value.includes(artist.id)
+  const alreadyFollowed = favourites.value.includes(artist.id)
 
-  if (alreadySaved !== shouldSave) {
+  if (alreadyFollowed !== shouldFollow) {
     await toggleFavourite(artist)
   }
 
@@ -180,8 +184,8 @@ async function setSharedSaved(artist, shouldSave) {
   }
 
   // toggleFavourite handles its own errors, so verify the result.
-  if (favourites.value.includes(artist.id) !== shouldSave) {
-    throw new Error('The saved artist could not be updated.')
+  if (favourites.value.includes(artist.id) !== shouldFollow) {
+    throw new Error('The followed artist could not be updated.')
   }
 }
 
@@ -192,7 +196,11 @@ async function updateArtistAction(action) {
   actionBusy.value = true
 
   try {
-    // Like is stored as the "follow" action; the artist then appears under Liked artists in the profile
+    // Like is stored as the "follow" action and also follows the artist; it then appears under Liked artists in the profile
+    if (action === 'follow') {
+      await setFollowed(artist, true)
+    }
+
     if (action === 'unsure') {
       await removeArtistAction(artist.id)
     } else {
@@ -242,12 +250,13 @@ async function toggleSave() {
   actionBusy.value = true
 
   try {
-    await loadFavourites()
+    if (artist.saved) {
+      await removeSavedArtist(artist.id)
+    } else {
+      await addSavedArtist(artist.id)
+    }
 
-    const shouldSave = !favourites.value.includes(artist.id)
-    await setSharedSaved(artist, shouldSave)
-
-    artist.saved = shouldSave
+    artist.saved = !artist.saved
     saveFlash.value++
     showSaveMessage(artist)
   } catch (error) {
@@ -258,14 +267,15 @@ async function toggleSave() {
   }
 }
 
-// Keep the card bookmarks consistent with the shared saved list.
-watchEffect(() => {
-  const savedIds = favourites.value
-
-  artists.value.forEach(artist => {
-    artist.saved = savedIds.includes(artist.id)
-  })
-})
+// Mark which of the loaded artists are already saved
+async function markSavedArtists() {
+  try {
+    const savedIds = (await getSavedArtists()).map(row => row.artist_id);
+    artists.value.forEach(artist => (artist.saved = savedIds.includes(artist.id)));
+  } catch (err) {
+    console.error('Could not load saved artists', err);
+  }
+}
 
 const openSong = ref(0);
 
@@ -280,8 +290,24 @@ async function loadTodaysArtists() {
   // No batch yet today
   if (rows.length === 0) {
     artists.value = await getArtists();
+
+    // Every artist has been swiped or followed already
+    if (artists.value.length === 0) {
+      noArtistsLeft.value = true;
+      artistsFinished.value = true;
+      showFinishedMessage.value = true;
+      return;
+    }
+
     await saveTodaysArtists(artists.value.map(artist => artist.id));
     return;
+  }
+
+  // Artists followed somewhere else since this batch was made count as followed
+  await loadFavourites();
+  const followedSince = rows.filter(row => row.action === null && favourites.value.includes(row.artist_id));
+  for (const row of followedSince) {
+    await setArtistAction(row.artist_id, 'follow');
   }
 
   // Remember what was already liked or skipped today, so the last screen is right after a refresh
@@ -291,7 +317,7 @@ async function loadTodaysArtists() {
   skippedThisBatch.value = await addSongs(await getArtistDetails(skippedIds));
 
   // Batch exists: show the ones without an action (only artists that have songs to play)
-  const pending = rows.filter(row => row.action === null);
+  const pending = rows.filter(row => row.action === null && !favourites.value.includes(row.artist_id));
   const pendingArtists = pending.length ? await addSongs(await getArtistDetails(pending.map(row => row.artist_id))) : [];
   artists.value = pendingArtists.filter(artist => artist.tracks.length);
 
@@ -311,6 +337,13 @@ async function startNewBatch() {
   try {
     const newArtists = await getArtists();
 
+    // Every artist has been swiped or followed already: stay on the last screen
+    if (newArtists.length === 0) {
+      noArtistsLeft.value = true;
+      toast("You've seen every artist we have for now.");
+      return;
+    }
+
     // The finished batch stays in the history; the new one is added after it
     try {
       await saveTodaysArtists(newArtists.map(artist => artist.id));
@@ -320,6 +353,7 @@ async function startNewBatch() {
 
     // only artists with a song to play get a card
     artists.value = newArtists.filter(artist => artist.tracks.length);
+    await markSavedArtists();
     current.value = 0;
     openSong.value = 0;
     hasSwipedCards.value = false;
@@ -342,6 +376,7 @@ onMounted(async () => {
 
   try {
     await loadTodaysArtists()
+    await markSavedArtists()
     await loadFavourites()
     return;
   } catch (err) {
@@ -373,6 +408,9 @@ onMounted(async () => {
       <p class="lead text-dark mb-0 fs-6">
         Swipe through artists, listen to a preview, and find new music that matches your taste.
       </p>
+      <RouterLink :to="{ name: 'match-history' }" class="small text-decoration-none">
+        <i class="bi bi-clock-history"></i> Match history
+      </RouterLink>
       <div v-if="!showFinishedMessage" class="liked-slot mt-2">
         <span v-if="likedThisBatch.length" :key="likedThisBatch.length" class="liked-counter badge rounded-pill">
           <i class="bi bi-heart-fill"></i> {{ likedThisBatch.length }} liked · building your taste profile
@@ -627,9 +665,10 @@ onMounted(async () => {
     <div v-else class="finish drop-in">
       <div class="finish-card">
         <p class="finish-kicker"><i class="bi bi-stars"></i> Today's matchmaking</p>
-        <h2 class="finish-title">Your taste profile just got sharper</h2>
+        <h2 class="finish-title">{{ noArtistsLeft ? "You've seen every artist we have!" : 'Your taste profile just got sharper' }}</h2>
         <p class="finish-sub">
-          <template v-if="likedThisBatch.length">
+          <template v-if="noArtistsLeft && !likedThisBatch.length">New local artists will show up here as they join.</template>
+          <template v-else-if="likedThisBatch.length">
             {{ likedThisBatch.length === 1 ? 'One artist now shapes' : likedThisBatch.length + ' artists now shape' }} what Riffle plays for you. They are saved under <b>Liked</b> in your profile.
           </template>
           <template v-else>You did not like anyone this round, so your taste profile stays as it was. Get a new batch to try again.</template>
@@ -683,9 +722,12 @@ onMounted(async () => {
           <RouterLink :to="{ name: 'profile', query: { tab: 'liked' } }" class="btn btn-primary rounded-pill px-4">
             <i class="bi bi-balloon-heart-fill"></i> See your liked artists
           </RouterLink>
-          <button type="button" class="btn btn-outline-primary rounded-pill px-3" :disabled="loadingNewBatch" @click="startNewBatch()">
+          <button v-if="!noArtistsLeft" type="button" class="btn btn-outline-primary rounded-pill px-3" :disabled="loadingNewBatch" @click="startNewBatch()">
             <i class="bi bi-arrow-repeat"></i> {{ loadingNewBatch ? 'Loading…' : 'Get a new batch' }}
           </button>
+          <RouterLink :to="{ name: 'match-history' }" class="btn btn-outline-dark rounded-pill px-3">
+            <i class="bi bi-clock-history"></i> Review your swipes
+          </RouterLink>
         </div>
       </div>
     </div>

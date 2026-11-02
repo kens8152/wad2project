@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/user'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useMessagesStore } from '@/stores/messages'
 import { supabase } from '@/services/supabase'
+import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,8 +27,6 @@ const links = [
 const activeSection = computed(() => route.meta.section)
 
 const menuOpen = ref(false)
-const searchOpen = ref(false)
-const searchTerm = ref('')
 
 // the account menu under your name
 const accountOpen = ref(false)
@@ -40,10 +39,9 @@ const accountLinks = [
   { label: 'Edit taste profile', to: '/onboarding' },
 ]
 
-// Whenever the page changes, close the menus and the search box
+// Whenever the page changes, close the menus
 watch(() => route.fullPath, () => {
   menuOpen.value = false
-  searchOpen.value = false
   accountOpen.value = false
 })
 
@@ -57,14 +55,6 @@ async function loadEmail() {
 }
 onMounted(loadEmail)
 watch(() => userStore.isLoggedIn, loadEmail)
-
-// Global search jumps to the events list with the term pre-filled.
-function submitSearch() {
-  const q = searchTerm.value.trim()
-  if (!q) return
-  router.push({ name: 'events-list', query: { q } })
-  searchTerm.value = ''
-}
 
 async function logoutUser() {
   logoutError.value = ''
@@ -118,19 +108,11 @@ async function logoutUser() {
       </nav>
 
       <div class="riffle-nav__right">
-        <form v-if="searchOpen" class="riffle-nav__search" role="search" @submit.prevent="submitSearch">
-          <input
-            v-model="searchTerm"
-            type="search"
-            class="form-control form-control-sm"
-            placeholder="Search events…"
-            aria-label="Search events"
-            autofocus
-          />
-        </form>
-        <button class="riffle-nav__icon-btn" type="button" aria-label="Search" @click="searchOpen = !searchOpen">
-          <i class="bi bi-search"></i>
-        </button>
+        <!-- Matchmaking button -->
+        <RouterLink :to="{ name: 'matchmaking' }" class="match-btn match-trigger" aria-label="Match me with artists">
+          <MatchCardsIcon />
+          <span class="match-btn__label">Match artists</span>
+        </RouterLink>
 
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
@@ -316,6 +298,41 @@ async function logoutUser() {
   box-shadow: 0 0 0 2px #fff;
 }
 
+/* Matchmaking button */
+.match-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 11px;
+  border-radius: 12px;
+  background: #1d2b64;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(29, 43, 100, 0.3);
+  transition: background 0.2s;
+}
+.match-btn:hover {
+  background: #26388a;
+  color: #fff;
+}
+
+/* Label slides out on hover */
+.match-btn__label {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: max-width 0.35s ease, margin-left 0.35s ease, opacity 0.25s ease;
+}
+.match-btn:hover .match-btn__label,
+.match-btn:focus-visible .match-btn__label {
+  max-width: 180px;
+  margin-left: 10px;
+  opacity: 1;
+}
+
 /* account menu */
 .riffle-nav__account {
   position: relative;
@@ -399,10 +416,6 @@ async function logoutUser() {
   background: #fff1f2;
 }
 
-.riffle-nav__search {
-  width: 150px;
-}
-
 .riffle-nav__user {
   display: inline-flex;
   align-items: center;
@@ -461,9 +474,6 @@ async function logoutUser() {
     right: auto;
     width: 32px;
   }
-  .riffle-nav__search {
-    width: 120px;
-  }
 }
 
 @media (max-width: 575.98px) {
@@ -472,10 +482,6 @@ async function logoutUser() {
   }
   .riffle-nav__brand {
     font-size: 1.5rem;
-  }
-  .riffle-nav__search {
-    width: 100px;
-    min-width: 0;
   }
   .riffle-nav__icon-btn,
   .riffle-nav__avatar {
