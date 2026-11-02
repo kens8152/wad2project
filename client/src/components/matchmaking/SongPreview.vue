@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   track: {
@@ -16,17 +16,26 @@ const emit = defineEmits(['open'])
 
 const audio = ref(null)
 const playing = ref(false)
-const time = ref(0)
-const duration = ref(30)
+// Apple gives a 30 second preview; only the middle 10 seconds (usually the chorus) are played
+const CLIP_START = 10
+const CLIP_LENGTH = 10
+const time = ref(0) // seconds into the 10 second clip
+const duration = CLIP_LENGTH
 
 async function start() {
   emit('open')
   await nextTick()
-  audio.value.play()
+  try {
+    await audio.value.play()
+  } catch (error) {
+    console.error('Could not play the preview', error)
+  }
 }
 
 function togglePlay() {
   if (audio.value.paused) {
+    // after the clip has ended, play it again from its start
+    if (time.value >= CLIP_LENGTH) audio.value.currentTime = CLIP_START
     audio.value.play()
   } else {
     audio.value.pause()
@@ -34,7 +43,18 @@ function togglePlay() {
 }
 
 function seek(e) {
-  audio.value.currentTime = e.target.value
+  audio.value.currentTime = CLIP_START + Number(e.target.value)
+}
+
+// jump to the start of the clip once the song is loaded
+function onLoaded() {
+  audio.value.currentTime = CLIP_START
+}
+
+// follow the song, and stop when the 10 seconds are over
+function onTime() {
+  time.value = Math.min(CLIP_LENGTH, Math.max(0, audio.value.currentTime - CLIP_START))
+  if (time.value >= CLIP_LENGTH) audio.value.pause()
 }
 
 function formatTime(seconds) {
@@ -43,6 +63,11 @@ function formatTime(seconds) {
 
 watch(() => props.open, open => {
   if (!open) audio.value.pause()
+})
+
+// a card that is removed (swiped away, or the page is left) must not keep playing
+onBeforeUnmount(() => {
+  audio.value.pause()
 })
 </script>
 
@@ -106,8 +131,8 @@ watch(() => props.open, open => {
       preload="none"
       @play="playing = true"
       @pause="playing = false"
-      @timeupdate="time = audio.currentTime"
-      @loadedmetadata="duration = audio.duration"
+      @timeupdate="onTime"
+      @loadedmetadata="onLoaded"
     ></audio>
   </div>
 </template>
