@@ -54,16 +54,15 @@ export async function addSongs(artists) {
   }));
 }
 
-// Artists already swiped (skip / follow) or followed, so they are not shown again
+// Artists already swiped (like / skip), so they are not shown again
 async function getSeenArtistIds() {
-  const [swiped, followed] = await Promise.all([
-    supabase.from('matchmaking_actions').select('artist_id').not('action', 'is', null),
-    supabase.from('followed_artists').select('artist_id'),
-  ]);
-  if (swiped.error) throw swiped.error;
-  if (followed.error) throw followed.error;
+  const { data, error } = await supabase
+    .from('matchmaking_actions')
+    .select('artist_id')
+    .not('action', 'is', null);
+  if (error) throw error;
 
-  return [...swiped.data, ...followed.data].map(row => row.artist_id);
+  return data.map(row => row.artist_id);
 }
 
 // A random batch of artists not seen yet, with songs

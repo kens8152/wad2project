@@ -4,7 +4,6 @@ import {
   getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction,
   getSavedArtists, addSavedArtist, removeSavedArtist,
 } from '@/services/matchmakingApi'
-import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
@@ -13,7 +12,6 @@ import SongPreview from '@/components/matchmaking/SongPreview.vue';
 
 const userStore = useUserStore();
 
-const { favourites, loadFavourites, toggleFavourite } = useFavouriteArtists()
 const actionBusy = ref(false)
 const saveFlash = ref(0)
 
@@ -29,7 +27,7 @@ const FLY_UP_DURATIONS = [0.5, 0.3, 0.7, 0.4, 0.6];
 const hasSwipedCards = ref(false);
 const artistsFinished = ref(false); // True after users has swiped all cards
 const showFinishedMessage = ref(false);
-const noArtistsLeft = ref(false); // True when every artist has been swiped or followed
+const noArtistsLeft = ref(false); // True when every artist has been swiped
 
 // Swipe animation: which way the main card is flying and which reaction burst is showing
 const swipeDir = ref(''); // 'left' (skip), 'right' (like), 'up' (unsure)
@@ -163,32 +161,6 @@ function finishSwiping() {
   }, (FLY_UP_DURATIONS[2] + 0.2)*1000); // Second index is the longest
 }
 
-// Set a specific followed state instead of blindly toggling it.
-async function setFollowed(artist, shouldFollow) {
-  const accountId = userStore.user.id
-
-  await loadFavourites()
-
-  if (!userStore.isLoggedIn || userStore.user.id !== accountId) {
-    throw new Error('Your account changed. Please try again.')
-  }
-
-  const alreadyFollowed = favourites.value.includes(artist.id)
-
-  if (alreadyFollowed !== shouldFollow) {
-    await toggleFavourite(artist)
-  }
-
-  if (!userStore.isLoggedIn || userStore.user.id !== accountId) {
-    throw new Error('Your account changed. Please try again.')
-  }
-
-  // toggleFavourite handles its own errors, so verify the result.
-  if (favourites.value.includes(artist.id) !== shouldFollow) {
-    throw new Error('The followed artist could not be updated.')
-  }
-}
-
 async function updateArtistAction(action) {
   const artist = artists.value[current.value]
   if (!artist || artistsFinished.value || !userStore.isLoggedIn || actionBusy.value) return
@@ -196,11 +168,7 @@ async function updateArtistAction(action) {
   actionBusy.value = true
 
   try {
-    // Like is stored as the "follow" action and also follows the artist; it then appears under Liked artists in the profile
-    if (action === 'follow') {
-      await setFollowed(artist, true)
-    }
-
+    // Like is stored as the "follow" action; the artist then appears under Liked artists in the profile
     if (action === 'unsure') {
       await removeArtistAction(artist.id)
     } else {
@@ -291,7 +259,7 @@ async function loadTodaysArtists() {
   if (rows.length === 0) {
     artists.value = await getArtists();
 
-    // Every artist has been swiped or followed already
+    // Every artist has been swiped already
     if (artists.value.length === 0) {
       noArtistsLeft.value = true;
       artistsFinished.value = true;
@@ -303,13 +271,6 @@ async function loadTodaysArtists() {
     return;
   }
 
-  // Artists followed somewhere else since this batch was made count as followed
-  await loadFavourites();
-  const followedSince = rows.filter(row => row.action === null && favourites.value.includes(row.artist_id));
-  for (const row of followedSince) {
-    await setArtistAction(row.artist_id, 'follow');
-  }
-
   // Remember what was already liked or skipped today, so the last screen is right after a refresh
   const likedIds = rows.filter(row => row.action === 'follow').map(row => row.artist_id);
   const skippedIds = rows.filter(row => row.action === 'skip').map(row => row.artist_id);
@@ -317,7 +278,7 @@ async function loadTodaysArtists() {
   skippedThisBatch.value = await addSongs(await getArtistDetails(skippedIds));
 
   // Batch exists: show the ones without an action (only artists that have songs to play)
-  const pending = rows.filter(row => row.action === null && !favourites.value.includes(row.artist_id));
+  const pending = rows.filter(row => row.action === null);
   const pendingArtists = pending.length ? await addSongs(await getArtistDetails(pending.map(row => row.artist_id))) : [];
   artists.value = pendingArtists.filter(artist => artist.tracks.length);
 
@@ -337,7 +298,7 @@ async function startNewBatch() {
   try {
     const newArtists = await getArtists();
 
-    // Every artist has been swiped or followed already: stay on the last screen
+    // Every artist has been swiped already: stay on the last screen
     if (newArtists.length === 0) {
       noArtistsLeft.value = true;
       toast("You've seen every artist we have for now.");
@@ -377,7 +338,6 @@ onMounted(async () => {
   try {
     await loadTodaysArtists()
     await markSavedArtists()
-    await loadFavourites()
     return;
   } catch (err) {
     console.error("Could not load today's artists", err);

@@ -4,13 +4,11 @@ import {
   getMatchHistory, getArtistDetails, changeMatchAction, undoMatchAction,
   getSavedArtists, addSavedArtist, removeSavedArtist,
 } from '@/services/matchmakingApi';
-import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists';
 import { toast } from '@/composables/useToast';
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
 
 const userStore = useUserStore();
-const { favourites, loadFavourites, toggleFavourite } = useFavouriteArtists();
 const busyId = ref(null);
 const savedIds = ref([]);
 
@@ -21,7 +19,7 @@ const filter = ref('all');
 
 const filters = [
   { value: 'all', label: 'All' },
-  { value: 'follow', label: 'Followed' },
+  { value: 'follow', label: 'Liked' },
   { value: 'skip', label: 'Skipped' },
 ];
 
@@ -34,22 +32,13 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
-// Follow or unfollow to match the swipe
-async function setFollowed(artist, shouldFollow) {
-  await loadFavourites();
-  if (favourites.value.includes(artist.id) !== shouldFollow) {
-    await toggleFavourite(artist, true);
-  }
-}
-
-// Swiped the wrong way: change skip <-> follow
+// Swiped the wrong way: change skip <-> like (a like is stored as "follow")
 async function changeAction(item, action) {
   if (item.action === action || busyId.value) return;
   busyId.value = item.artist.id;
 
   try {
     await changeMatchAction(item.artist.id, action);
-    await setFollowed(item.artist, action === 'follow');
     history.value.forEach(h => {
       if (h.artist.id === item.artist.id) h.action = action;
     });
@@ -61,7 +50,7 @@ async function changeAction(item, action) {
   }
 }
 
-// Bookmark (separate from following)
+// Bookmark (separate from liking and following)
 async function toggleSave(artist) {
   const wasSaved = savedIds.value.includes(artist.id);
   savedIds.value = wasSaved ? savedIds.value.filter(id => id !== artist.id) : [...savedIds.value, artist.id];
@@ -87,7 +76,6 @@ async function undo(item) {
 
   try {
     await undoMatchAction(item.artist.id);
-    await setFollowed(item.artist, false);
     history.value = history.value.filter(h => h.artist.id !== item.artist.id);
     toast(item.artist.name + ' can show up in matchmaking again');
   } catch (err) {
@@ -135,7 +123,7 @@ onMounted(() => {
         <i class="bi bi-arrow-left"></i> Profile
       </RouterLink>
       <h1 class="fw-bold mt-1 mb-1">Artist matchmaking history</h1>
-      <p class="text-secondary mb-0">Artists you followed or skipped previously will be shown here</p>
+      <p class="text-secondary mb-0">Artists you liked or skipped previously will be shown here</p>
     </div>
 
     <!-- Filter -->
@@ -170,7 +158,7 @@ onMounted(() => {
     <div v-else-if="filteredHistory.length === 0" class="text-center py-5">
       <i class="bi bi-clock-history display-4 text-primary"></i>
       <h2 class="h4 fw-bold mt-3">Nothing here yet</h2>
-      <p class="text-secondary">Skip or follow artists in matchmaking and they will show up here.</p>
+      <p class="text-secondary">Like or skip artists in matchmaking and they will show up here.</p>
       <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-dark">Match artists</RouterLink>
     </div>
 
@@ -191,7 +179,7 @@ onMounted(() => {
           </button>
 
           <div class="card-body d-flex align-items-center gap-3 p-3 pe-5">
-            <!-- Photo with followed / skipped icon -->
+            <!-- Photo with liked / skipped icon -->
             <div class="position-relative flex-shrink-0">
               <img
                 :src="item.artist.image"
@@ -220,7 +208,7 @@ onMounted(() => {
               </div>
               <div class="small text-secondary d-flex flex-wrap column-gap-3 mt-1">
                 <span class="fw-semibold" :class="item.action === 'follow' ? 'text-danger' : 'text-body'">
-                  {{ item.action === 'follow' ? 'Followed' : 'Skipped' }}
+                  {{ item.action === 'follow' ? 'Liked' : 'Skipped' }}
                 </span>
                 <span>{{ formatDate(item.date) }}</span>
               </div>
@@ -236,7 +224,7 @@ onMounted(() => {
               :disabled="busyId === item.artist.id"
               @click="changeAction(item, 'follow')"
             >
-              <i class="bi bi-heart"></i> Follow instead
+              <i class="bi bi-heart"></i> Like instead
             </button>
             <button
               v-else

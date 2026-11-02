@@ -155,14 +155,8 @@ const removingId = ref('')
 async function unlikeArtist(artist) {
   removingId.value = artist.id
   try {
-    // a liked artist is also followed: unfollowing removes the like (the matchmaking swipe) too
-    await loadFavourites()
-    if (favourites.value.includes(artist.id)) {
-      await toggleFavourite(artist)
-    } else {
-      await removeLikedArtist(artist.id)
-    }
-    await Promise.all([loadLikedArtists(), loadFollowedArtists()])
+    await removeLikedArtist(artist.id)
+    await loadLikedArtists()
     toast('Removed ' + artist.name + ' from your liked artists')
   } catch (error) {
     console.error('Could not remove the liked artist', error)
@@ -180,8 +174,7 @@ async function unfollowArtist(artist) {
       await toggleFavourite(artist)
     }
 
-    // unfollowing also removes the matchmaking like
-    await Promise.all([loadFollowedArtists(), loadLikedArtists()])
+    await loadFollowedArtists()
   } catch (error) {
     console.error('Could not refresh followed artists:', error)
     toast('Could not refresh the artists you follow. Please try again.')

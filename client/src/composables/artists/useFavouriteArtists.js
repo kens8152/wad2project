@@ -1,6 +1,6 @@
 import { ref, watch, effectScope } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { getFollowedArtists, addFollowedArtist, removeFollowedArtist, changeMatchAction, undoMatchAction } from '@/services/matchmakingApi'
+import { getFollowedArtists, addFollowedArtist, removeFollowedArtist } from '@/services/matchmakingApi'
 import { toast } from '@/composables/useToast'
 
 // Shared between every component that uses this file.
@@ -66,8 +66,7 @@ export function useFavouriteArtists() {
     })
   }
 
-  // keepSwipe: true when the caller (match history) changes the swipe itself
-  async function toggleFavourite(artist, keepSwipe = false) {
+  async function toggleFavourite(artist) {
     if (!userStore.isLoggedIn) {
       toast('Please log in to follow artists.')
       return
@@ -108,20 +107,6 @@ export function useFavouriteArtists() {
 
       favourites.value = wasFavourite ? favourites.value.filter(id => id !== artistId) : [...new Set([...favourites.value, artistId])]
       toast(wasFavourite ? 'Unfollowed artist' : 'Following artist')
-
-      // Keep the matchmaking swipe in step: follow -> swipe becomes follow, unfollow -> swipe is undone
-      // (does nothing if the artist was never swiped)
-      if (!keepSwipe) {
-        try {
-          if (wasFavourite) {
-            await undoMatchAction(artistId)
-          } else {
-            await changeMatchAction(artistId, 'follow')
-          }
-        } catch (error) {
-          console.error('Could not update matchmaking swipe:', error)
-        }
-      }
     } catch (error) {
       console.error('Could not update followed artist:', error)
       toast('Could not update this artist. Please try again.')
