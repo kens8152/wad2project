@@ -438,8 +438,8 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
             </form>
 
             <template v-else>
-              <h1 class="h3">{{ post.title }}</h1>
-              <p v-if="post.content" style="white-space: pre-wrap">{{ post.content }}</p>
+              <h1 class="h3 forum-title">{{ post.title }}</h1>
+              <p v-if="post.content" class="forum-caption" style="white-space: pre-wrap">{{ post.content }}</p>
 
               <PostImages :images="post.images ?? []" linked class="mb-3" />
             </template>

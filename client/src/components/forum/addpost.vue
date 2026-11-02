@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
 
   
   <Teleport to="body">
-    <div v-if="open">
+    <div v-if="open" class="forum-font">
       <div class="modal-backdrop show"></div>
 
       <div
