@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/user'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useMessagesStore } from '@/stores/messages'
 import { supabase } from '@/services/supabase'
+import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,6 +107,12 @@ async function logoutUser() {
       </nav>
 
       <div class="riffle-nav__right">
+        <!-- Matchmaking button -->
+        <RouterLink :to="{ name: 'matchmaking' }" class="match-btn match-trigger" aria-label="Match me with artists">
+          <MatchCardsIcon />
+          <span class="match-btn__label">Match artists</span>
+        </RouterLink>
+
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
             <i class="bi bi-chat-dots"></i>
@@ -288,6 +295,41 @@ async function logoutUser() {
   border-radius: 50%;
   background: #e0245e;
   box-shadow: 0 0 0 2px #fff;
+}
+
+/* Matchmaking button */
+.match-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 11px;
+  border-radius: 12px;
+  background: #1d2b64;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(29, 43, 100, 0.3);
+  transition: background 0.2s;
+}
+.match-btn:hover {
+  background: #26388a;
+  color: #fff;
+}
+
+/* Label slides out on hover */
+.match-btn__label {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: max-width 0.35s ease, margin-left 0.35s ease, opacity 0.25s ease;
+}
+.match-btn:hover .match-btn__label,
+.match-btn:focus-visible .match-btn__label {
+  max-width: 180px;
+  margin-left: 10px;
+  opacity: 1;
 }
 
 /* account menu */

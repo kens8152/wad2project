@@ -47,8 +47,10 @@ const results = computed(() => {
   <div class="vstack gap-3">
     <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
       <ForumMenuButton />
-      <Forumsearch v-model="searchTerm" />
-      <Forumsort v-model="sort" />
+      <div class="forum-filter-bar">
+        <Forumsearch v-model="searchTerm" />
+        <Forumsort v-model="sort" />
+      </div>
     </div>
 
     <WheelList :items="results" v-slot="{ item }">
@@ -60,13 +62,3 @@ const results = computed(() => {
     </p>
   </div>
 </template>
-
-<style scoped>
-.forum-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 1020;
-  height: var(--forum-search-height, 3.5rem);
-  background: var(--bs-body-bg);
-}
-</style>

@@ -13,6 +13,7 @@ const postList = ref([])
 const tags = ref([])
 const loading = ref(true)
 const route = useRoute()
+const TOOLBAR_ROUTES = ['forum', 'forum-lfg', 'forum-saved', 'forum-mypost']
 async function addPost(p) {
     if (!userStore.user) return
     try {
@@ -57,7 +58,7 @@ onMounted(async () => {
             <Forumnav @reset="resetCount++" />
             <main
                 class="d-flex justify-content-center flex-grow-1 px-3"
-                :class="route.name === 'forum' ? '' : 'pt-3'"
+                :class="TOOLBAR_ROUTES.includes(route.name) ? '' : 'pt-3'"
                 style="min-width: 0; padding-bottom: 6rem"
             >
                 <div class="vstack gap-3">

@@ -1,6 +1,6 @@
 import { ref, watch, effectScope } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { getSavedArtists, addSavedArtist, removeSavedArtist } from '@/services/matchmakingApi'
+import { getFollowedArtists, addFollowedArtist, removeFollowedArtist } from '@/services/matchmakingApi'
 import { toast } from '@/composables/useToast'
 
 // Shared between every component that uses this file.
@@ -25,7 +25,7 @@ export function useFavouriteArtists() {
 
     const request = (async () => {
       try {
-        const rows = await getSavedArtists()
+        const rows = await getFollowedArtists()
 
         // Ignore an old response after logout or an account change.
         if (version !== accountVersion) return
@@ -58,8 +58,8 @@ export function useFavouriteArtists() {
 
         if (userStore.isLoggedIn && userStore.user.id) {
           loadFavourites().catch(error => {
-            console.error('Could not load saved artists:', error)
-            toast('Could not load your saved artists. Please refresh to try again.')
+            console.error('Could not load followed artists:', error)
+            toast('Could not load the artists you follow. Please refresh to try again.')
           })
         }
       }, { immediate: true, flush: 'sync' })
@@ -68,19 +68,19 @@ export function useFavouriteArtists() {
 
   async function toggleFavourite(artist) {
     if (!userStore.isLoggedIn) {
-      toast('Please log in to save artists.')
+      toast('Please log in to follow artists.')
       return
     }
 
     const artistId = artist?.id
     if (!artistId || pendingIds.value.includes(artistId)) return
 
-    // Wait for the saved list before deciding whether to add or remove.
+    // Wait for the followed list before deciding whether to add or remove.
     try {
       if (loadPromise) await loadPromise
     } catch (error) {
-      console.error('Could not load saved artists:', error)
-      toast('Could not check your saved artists. Please try again.')
+      console.error('Could not load followed artists:', error)
+      toast('Could not check the artists you follow. Please try again.')
       return
     }
 
@@ -93,12 +93,12 @@ export function useFavouriteArtists() {
 
     try {
       if (wasFavourite) {
-        await removeSavedArtist(artistId)
+        await removeFollowedArtist(artistId)
       } else {
         try {
-          await addSavedArtist(artistId)
+          await addFollowedArtist(artistId)
         } catch (error) {
-          // An artist already saved elsewhere should not create a duplicate.
+          // An artist already followed elsewhere should not create a duplicate.
           if (error.code !== '23505') throw error
         }
       }
@@ -106,9 +106,9 @@ export function useFavouriteArtists() {
       if (version !== accountVersion) return
 
       favourites.value = wasFavourite ? favourites.value.filter(id => id !== artistId) : [...new Set([...favourites.value, artistId])]
-      toast(wasFavourite ? 'Artist removed from saved artists' : 'Artist saved')
+      toast(wasFavourite ? 'Unfollowed artist' : 'Following artist')
     } catch (error) {
-      console.error('Could not update saved artist:', error)
+      console.error('Could not update followed artist:', error)
       toast('Could not update this artist. Please try again.')
     } finally {
       if (version === accountVersion) {

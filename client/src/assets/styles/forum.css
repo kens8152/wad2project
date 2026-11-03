@@ -1,4 +1,3 @@
-
 .forum-icon-btn {
   --bs-btn-color: var(--bs-secondary-color);
   --bs-btn-hover-color: var(--bs-secondary-color);
@@ -77,4 +76,26 @@ a.forum-tag:focus-visible {
     color: #ffb020;
     filter: drop-shadow(0 0 4px rgba(255, 176, 32, 0.8));
   }
+}
+
+.forum-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-grow: 1;
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 14px;
+  background: var(--riffle-surface);
+  --forum-search-height: auto;
+}
+
+.forum-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  padding-block: 0.75rem 0.5rem;
+  margin-bottom: -0.5rem;
+  background: var(--bs-body-bg);
 }

@@ -93,6 +93,12 @@ const routes = [
     component: () => import('@/views/matchmaking/SavedArtistsView.vue'),
     meta: { title: 'Saved artists', section: 'profile' },
   },
+  {
+    path: '/profile/match-history',
+    name: 'match-history',
+    component: () => import('@/views/matchmaking/MatchHistoryView.vue'),
+    meta: { title: 'Match history', section: 'profile' },
+  },
 
   {
     path: '/notifications',

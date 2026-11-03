@@ -118,6 +118,7 @@ async function removePost() {
 </template>
 <style scoped>
 .post-card {
+  background-color: var(--riffle-surface);
   transition: background-color 0.2s ease;
 }
 .post-card:hover,
