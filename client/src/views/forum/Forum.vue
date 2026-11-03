@@ -52,7 +52,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="forum-font">
+    <div>
         <div class="d-flex flex-column flex-lg-row">
             <Forumnav @reset="resetCount++" />
             <main
