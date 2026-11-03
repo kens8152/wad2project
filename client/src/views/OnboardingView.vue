@@ -1,7 +1,7 @@
 <script setup>
 
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import { searchSongs, fetchTopArtists } from '@/services/spotifyApi'
 import { getTopGenres } from '@/services/lastFM'
@@ -13,13 +13,16 @@ import { findApplePreview } from '@/services/applePreviewApi'
 
 import { supabase } from '@/services/supabase.js'
 
-import { loginWithSpotify, refreshAccessToken } from '@/services/spotifyAuth'
+import { loginWithSpotify, refreshAccessToken, logout as clearSpotifySession } from '@/services/spotifyAuth'
 
 
 const userStore = useUserStore()
 
 const saving = ref(false)
 const connectingSpotify = ref(false)
+const spotifyConnected = ref(Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token')))
+
+let alreadyOnboarded = false
 
 const hasSavedPreferences = ref(false)
 const songFeedback = ref('')
@@ -118,6 +121,8 @@ const songError = ref('')
 const errorMessage = ref('')
 
 const router = useRouter()
+const route = useRoute()
+
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
 
@@ -169,13 +174,27 @@ onMounted(async () => {
     errorMessage.value = 'Your unfinished form could not be restored. Please check your preferences.'
   }
 
-  loadMissingCovers()
+  loadMissingCovers().catch(error => {
+    console.warn('Could not load song artwork:', error)
+  })
+
+  spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
+
+  if (route.query.spotify === 'connected') {
+    const query = { ...route.query }
+    delete query.spotify
+
+    await router.replace({ path: route.path, query })
+    await importSpotifyGenres()
+  }
 })
 
 async function connectSpotify() {
-  if (!userStore.isLoggedIn || connectingSpotify.value) return
+  if (!userStore.isLoggedIn || connectingSpotify.value || importingGenres.value || saving.value || songLoading.value) return
 
   errorMessage.value = ''
+  genreImportMessage.value = ''
+  genreImportError.value = ''
   connectingSpotify.value = true
 
   try {
@@ -192,6 +211,18 @@ async function connectSpotify() {
   } finally {
     connectingSpotify.value = false
   }
+}
+
+function disconnectSpotify() {
+  if (saving.value || connectingSpotify.value || importingGenres.value || songLoading.value) return
+
+  clearSpotifySession()
+  spotifyConnected.value = false
+  openSongId.value = ''
+  songResults.value = []
+  songError.value = ''
+  genreImportError.value = ''
+  genreImportMessage.value = 'Spotify disconnected from this browser. Your selected genres and favourite songs have been kept.'
 }
 
 
@@ -246,7 +277,7 @@ function addSong(song) {
 }
 
 async function savePreferences() {
-  if (!userStore.isLoggedIn || saving.value) return
+  if (!userStore.isLoggedIn || saving.value || importingGenres.value || connectingSpotify.value) return
 
   errorMessage.value = ''
 
@@ -332,7 +363,8 @@ async function importSpotifyGenres() {
     let token = localStorage.getItem('access_token')
 
     if (!token) {
-      genreImportError.value = 'Connect Spotify first, then click Import Spotify genres.'
+      spotifyConnected.value = false
+      genreImportError.value = 'Please connect Spotify to get genre suggestions.'
       return
     }
 
@@ -369,7 +401,7 @@ async function importSpotifyGenres() {
     const status = error.response?.status
 
     if (status === 401 || status === 403) {
-      genreImportError.value = 'Spotify access was denied or expired. Reconnect Spotify, then try importing again.'
+      genreImportError.value = 'Spotify access was denied or expired. Disconnect Spotify, then connect again to retry.'
     } else {
       genreImportError.value = 'Genres could not be imported. Please try again or select them manually.'
     }
@@ -404,12 +436,12 @@ async function importSpotifyGenres() {
         <div class="connection-box spotify-box">
           <div>
             <h2>Connect Spotify</h2>
-            <p>Connect your account, then import suggested genres from your top artists.</p>
+            <p>Connect Spotify to automatically suggest genres from your top artists. Review your selections below before saving.</p>
           </div>
 
-          <div class="d-flex flex-wrap gap-2">
-            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
-            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="importSpotifyGenres">{{ importingGenres ? 'Importing genres…' : 'Import Spotify genres' }}</button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span v-if="spotifyConnected" class="small fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>Spotify connected</span>
+            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres || songLoading" @click="spotifyConnected ? disconnectSpotify() : connectSpotify()">{{ connectingSpotify ? 'Connecting…' : importingGenres ? 'Suggesting genres…' : spotifyConnected ? 'Disconnect Spotify' : 'Connect Spotify' }}</button>
           </div>
         </div>
 

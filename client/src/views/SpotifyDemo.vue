@@ -1,69 +1,4 @@
-<template>
-  <div class="app">
-    <h1>Spotify Demo</h1>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <RouterLink :to="returnPath" class="return-link">Return to Riffle →</RouterLink>
-
-    <!-- Logged out -->
-    <button v-if="!accessToken" @click="loginWithSpotify">Log in with Spotify</button>
-
-    <!-- Logged in -->
-    <template v-else>
-
-      <button class="secondary" @click="logout">Log out</button>
-
-      <section v-if="profile" class="profile">
-        <img v-if="profile.images?.length" :src="profile.images[0].url" alt="Avatar" />
-        <div>
-          <h2>{{ profile.display_name }}</h2>
-          <p>{{ profile.email }}</p>
-          <p>{{ profile.country }} · {{ profile.product }}</p>
-        </div>
-      </section>
-
-      <p v-if="topGenres.length">
-        Your top genres: <strong>{{ topGenres.join(', ') }}</strong>
-      </p>
-
-      <h2>Your playlists</h2>
-      <p v-if="loading">Loading…</p>
-      <p v-else-if="!playlists.length">No playlists found.</p>
-      <div class="grid">
-        <a
-          v-for="p in playlists"
-          :key="p.id"
-          class="card"
-          :href="p.external_urls?.spotify"
-          target="_blank"
-          rel="noopener"
-        >
-          <img v-if="p.images?.length" :src="p.images[0].url" :alt="p.name" />
-          <strong>{{ p.name }}</strong>
-          <small>{{ trackCount(p) }}</small>
-        </a>
-      </div>
-      <h2>Song Recommendation:</h2>
-      <input type="text" v-model="selectedGenre" placeholder="Enter a genre"  style="margin-right: 10px;"/>
-      <button @click="getSelectedRecommendation">Get Recommendation</button>
-      <div class="grid" style="margin-top: 20px;">
-        <a
-          v-for="album in albums"
-          :key="album.id"
-          class="card"
-          :href="album.external_urls?.spotify"
-          target="_blank"
-          rel="noopener"
-        >
-          <img v-if="album.images?.length" :src="album.images[0].url" :alt="album.name" />
-          <strong>{{ album.name }}</strong>
-          <small>{{ album.total_tracks }} tracks</small>
-        </a>
-      </div>
-
-    </template>
-  </div>
-</template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
@@ -201,8 +136,13 @@ onMounted(async () => {
     const returnTo = sessionStorage.getItem('riffle-spotify-return-to')
     sessionStorage.removeItem('riffle-spotify-return-to')
 
-    if (returnTo === '/onboarding' || returnTo === '/profile') {
-      await router.replace(returnTo)
+    if (returnTo === '/onboarding') {
+      await router.replace({ path: '/onboarding', query: { spotify: 'connected' } })
+      return
+    }
+
+    if (returnTo === '/profile') {
+      await router.replace('/profile')
       return
     }
 
@@ -225,6 +165,73 @@ onMounted(async () => {
   }
 })
 </script>
+
+<template>
+  <div class="app">
+    <h1>Spotify Demo</h1>
+
+    <p v-if="error" class="error">{{ error }}</p>
+    <RouterLink :to="returnPath" class="return-link">Return to Riffle →</RouterLink>
+
+    <!-- Logged out -->
+    <button v-if="!accessToken" @click="loginWithSpotify">Log in with Spotify</button>
+
+    <!-- Logged in -->
+    <template v-else>
+
+      <button class="secondary" @click="logout">Log out</button>
+
+      <section v-if="profile" class="profile">
+        <img v-if="profile.images?.length" :src="profile.images[0].url" alt="Avatar" />
+        <div>
+          <h2>{{ profile.display_name }}</h2>
+          <p>{{ profile.email }}</p>
+          <p>{{ profile.country }} · {{ profile.product }}</p>
+        </div>
+      </section>
+
+      <p v-if="topGenres.length">
+        Your top genres: <strong>{{ topGenres.join(', ') }}</strong>
+      </p>
+
+      <h2>Your playlists</h2>
+      <p v-if="loading">Loading…</p>
+      <p v-else-if="!playlists.length">No playlists found.</p>
+      <div class="grid">
+        <a
+          v-for="p in playlists"
+          :key="p.id"
+          class="card"
+          :href="p.external_urls?.spotify"
+          target="_blank"
+          rel="noopener"
+        >
+          <img v-if="p.images?.length" :src="p.images[0].url" :alt="p.name" />
+          <strong>{{ p.name }}</strong>
+          <small>{{ trackCount(p) }}</small>
+        </a>
+      </div>
+      <h2>Song Recommendation:</h2>
+      <input type="text" v-model="selectedGenre" placeholder="Enter a genre"  style="margin-right: 10px;"/>
+      <button @click="getSelectedRecommendation">Get Recommendation</button>
+      <div class="grid" style="margin-top: 20px;">
+        <a
+          v-for="album in albums"
+          :key="album.id"
+          class="card"
+          :href="album.external_urls?.spotify"
+          target="_blank"
+          rel="noopener"
+        >
+          <img v-if="album.images?.length" :src="album.images[0].url" :alt="album.name" />
+          <strong>{{ album.name }}</strong>
+          <small>{{ album.total_tracks }} tracks</small>
+        </a>
+      </div>
+
+    </template>
+  </div>
+</template>
 
 <style scoped>
 :global(body.spotify-dark) { background-color: #121212; color: #fff; }
