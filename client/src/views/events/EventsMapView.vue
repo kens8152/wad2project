@@ -1,14 +1,18 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import EventsShell from '../../components/events/EventsShell.vue'
 import EventMap from '../../components/events/EventMap.vue'
 import EventMapCard from '../../components/events/EventMapCard.vue'
 import SortDropdown from '../../components/events/SortDropdown.vue'
 import { SORTS, useEventFilters } from '../../composables/events/useEventFilters'
+import { useEventsData } from '../../composables/events/useEventsData'
+import { useEventsTour } from '../../composables/events/useEventsTour'
 
+const route = useRoute()
 const router = useRouter()
 const filters = useEventFilters()
+const data = useEventsData()
 
 const selectedId = ref(null) // the pin that was clicked
 const highlightId = ref(null) // its card, highlighted once the strip has stopped scrolling
@@ -91,6 +95,49 @@ watch(filters.sort, async () => {
   cardsEl.value?.scrollTo({ left: 0, behavior: 'auto' })
 })
 
+// "View on map" on an event page comes here with ?focus=<event id>: that event is selected and the map shows it close up.
+// If the filters hide that event, the map shows the events at its venue instead (the same as the venue links elsewhere).
+const focusId = computed(() => {
+  const id = Array.isArray(route.query.focus) ? route.query.focus[0] : route.query.focus
+  return id || null
+})
+// the map is only asked to show the event while that event is among the results
+function focusInResults(events) {
+  return focusId.value && events.some((e) => e.id === focusId.value) ? focusId.value : null
+}
+
+let selectedFromLink = null
+let widenedFor = null
+
+watch([focusId, filters.results, filters.ready], ([id, list, ready]) => {
+  if (!id || !ready || selectedFromLink === id) return
+
+  if (list.some((e) => e.id === id)) {
+    selectedFromLink = id
+    select(id)
+  } else if (widenedFor !== id) {
+    widenedFor = id
+    const event = data.getEvent(id)
+    if (event) filters.applyQuery({ venue: event.venueId })
+  }
+}, { immediate: true })
+
+// The Events guide picks a pin (and lets it go again) through these commands.
+const tour = useEventsTour()
+watch(
+  () => tour.command.value,
+  (command) => {
+    if (command.type === 'select' && command.id && selectedId.value !== command.id) select(command.id)
+    else if (command.type === 'clear' && selectedId.value) {
+      clearInterval(highlightTimer)
+      selectedId.value = null
+      highlightId.value = null
+      cardsEl.value?.scrollTo({ left: 0, behavior: 'smooth' })
+    }
+  },
+  { flush: 'sync' }, // every command counts, even two sent one after the other
+)
+
 // Drop a selection that's been filtered out.
 watch(filters.results, (list) => {
   if (selectedId.value && !list.some((e) => e.id === selectedId.value)) {
@@ -115,6 +162,7 @@ watch(filters.results, (list) => {
           :user-location="filters.user.value.location"
           :selected-id="selectedId"
           :hover-id="hoverId"
+          :focus-id="focusInResults(events)"
           @select="select"
           @open="open"
         />

@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { fetchEventCatalog } from '../../services/events/eventsService'
 import { useCurrentUser } from '@/composables/useCurrentUser'
+import { distanceKm } from '../../utils/events/geo'
 
 // Module-level state: the catalog is fetched once and shared by the map view,
 // list view and detail view, so switching between them is instant.
@@ -13,6 +14,11 @@ const error = ref('')
 
 let inflight = null
 
+// how far every event is from a place
+function measureFrom(location) {
+  for (const event of events.value) event.distanceKm = distanceKm(location, event.venue)
+}
+
 function load() {
   if (inflight) return inflight
   const { user } = useCurrentUser()
@@ -24,6 +30,7 @@ function load() {
       artists.value = catalog.artists
       genres.value = catalog.genres
       venues.value = catalog.venues
+      measureFrom(user.value.location) // a location found while the events were loading
     })
     .catch((e) => {
       inflight = null // allow a retry
@@ -46,6 +53,11 @@ export function useEventsData() {
     error,
     user,
     load,
+    // your real location was found: the map and every distance move to it
+    setLocation(location) {
+      user.value = { ...user.value, location }
+      measureFrom(location)
+    },
     getEvent: (id) => events.value.find((e) => e.id === id) || null,
   }
 }

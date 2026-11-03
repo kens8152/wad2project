@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
 import RangeSlider from './RangeSlider.vue'
 import ArtistAvatar from './ArtistAvatar.vue'
 import { useEventFilters, MAX_DISTANCE_KM, WEEK_DAYS } from '../../composables/events/useEventFilters'
@@ -8,12 +8,6 @@ import { toast } from '@/composables/useToast'
 const emit = defineEmits(['applied'])
 
 const filters = useEventFilters()
-const searchInput = ref(null)
-
-function clearSearch() {
-  filters.setQuery('')
-  searchInput.value?.focus()
-}
 const { draft, genres, artists, genreCounts, days } = filters
 
 // ---- artists list -----------------------------------------------------------
@@ -36,31 +30,6 @@ const distanceTicks = [
   { value: MAX_DISTANCE_KM, top: '20+ km' },
 ]
 const dateTicks = computed(() => days.value.map((d) => ({ value: d.index, top: d.dow, bottom: d.num })))
-
-// ---- voice search (Web Speech API, where available) ------------------------------
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const listening = ref(false)
-let recognition = null
-
-function toggleVoice() {
-  if (!SpeechRecognition) {
-    toast('Voice search is not supported in this browser')
-    return
-  }
-  if (listening.value) {
-    recognition?.stop()
-    return
-  }
-  recognition = new SpeechRecognition()
-  recognition.lang = 'en-SG'
-  recognition.interimResults = false
-  recognition.onresult = (e) => filters.setQuery(e.results[0][0].transcript)
-  recognition.onerror = () => toast('Could not hear that, try again')
-  recognition.onend = () => (listening.value = false)
-  listening.value = true
-  recognition.start()
-}
-onBeforeUnmount(() => recognition?.abort())
 
 // a short burst of music notes from the heart when preferences are saved
 const heartBurst = ref(false)
@@ -89,38 +58,6 @@ function apply() {
 
 <template>
   <aside class="filters riffle-card" aria-label="Event filters">
-    <!-- Search -->
-    <div class="filters__search">
-      <i class="bi bi-search" aria-hidden="true"></i>
-      <input
-        ref="searchInput"
-        :value="draft.q"
-        type="search"
-        placeholder="Search"
-        aria-label="Search events, artists or venues"
-        @input="filters.setQuery($event.target.value)"
-      />
-      <button
-        v-if="draft.q"
-        type="button"
-        class="filters__clear"
-        aria-label="Clear search"
-        @click="clearSearch"
-      >
-        <i class="bi bi-x-lg"></i>
-      </button>
-      <button
-        type="button"
-        class="filters__mic"
-        :class="{ 'is-listening': listening }"
-        :aria-label="listening ? 'Stop voice search' : 'Search by voice'"
-        :aria-pressed="listening"
-        @click="toggleVoice"
-      >
-        <i class="bi bi-mic-fill"></i>
-      </button>
-    </div>
-
     <!-- Preferences -->
     <div class="filters__row filters__prefs">
       <div class="d-flex align-items-center gap-2">
@@ -250,75 +187,6 @@ function apply() {
 <style scoped>
 .filters {
   padding: 0.75rem 1rem;
-}
-
-.filters__search {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.2rem 0.4rem 0.2rem 0.9rem;
-  border-radius: 999px;
-  background: #eef0f8;
-  color: var(--riffle-muted);
-}
-.filters__search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  outline: none;
-  font-size: 1rem;
-  color: var(--riffle-ink);
-  padding: 0.35rem 0;
-}
-.filters__search input::placeholder {
-  color: var(--riffle-muted);
-}
-.filters__search:focus-within {
-  box-shadow: 0 0 0 2px var(--riffle-blue);
-}
-.filters__search input::-webkit-search-cancel-button {
-  -webkit-appearance: none; /* the browser's own cross is replaced by the button below */
-  appearance: none;
-  display: none;
-}
-.filters__clear {
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--riffle-muted);
-  font-size: 0.8rem;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
-}
-.filters__clear:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
-.filters__clear:active {
-  transform: scale(0.92);
-}
-.filters__mic {
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--riffle-muted);
-}
-.filters__mic:hover {
-  background: #e0e4f3;
-}
-.filters__mic.is-listening {
-  background: var(--riffle-coral);
-  color: #fff;
-  animation: pulse 1.2s infinite;
-}
-@keyframes pulse {
-  50% {
-    box-shadow: 0 0 0 8px rgba(240, 72, 62, 0.15);
-  }
 }
 
 .filters__row {
