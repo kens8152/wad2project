@@ -91,16 +91,8 @@ async function logoutUser() {
 
     <div class="riffle-nav__inner container-xxl">
       <RouterLink :to="{ name: 'discover' }" class="riffle-nav__brand" aria-label="Riffle home">
-        <span class="riffle-nav__planet">
-          <span class="riffle-nav__ring riffle-nav__ring--back" aria-hidden="true"></span>
-          <span class="riffle-nav__word">Riffle</span>
-          <span class="riffle-nav__ring riffle-nav__ring--front" aria-hidden="true"></span>
-          <span class="riffle-nav__orbit" aria-hidden="true">
-            <span class="riffle-nav__orbit-x">
-              <i class="bi bi-music-note-beamed riffle-nav__logo"></i>
-            </span>
-          </span>
-        </span>
+        <i class="bi bi-music-note-beamed riffle-nav__logo"></i>
+        <span>Riffle</span>
       </RouterLink>
 
       <nav class="riffle-nav__links" :class="{ 'is-open': menuOpen }" aria-label="Main">
@@ -226,101 +218,12 @@ async function logoutUser() {
   text-decoration: none;
 }
 
-/* The word "Riffle" is the planet; a tilted ring and the music note orbit around it.
-   The back half of the ring and the note (while it is on the far side) sit behind the word. */
-.riffle-nav__planet {
-  --orbit-x: 2.3em; /* half the ring's width */
-  --orbit-y: 0.55em; /* half the ring's height */
-  --orbit-time: 4s;
-  position: relative;
-  isolation: isolate;
-  display: inline-grid;
-  place-items: center;
-  margin-inline: 0.75em;
-}
-.riffle-nav__word {
-  position: relative;
-  z-index: 1;
-}
-
-.riffle-nav__ring,
-.riffle-nav__orbit {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  pointer-events: none;
-}
-.riffle-nav__ring {
-  width: calc(var(--orbit-x) * 2);
-  height: calc(var(--orbit-y) * 2);
-  margin: calc(var(--orbit-y) * -1) 0 0 calc(var(--orbit-x) * -1);
-  border: 2px solid rgba(124, 77, 255, 0.35);
-  border-radius: 50%;
-  transform: rotate(-10deg);
-}
-.riffle-nav__ring--back {
-  z-index: 0;
-  clip-path: inset(0 0 50% 0);
-}
-.riffle-nav__ring--front {
-  z-index: 2;
-  clip-path: inset(50% 0 0 0);
-  border-color: rgba(255, 77, 141, 0.45);
-}
-
-/* three nested layers: one swaps front/back, one swings side to side, one up and down.
-   Together the side-to-side and up-and-down swings trace an ellipse that matches the ring. */
-.riffle-nav__orbit {
-  transform: rotate(-10deg);
-  animation: orbit-depth var(--orbit-time) step-end infinite;
-}
-.riffle-nav__orbit-x {
-  display: block;
-  animation: orbit-x calc(var(--orbit-time) / 2) ease-in-out infinite alternate;
-}
 .riffle-nav__logo {
-  display: block;
-  margin: -0.5em 0 0 -0.35em; /* centres the note on its path */
-  font-size: 0.7em;
-  line-height: 1;
+  font-size: 1.9rem;
   background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
   -webkit-background-clip: text;  /* cuts that background to the shape of the text (here, the icon glyph) */
   background-clip: text;
   color: transparent;
-  animation: orbit-y calc(var(--orbit-time) / 2) ease-in-out calc(var(--orbit-time) / -4) infinite alternate;
-}
-
-@keyframes orbit-depth {
-  0% {
-    z-index: 3; /* passing in front of the word */
-  }
-  50% {
-    z-index: 0; /* passing behind it */
-  }
-}
-@keyframes orbit-x {
-  from {
-    transform: translateX(calc(var(--orbit-x) * -1));
-  }
-  to {
-    transform: translateX(var(--orbit-x));
-  }
-}
-@keyframes orbit-y {
-  from {
-    transform: translateY(calc(var(--orbit-y) * -1)) scale(0.75); /* far side: smaller */
-  }
-  to {
-    transform: translateY(var(--orbit-y)) scale(1.15); /* near side: bigger */
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .riffle-nav__orbit,
-  .riffle-nav__orbit-x,
-  .riffle-nav__logo {
-    animation-play-state: paused;
-  }
 }
 
 .riffle-nav__links {
