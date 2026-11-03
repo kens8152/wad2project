@@ -3,6 +3,7 @@ import { onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ToastHost from '@/components/layout/ToastHost.vue'
+import EventsTourHost from '@/components/events/EventsTourHost.vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -30,6 +31,8 @@ onBeforeUnmount(() => {
       </RouterView>
     </main>
     <ToastHost />
+    <!-- the guide for the Events map and list (it moves between the two pages, so it lives here) -->
+    <EventsTourHost />
   </template>
   <p v-else class="text-center p-4">Loading Riffle…</p>
 </template>
@@ -48,6 +51,12 @@ onBeforeUnmount(() => {
   min-height: 0;
   height: auto;
   overflow-y: auto;
+  /* the Discover page background (off-white with a faint dot grid) behind every page.
+     "local" makes the dots scroll along with the page */
+  background-color: var(--riffle-bg);
+  background-image: radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px);
+  background-size: 30px 30px;
+  background-attachment: local;
 }
 .page-enter-active,
 .page-leave-active {

@@ -20,14 +20,11 @@ const links = [
   { label: 'Events', to: { name: 'events-map' }, section: 'events' },
   { label: 'Artists', to: { name: 'artists' }, section: 'artists' },
   { label: 'Forum', to: { name: 'forum' }, section: 'forum' },
-  { label: 'Spotify Demo', to: { name: 'spotify-demo' }, section: 'spotify' },
 ]
 
 const activeSection = computed(() => route.meta.section)
 
 const menuOpen = ref(false)
-const searchOpen = ref(false)
-const searchTerm = ref('')
 
 // the account menu under your name
 const accountOpen = ref(false)
@@ -40,10 +37,9 @@ const accountLinks = [
   { label: 'Edit taste profile', to: '/onboarding' },
 ]
 
-// Whenever the page changes, close the menus and the search box
+// Whenever the page changes, close the menus
 watch(() => route.fullPath, () => {
   menuOpen.value = false
-  searchOpen.value = false
   accountOpen.value = false
 })
 
@@ -57,14 +53,6 @@ async function loadEmail() {
 }
 onMounted(loadEmail)
 watch(() => userStore.isLoggedIn, loadEmail)
-
-// Global search jumps to the events list with the term pre-filled.
-function submitSearch() {
-  const q = searchTerm.value.trim()
-  if (!q) return
-  router.push({ name: 'events-list', query: { q } })
-  searchTerm.value = ''
-}
 
 async function logoutUser() {
   logoutError.value = ''
@@ -118,20 +106,6 @@ async function logoutUser() {
       </nav>
 
       <div class="riffle-nav__right">
-        <form v-if="searchOpen" class="riffle-nav__search" role="search" @submit.prevent="submitSearch">
-          <input
-            v-model="searchTerm"
-            type="search"
-            class="form-control form-control-sm"
-            placeholder="Search events…"
-            aria-label="Search events"
-            autofocus
-          />
-        </form>
-        <button class="riffle-nav__icon-btn" type="button" aria-label="Search" @click="searchOpen = !searchOpen">
-          <i class="bi bi-search"></i>
-        </button>
-
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
             <i class="bi bi-chat-dots"></i>
@@ -399,10 +373,6 @@ async function logoutUser() {
   background: #fff1f2;
 }
 
-.riffle-nav__search {
-  width: 150px;
-}
-
 .riffle-nav__user {
   display: inline-flex;
   align-items: center;
@@ -461,9 +431,6 @@ async function logoutUser() {
     right: auto;
     width: 32px;
   }
-  .riffle-nav__search {
-    width: 120px;
-  }
 }
 
 @media (max-width: 575.98px) {
@@ -472,10 +439,6 @@ async function logoutUser() {
   }
   .riffle-nav__brand {
     font-size: 1.5rem;
-  }
-  .riffle-nav__search {
-    width: 100px;
-    min-width: 0;
   }
   .riffle-nav__icon-btn,
   .riffle-nav__avatar {

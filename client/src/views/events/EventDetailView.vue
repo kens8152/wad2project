@@ -3,8 +3,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import EventCover from '../../components/events/EventCover.vue'
 import ArtistAvatar from '../../components/events/ArtistAvatar.vue'
-import FriendStack from '../../components/events/FriendStack.vue'
 import EventDiscussion from '../../components/events/EventDiscussion.vue'
+import EventMiniMap from '../../components/events/EventMiniMap.vue'
+import DiscoverTour from '../../components/discover/DiscoverTour.vue'
+import { bringOnScreen, forgetSeen, hasSettled, isOnScreen, isStill, scrollHasStopped } from '../../utils/tourChecks'
 import { useEventsData } from '../../composables/events/useEventsData'
 import { useSavedEvents } from '../../composables/events/useSavedEvents'
 import { dayLabel, dayLabelYear } from '../../utils/events/date'
@@ -18,7 +20,6 @@ const data = useEventsData()
 const { isSaved, toggle } = useSavedEvents()
 
 const tab = ref('details')
-const showAttendees = ref(false)
 
 onMounted(() => data.load())
 
@@ -28,7 +29,6 @@ const saved = computed(() => (event.value ? isSaved(event.value.id) : false))
 // Reset UI state when navigating between events (e.g. via "More at …").
 watch(() => props.id, () => {
   tab.value = 'details'
-  showAttendees.value = false
   window.scrollTo({ top: 0 })
 })
 
@@ -40,15 +40,6 @@ const moreAtVenue = computed(() =>
         .slice(0, 3)
     : [],
 )
-
-const friendSentence = computed(() => {
-  const names = event.value.friends.map((f) => f.name)
-  if (!names.length) return 'None of your friends are going yet'
-  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
-  return `${list} ${names.length === 1 ? 'is' : 'are'} going`
-})
-
-const otherAttendees = computed(() => Math.max(0, event.value.going - event.value.friends.length))
 
 const detailTiles = computed(() => {
   const e = event.value
@@ -78,6 +69,94 @@ const detailTiles = computed(() => {
     },
   ]
 })
+
+// ---- the guided tour of this page ----
+// Like the Discover guide: the page goes dark and one or two parts are lit up while a card explains them.
+// When a step needs the page to scroll, or to switch between Details and Discussions, the spotlight fades out first and
+// comes back once the page has stopped moving, so it never flashes or slides across the screen.
+const tourOpen = ref(false)
+
+const tourPlan = [
+  {
+    title: 'The event at a glance',
+    text: 'When it starts, its genre and its name. The colours of the cover come from the genre.',
+    targets: ['.hero__text'],
+  },
+  {
+    title: 'Tickets, save and share',
+    text: "Get tickets from the organiser's site, save the event to find it again later, or share it with friends.",
+    targets: ['.hero__actions'],
+  },
+  {
+    title: 'Details and discussions',
+    text: 'Switch between everything about the event and the discussion with other fans.',
+    targets: ['.event-tabs'],
+  },
+  {
+    title: "Who's playing",
+    text: 'The line-up, with the headliner first. Click an artist to open their page.',
+    targets: ['.lineup'],
+  },
+  {
+    title: 'Times, entry and getting there',
+    text: 'Doors and set times, how to get in, the venue, and the nearest public transport. The links open the route in your maps app.',
+    targets: ['.tiles'],
+  },
+  {
+    title: 'Find it on the map',
+    text: 'The venue on a small map. Open it on the Events map to see it among everything else on.',
+    targets: ['.mini-map'],
+  },
+  {
+    title: 'More at this venue',
+    text: 'Other events coming up at the same place, and a link to all of them.',
+    targets: ['.event-layout__side > .event-section'],
+  },
+  {
+    tab: 'discussions',
+    title: 'Join the discussion',
+    text: 'Ask a question, find people to go with, or say what you thought of the show.',
+    targets: ['.discussion'],
+  },
+  {
+    title: 'Come back anytime',
+    text: 'Reopen this guide anytime with the Guide button.',
+    targets: ['.event-guide-btn'],
+  },
+]
+
+const tourSteps = tourPlan.map((step) => ({
+  title: step.title,
+  text: step.text,
+  target: () => step.targets,
+  // the page changes when the tab has to change, or when the parts are not on the screen yet (the page scrolls to them)
+  changes: () => (step.tab || 'details') !== tab.value || step.targets.some((target) => !isOnScreen(target)),
+  // lit up once the page has stopped scrolling, the tab has finished appearing, and the part has stopped moving
+  ready: () => {
+    const settled = scrollHasStopped() && hasSettled('.event-layout__main')
+    return step.targets.map((target) => settled && isStill(target))
+  },
+}))
+
+function startTour() {
+  tab.value = 'details'
+  forgetSeen()
+  const main = document.querySelector('.app-main')
+  if (main) main.scrollTop = 0
+  tourOpen.value = true
+}
+
+function onTourStep(number) {
+  const step = tourPlan[number]
+  tab.value = step.tab || 'details'
+  // wait for the tab to be drawn, then scroll its part onto the screen
+  requestAnimationFrame(() => requestAnimationFrame(() => step.targets.forEach(bringOnScreen)))
+}
+
+function endTour() {
+  tourOpen.value = false
+  tab.value = 'details'
+}
 
 function back() {
   if (window.history.state?.back) router.back()
@@ -126,7 +205,12 @@ async function onShare() {
         <div class="hero__scrim"></div>
 
         <div class="hero__inner">
-          <button type="button" class="hero__back" @click="back"><i class="bi bi-arrow-left"></i> Back to Events</button>
+          <div class="hero__top">
+            <button type="button" class="hero__back" @click="back"><i class="bi bi-arrow-left"></i> Back to Events</button>
+            <button type="button" class="event-guide-btn" :class="{ 'is-on': tourOpen }" @click="startTour">
+              <i class="bi bi-compass"></i> Guide
+            </button>
+          </div>
 
           <div class="hero__bottom">
             <div class="hero__text">
@@ -214,40 +298,7 @@ async function onShare() {
 
         <!-- Side column -->
         <aside class="event-layout__side">
-          <section class="riffle-card event-section">
-            <div class="side-head">
-              <h2 class="event-section__title m-0">Who's going</h2>
-              <span class="side-head__icon tone-blue"><i class="bi bi-people-fill"></i></span>
-            </div>
-
-            <div class="going-stats">
-              <div><strong>{{ event.going }}</strong><span>going</span></div>
-              <div><strong>{{ event.friends.length }}</strong><span>friends from Spotify</span></div>
-            </div>
-
-            <p class="going-friends">
-              <FriendStack v-if="event.friends.length" :friends="event.friends" :size="34" />
-              <span>{{ friendSentence }}</span>
-            </p>
-
-            <button
-              type="button"
-              class="going-btn"
-              :aria-expanded="showAttendees"
-              @click="showAttendees = !showAttendees"
-            >
-              {{ showAttendees ? 'Hide who\'s going' : 'See who\'s going' }}
-              <i class="bi" :class="showAttendees ? 'bi-chevron-up' : 'bi-arrow-right'"></i>
-            </button>
-
-            <ul v-if="showAttendees" class="attendees">
-              <li v-for="f in event.friends" :key="f.id">
-                <ArtistAvatar :name="f.name" :hue="f.hue" :size="30" /> {{ f.name }}
-                <span class="attendees__tag">Friend</span>
-              </li>
-              <li v-if="otherAttendees" class="attendees__more">and {{ otherAttendees }} other{{ otherAttendees === 1 ? '' : 's' }}</li>
-            </ul>
-          </section>
+          <EventMiniMap :venue="event.venue" :color="event.genre.hex" :link-to="{ name: 'events-map', query: { focus: event.id } }" />
 
           <section class="riffle-card event-section">
             <div class="side-head">
@@ -277,6 +328,9 @@ async function onShare() {
           </section>
         </aside>
       </div>
+
+      <!-- the guided tour of this page -->
+      <DiscoverTour v-if="tourOpen" label="Event" :steps="tourSteps" @step="onTourStep" @finish="endTour" @skip="endTour" />
     </template>
   </div>
 </template>
@@ -322,6 +376,35 @@ async function onShare() {
   gap: 2.5rem;
   min-height: 290px;
   padding: 1.25rem 1.5rem 1.5rem;
+}
+/* the top of the cover: Back on the left, Guide on the right */
+.hero__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.event-guide-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.15s;
+}
+.event-guide-btn:hover,
+.event-guide-btn.is-on {
+  background: rgba(255, 255, 255, 0.3);
+}
+.event-guide-btn:hover {
+  transform: translateY(-1px);
 }
 .hero__back {
   align-self: flex-start;
@@ -593,79 +676,6 @@ async function onShare() {
   justify-content: space-between;
   gap: 1rem;
 }
-.going-stats {
-  display: flex;
-  gap: 1.6rem;
-  margin: 1.1rem 0 0.9rem;
-}
-.going-stats > div {
-  display: flex;
-  flex-direction: column;
-}
-.going-stats > div + div {
-  padding-left: 1.6rem;
-  border-left: 1px solid var(--riffle-border);
-}
-.going-stats strong {
-  font-size: 2rem;
-  line-height: 1;
-  color: var(--riffle-ink);
-}
-.going-stats span {
-  font-size: 0.88rem;
-  color: var(--riffle-muted);
-}
-.going-friends {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  margin: 0 0 1rem;
-  font-size: 0.88rem;
-  color: var(--riffle-muted);
-}
-.going-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.7rem;
-  border: 0;
-  border-radius: 10px;
-  background: #eef2ff;
-  font-weight: 700;
-  color: var(--riffle-ink);
-}
-.going-btn:hover {
-  background: #e2e8ff;
-}
-.attendees {
-  list-style: none;
-  margin: 0.9rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.55rem;
-  font-weight: 600;
-  color: var(--riffle-ink);
-}
-.attendees li {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.attendees__tag {
-  margin-left: auto;
-  padding: 0.05rem 0.55rem;
-  border-radius: 999px;
-  background: #e1f7ee;
-  color: #11956f;
-  font-size: 0.74rem;
-}
-.attendees__more {
-  color: var(--riffle-muted) !important;
-  font-weight: 500 !important;
-}
-
 .more-list {
   list-style: none;
   margin: 1rem 0 0;

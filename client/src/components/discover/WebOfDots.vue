@@ -23,6 +23,7 @@ const props = defineProps({
   insetRight: { type: Number, default: 0 },
   insetBottom: { type: Number, default: 0 },
   pickedId: { type: String, default: null },
+  reduceEffects: { type: Boolean, default: false }, // no blur behind an opened dot (the guided tour has its own dark screen, and blur is slow to redraw)
 })
 const emit = defineEmits(['pick', 'follow', 'taste-click'])
 
@@ -63,7 +64,16 @@ function measure() {
 function glide() {
   smooth.value = true
   clearTimeout(smoothTimer)
-  smoothTimer = setTimeout(() => (smooth.value = false), 600)
+  // The glide ends when its transition ends (see onWorldTransitionEnd). This timer is only a safety net: if it ended the
+  // glide by itself, a slow frame would cut the camera's move short and make it jump to the end.
+  smoothTimer = setTimeout(() => (smooth.value = false), 2500)
+}
+
+function onWorldTransitionEnd(event) {
+  if (event.target === event.currentTarget && event.propertyName === 'transform') {
+    clearTimeout(smoothTimer)
+    smooth.value = false
+  }
 }
 
 // the space that is not covered by the panels
@@ -497,7 +507,7 @@ function isPictured(node) {
 }
 
 // The map turns off the browser's own touch scrolling (so a finger can drag the map), which would also stop the
-// opened card's list from scrolling. So the card scrolls itself: it follows the finger.
+// opened card's list from scrolling. So the list scrolls itself: it follows the finger.
 let touchY = 0
 function cardTouchStart(event) {
   touchY = event.touches[0].clientY
@@ -507,6 +517,37 @@ function cardTouchMove(event) {
   event.currentTarget.scrollTop += touchY - y
   touchY = y
 }
+
+// Where the opened dot and the artists around it end up on the screen (pictures and names included), for the guided tour.
+// It works from the final camera, so it is right even while the artists are still flying out.
+function stageBounds() {
+  const hero = pickedNode.value
+  const box = document.getElementById('web-of-dots')
+  if (!hero || !box) return null
+
+  const origin = box.getBoundingClientRect()
+  const z = view.value.z
+  const spots = [{ node: hero, radius: heroPx.value + 4, below: 34 }].concat(
+    pickedNeighbours.value.map(node => ({ node: node, radius: bubbleRadius(node) + 3, below: 22 })),
+  )
+
+  let left = Infinity
+  let right = -Infinity
+  let top = Infinity
+  let bottom = -Infinity
+  for (const spot of spots) {
+    const x = origin.left + spot.node.x * z + view.value.x
+    const y = origin.top + spot.node.y * z + view.value.y
+    const reach = Math.max(spot.radius, spot.node.name.length * 3.8) // a name can be wider than the picture
+    left = Math.min(left, x - reach)
+    right = Math.max(right, x + reach)
+    top = Math.min(top, y - spot.radius)
+    bottom = Math.max(bottom, y + spot.radius + spot.below)
+  }
+  const pad = 14
+  return { top: top - pad, left: left - pad, width: right - left + pad * 2, height: bottom - top + pad * 2 }
+}
+defineExpose({ stageBounds })
 
 function clickBubble(node) {
   if (dragged) return
@@ -536,7 +577,7 @@ const tastePillStyle = computed(() => {
   <div
     id="web-of-dots"
     class="web"
-    :class="{ 'is-dragging': dragging }"
+    :class="{ 'is-dragging': dragging, 'is-calm': reduceEffects }"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -546,10 +587,10 @@ const tastePillStyle = computed(() => {
     @wheel.prevent="onWheel"
   >
     <svg class="web__svg" role="application" aria-label="Web of artists. Each dot is an artist and each line joins two artists who share fans.">
-      <g class="web__world" :class="{ 'is-smooth': smooth }" :style="worldStyle">
+      <g class="web__world" :class="{ 'is-smooth': smooth }" :style="worldStyle" @transitionend="onWorldTransitionEnd">
 
         <!-- the lines between artists who share fans -->
-        <path class="web__edges" :class="{ 'is-quiet': focusId !== null, 'is-blurred': pickedNode !== null }" :d="edgesPath" fill="none" />
+        <path class="web__edges" :class="{ 'is-quiet': focusId !== null, 'is-blurred': pickedNode !== null && !reduceEffects }" :d="edgesPath" fill="none" />
         <path v-if="focusEdgesPath && !pickedNode" :key="focusId" class="web__edges web__edges--focus" :d="focusEdgesPath" fill="none" />
 
         <!-- your taste profile -->
@@ -559,7 +600,7 @@ const tastePillStyle = computed(() => {
         </g>
 
         <!-- the artists (blurred while a dot is open) -->
-        <g class="web__dots" :class="{ 'is-blurred': pickedNode !== null }">
+        <g class="web__dots" :class="{ 'is-blurred': pickedNode !== null && !reduceEffects }">
           <g v-for="node in nodes" :key="node.id">
             <circle
               class="dot"
@@ -584,13 +625,6 @@ const tastePillStyle = computed(() => {
               :stroke-width="2.5 / view.z"
               :style="{ animationDelay: lineDelay(position) + 's' }"
             />
-            <line
-              class="stage__spark"
-              pathLength="1"
-              :x1="pickedNode.x" :y1="pickedNode.y" :x2="other.x" :y2="other.y"
-              :stroke-width="3.5 / view.z"
-              :style="{ '--wait': popDelay(position) + 's' }"
-            />
           </g>
 
           <!-- linked artists: they fly out from the opened dot to their own place on the map -->
@@ -598,6 +632,8 @@ const tastePillStyle = computed(() => {
             <g class="bubble" :style="{ ...flyFrom(other), animationDelay: popDelay(position) + 's' }">
               <g class="bubble__body" role="button" :aria-label="other.name" @pointerdown.stop @click.stop="clickBubble(other)">
                 <title>{{ other.name }}</title>
+                <circle class="shadow" :r="bubbleRadius(other) + 7" cy="3" />
+                <circle class="shadow" :r="bubbleRadius(other) + 5" cy="2.5" />
                 <circle :r="bubbleRadius(other) + 3" fill="#fff" />
                 <circle :r="bubbleRadius(other) + 3" fill="none" :stroke="other.color" stroke-width="2" />
                 <clipPath :id="'clip-' + other.id"><circle :r="bubbleRadius(other)" /></clipPath>
@@ -615,6 +651,8 @@ const tastePillStyle = computed(() => {
           <!-- the opened artist, the biggest of all -->
           <g :transform="pinTransform(pickedNode)">
             <g class="hero">
+              <circle class="shadow" :r="heroPx + 12" cy="5" />
+              <circle class="shadow" :r="heroPx + 8" cy="4" />
               <circle :r="heroPx + 4" fill="#fff" />
               <circle :r="heroPx + 4" fill="none" :stroke="pickedNode.color" stroke-width="3" />
               <clipPath :id="'clip-' + pickedNode.id"><circle :r="heroPx" /></clipPath>
@@ -681,8 +719,6 @@ const tastePillStyle = computed(() => {
       @pointerdown.stop
       @click.stop
       @wheel.stop
-      @touchstart="cardTouchStart"
-      @touchmove="cardTouchMove"
     >
       <div class="card-head">
         <img class="card-avatar" :src="pictureOf(cardNode)" alt="" :style="{ borderColor: cardNode.color }" />
@@ -705,7 +741,7 @@ const tastePillStyle = computed(() => {
       <p v-if="!cardIsOpen" class="card-hint">Click to open</p>
 
       <template v-if="cardIsOpen">
-        <ul v-if="neighbourNodes.length" class="card-links list-unstyled">
+        <ul v-if="neighbourNodes.length" class="card-links list-unstyled" @touchstart="cardTouchStart" @touchmove="cardTouchMove">
           <li v-for="other in neighbourNodes.slice(0, MAX_NEIGHBOURS_SHOWN)" :key="other.id">
             <button type="button" class="card-link" @click="emit('pick', other.id)">
               <img class="card-thumb" :src="pictureOf(other)" alt="" :style="{ borderColor: other.color }" />
@@ -774,7 +810,23 @@ const tastePillStyle = computed(() => {
 .web__world.is-smooth {
   transition: transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
+/* during the guided tour: a slower camera that eases in and out */
+.web.is-calm .web__world.is-smooth {
+  transition: transform 0.95s cubic-bezier(0.45, 0, 0.2, 1);
+}
 
+
+/* during the guided tour the map behind the dark screen changes in one go: no fading, popping or blur on the dots and lines,
+   because the dark screen is see-through and every little transition would show up as a flicker */
+.web.is-calm .dot,
+.web.is-calm .web__dots,
+.web.is-calm .web__edges {
+  transition: none;
+}
+.web.is-calm .web__edges--focus {
+  animation: none;
+  display: none; /* the coloured lines of the opened dot already show these links */
+}
 
 /* lines */
 .web__edges {
@@ -876,10 +928,10 @@ const tastePillStyle = computed(() => {
   pointer-events: none;
 }
 
-/* a line draws itself from the opened artist to each linked artist, then a soft spark keeps running along it */
+/* a line draws itself from the opened artist to each linked artist */
 .stage__line {
-  stroke-linecap: round;
-  stroke-dasharray: 1;
+  stroke-linecap: butt; /* round caps leave a dot at the start while the line is still hidden */
+  stroke-dasharray: 1 2;
   opacity: 0.85;
   animation: line-draw 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) backwards;
 }
@@ -891,30 +943,9 @@ const tastePillStyle = computed(() => {
     stroke-dashoffset: 0;
   }
 }
-.stage__spark {
-  stroke: #fff;
-  stroke-linecap: round;
-  stroke-dasharray: 0.04 0.96;
-  opacity: 0;
-  animation: spark-run 2.2s linear infinite var(--wait), spark-show 0.3s ease forwards var(--wait);
-}
-@keyframes spark-run {
-  from {
-    stroke-dashoffset: 0.04;
-  }
-  to {
-    stroke-dashoffset: -0.96;
-  }
-}
-@keyframes spark-show {
-  to {
-    opacity: 0.8;
-  }
-}
-
 /* the linked artists glide out from the opened dot and settle */
 .bubble {
-  animation: bubble-fly 0.7s cubic-bezier(0.2, 1.15, 0.35, 1) backwards;
+  animation: bubble-fly 0.7s cubic-bezier(0.22, 0.8, 0.3, 1) backwards; /* no overshoot: nothing may leave the lit-up area */
 }
 @keyframes bubble-fly {
   from {
@@ -931,7 +962,11 @@ const tastePillStyle = computed(() => {
   cursor: pointer;
   transform-origin: 0 0;
   transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
-  filter: drop-shadow(0 4px 8px rgba(20, 35, 90, 0.3));
+}
+/* a soft shadow made of two plain circles (a blur filter on pictures is slow to redraw while they animate) */
+.stage .shadow {
+  fill: rgba(20, 35, 90, 0.1);
+  pointer-events: none;
 }
 .bubble__body:hover {
   transform: scale(1.1);
@@ -962,8 +997,7 @@ const tastePillStyle = computed(() => {
 /* the opened artist */
 .hero {
   transform-origin: 0 0;
-  filter: drop-shadow(0 8px 16px rgba(20, 35, 90, 0.3));
-  animation: hero-pop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+  animation: hero-pop 0.6s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
 }
 @keyframes hero-pop {
   from {
@@ -1083,7 +1117,9 @@ const tastePillStyle = computed(() => {
   transform-origin: left top;
 }
 .web__card.is-open {
-  overflow-y: auto;
+  display: flex; /* the list of artists scrolls, while the buttons under it always stay in view */
+  flex-direction: column;
+  overflow: hidden;
   pointer-events: auto;
   cursor: default;
   animation: card-slide 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) 0.25s backwards;
@@ -1186,7 +1222,17 @@ const tastePillStyle = computed(() => {
   font-size: 0.72rem;
 }
 .card-links {
+  flex: 1 1 auto;
+  min-height: 3.4rem;
   margin: 0.55rem 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.web__card.is-open > * {
+  flex: none;
+}
+.web__card.is-open > .card-links {
+  flex: 1 1 auto;
 }
 .card-link {
   display: flex;

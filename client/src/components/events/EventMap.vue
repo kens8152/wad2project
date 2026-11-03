@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { ATTRIBUTION, MAX_ZOOM, MIN_ZOOM, SG_BOUNDS, TILE_URL } from '../../utils/events/onemap'
+import { useEventsTour } from '../../composables/events/useEventsTour'
+import { useLiveLocation } from '../../composables/events/useLiveLocation'
 
 // Interactive map surface (OneMap tiles drawn with Leaflet, pins, genre key).
 //
@@ -20,8 +22,26 @@ const props = defineProps({
   userLocation: { type: Object, required: true },
   selectedId: { type: String, default: null },
   hoverId: { type: String, default: null },
+  focusId: { type: String, default: null }, // an event to show close up (a link from the event page)
 })
 const emit = defineEmits(['select', 'open'])
+
+// the "my location" button in the bottom right corner: asks for your location, and later flies back to you
+const location = useLiveLocation()
+function onLocate() {
+  if (location.status.value === 'on' && map) {
+    autoFit = false
+    map.flyTo([props.userLocation.lat, props.userLocation.lng], Math.max(map.getZoom(), 15), { duration: 1.2 })
+  } else {
+    location.toggle()
+  }
+}
+const locateTitle = computed(() => ({
+  asking: 'Finding your location…',
+  on: 'Go to my location',
+  denied: 'Location is blocked: allow it in the address bar',
+  outside: 'You are outside Singapore',
+}[location.status.value] || 'Use my location'))
 
 const root = ref(null)
 const mapEl = ref(null)
@@ -33,6 +53,8 @@ let zoomTimer = null
 // Until you touch the map (drag, zoom or pick a pin), it keeps itself fitted to every event shown, whenever the
 // events or the size of the box change. So the first thing you see is the same view as "Show all events".
 let autoFit = true
+
+const FOCUS_ZOOM = 17 // a close-up of the venue: its street and the buildings around it
 
 // where each marker is on screen, in pixels from the top-left of the map box
 const pixel = ref({})
@@ -65,11 +87,18 @@ function zoomStep(amount) {
 }
 
 // "Show all events": zoom and move so that every pin is inside the box.
-// The map starts in this same view, so the first thing you see is every event.
-function fitAll(animate = true) {
+// The map starts one zoom level closer than that (closer = true): a clearer first view around the middle of the events.
+function fitAll(animate = true, closer = false) {
   if (!pins.value.length) return
   const bounds = L.latLngBounds(pins.value.map((p) => [p.lat, p.lng]))
-  map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16, animate: animate })
+  bounds.extend([props.userLocation.lat, props.userLocation.lng]) // you are in the view as well
+  const padding = [80, 80]
+  if (closer) {
+    const zoom = Math.min(MAX_ZOOM, map.getBoundsZoom(bounds, false, L.point(padding)) + 1)
+    map.setView(bounds.getCenter(), zoom, { animate: animate })
+  } else {
+    map.fitBounds(bounds, { padding: padding, maxZoom: 16, animate: animate })
+  }
 }
 
 // Plain scrolling scrolls the page as usual. The map only zooms with
@@ -128,18 +157,23 @@ onMounted(() => {
 
   map.on('dragstart', () => (autoFit = false))
 
+  // a link asked for one event: start on it, instead of fitted to every event
+  if (props.focusId) autoFit = false
+
   observer = new ResizeObserver(() => {
     map.invalidateSize()
-    if (autoFit && root.value.clientWidth > 0) fitAll(false)
+    if (autoFit && root.value.clientWidth > 0) fitAll(false, true)
     refresh()
   })
   observer.observe(root.value)
+  showFocused()
   refresh()
 })
 onBeforeUnmount(() => {
   observer?.disconnect()
   clearTimeout(zoomTimer)
   clearTimeout(hintTimer)
+  clearTimeout(focusTimer)
   map?.remove()
 })
 
@@ -178,10 +212,75 @@ const pins = computed(() => {
   }
   return list
 })
+// your location changed (it was found, or you moved): show where you are
+watch(
+  () => [props.userLocation.lat, props.userLocation.lng],
+  () => {
+    if (autoFit && map) fitAll(true, true)
+    refresh()
+  },
+)
 watch(pins, () => {
-  if (autoFit && map) fitAll(false)
+  if (autoFit && map) fitAll(false, true)
   refresh()
 })
+
+// Fly in to a pin with a smooth zoom. (With "reduce motion" switched on the map simply jumps there.)
+function flyToPin(pin) {
+  autoFit = false
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    map.setView([pin.lat, pin.lng], FOCUS_ZOOM, { animate: false })
+    return
+  }
+  map.flyTo([pin.lat, pin.lng], FOCUS_ZOOM, { duration: 2.2, easeLinearity: 0.25 })
+}
+
+// the "Zoom to this event" button: appears when a pin is selected
+function zoomToSelected() {
+  const pin = pins.value.find((p) => p.id === props.selectedId)
+  if (map && pin) flyToPin(pin)
+}
+
+// Show the event the link asked for (once, when its pin exists): the map first shows every event, then flies in
+// to the venue.
+let focusedId = null
+let focusTimer = null
+function showFocused() {
+  if (!map || !props.focusId || focusedId === props.focusId) return
+  const pin = pins.value.find((p) => p.id === props.focusId)
+  if (!pin) return
+  focusedId = props.focusId
+  autoFit = false
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    flyToPin(pin)
+    return
+  }
+
+  fitAll(false)
+  clearTimeout(focusTimer)
+  focusTimer = setTimeout(() => {
+    if (map) flyToPin(pin)
+  }, 600)
+}
+watch([() => props.focusId, pins], showFocused)
+
+// The Events guide shows the zoom: it flies in to the picked event, and back out to every event.
+const tour = useEventsTour()
+watch(
+  () => tour.command.value,
+  (command) => {
+    if (!map) return
+    if (command.type === 'zoom') {
+      const pin = pins.value.find((p) => p.id === command.id)
+      if (pin) flyToPin(pin)
+    } else if (command.type === 'fit') {
+      autoFit = true
+      fitAll(true, true)
+    }
+  },
+  { flush: 'sync' }, // every command counts, even two sent one after the other
+)
 
 const pinHoverId = ref(null) // the pin the mouse is over
 const activeId = computed(() => props.hoverId || pinHoverId.value || props.selectedId)
@@ -229,6 +328,7 @@ watch(
         <div
           v-if="pixel[pin.id]"
           class="event-map__marker"
+          :data-pin-id="pin.id"
           :class="{ 'is-active': activeId === pin.id }"
           :style="{ left: `${pixel[pin.id].x}px`, top: `${pixel[pin.id].y}px` }"
         >
@@ -263,6 +363,20 @@ watch(
       </ul>
     </div>
 
+    <!-- my location -->
+    <button
+      type="button"
+      class="event-map__locate"
+      :class="'is-' + location.status.value"
+      :title="locateTitle"
+      :aria-label="locateTitle"
+      @click="onLocate"
+      @wheel.stop
+    >
+      <span v-if="location.status.value === 'asking'" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      <i v-else class="bi" :class="location.status.value === 'on' ? 'bi-geo-alt-fill' : 'bi-geo-alt'"></i>
+    </button>
+
     <!-- zoom -->
     <div class="event-map__zoom" @wheel.stop>
       <button type="button" aria-label="Zoom in" :disabled="zoomLevel >= MAX_ZOOM - 0.001" @click="zoomStep(1)">
@@ -274,6 +388,19 @@ watch(
       <button type="button" aria-label="Show all events" title="Show all events" @click="fitAll()">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
+      <!-- only when a pin is selected: fly in to that event -->
+      <Transition name="zoom-event">
+        <button
+          v-if="selectedId"
+          type="button"
+          class="event-map__zoom-event"
+          aria-label="Zoom to this event"
+          title="Zoom to this event"
+          @click="zoomToSelected"
+        >
+          <i class="bi bi-crosshair"></i>
+        </button>
+      </Transition>
     </div>
   </div>
 </template>
@@ -500,6 +627,33 @@ watch(
   box-shadow: 0 0 0 2px #fff, 0 0 0 3px #d9deee;
 }
 
+.event-map__locate {
+  position: absolute;
+  right: 14px;
+  bottom: 34px; /* above the OneMap credit */
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--riffle-shadow);
+  color: var(--riffle-ink);
+  font-size: 1.2rem;
+  transition: background 0.15s, color 0.15s;
+}
+.event-map__locate:hover {
+  background: #eef1fb;
+}
+.event-map__locate.is-on {
+  color: var(--riffle-blue);
+}
+.event-map__locate.is-denied,
+.event-map__locate.is-outside {
+  color: var(--riffle-faint);
+}
 .event-map__zoom {
   position: absolute;
   top: 14px;
@@ -528,6 +682,25 @@ watch(
 }
 .event-map__zoom button:disabled {
   color: var(--riffle-faint);
+}
+/* the "Zoom to this event" button stands out a little: it appears and slides open when a pin is selected */
+.event-map__zoom .event-map__zoom-event {
+  color: #fff;
+  background: var(--riffle-blue);
+  overflow: hidden;
+}
+.event-map__zoom .event-map__zoom-event:hover:not(:disabled) {
+  background: var(--riffle-navy-soft);
+}
+.zoom-event-enter-active,
+.zoom-event-leave-active {
+  transition: height 0.25s ease, opacity 0.25s ease;
+}
+.zoom-event-enter-from,
+.zoom-event-leave-to {
+  height: 0 !important;
+  opacity: 0;
+  border-top-width: 0 !important;
 }
 
 @media (max-width: 575.98px) {

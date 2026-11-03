@@ -118,6 +118,7 @@ const router = useRouter()
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
 const connectingSpotify = ref(false)
+let alreadyOnboarded = true // false only when this account is seen to have never finished onboarding (a brand new account)
 
 // The song whose player is open (only one plays at a time). Search results use "result:<id>",
 // songs you have already added use "saved:<text>".
@@ -131,9 +132,11 @@ onMounted(async () => {
   if (!userStore.isLoggedIn) return
 
   try {
-    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs').eq('id', userStore.user.id).maybeSingle()
+    const { data, error } = await supabase.from('profiles').select('display_name, genres, favourite_songs, onboarding_completed').eq('id', userStore.user.id).maybeSingle()
 
     if (error) throw error
+
+    alreadyOnboarded = Boolean(data && data.onboarding_completed === true)
 
     if (data) {
       hasSavedPreferences.value = true
@@ -266,6 +269,15 @@ async function savePreferences() {
     if (error) throw error
 
     userStore.updateDisplayName(displayName.value.trim())
+
+    // A brand new account has just finished onboarding: the Discover page will show it the guide once
+    if (!alreadyOnboarded) {
+      try {
+        localStorage.setItem('riffle.discoverGuidePending:' + userStore.user.id, 'yes')
+      } catch (guideError) {
+        console.warn('Could not remember to show the Discover guide:', guideError)
+      }
+    }
 
     // Keep the existing profile page working during migration
     const profile = {

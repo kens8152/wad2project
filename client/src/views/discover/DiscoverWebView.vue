@@ -5,6 +5,7 @@ import { supabase } from '@/services/supabase'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
 import WebOfDots from '../../components/discover/WebOfDots.vue'
+import DiscoverTour from '../../components/discover/DiscoverTour.vue'
 import { GENRES, formatFans, getGraph, recommendedNodes, tasteSpot } from '../../data/discover/discoverGraph'
 
 // Discover: the web of artists.
@@ -108,39 +109,133 @@ function clearFilters() {
   searchTerm.value = ''
 }
 
-// ---- the guide and the recommended list (one of them sits at the top right) ----
-const GUIDE_SEEN_KEY = 'riffle.discoverGuideSeen'
-function guideAlreadySeen() {
+// ---- the guided tour ----
+// The tour starts by itself only for a brand new account, the first time it opens Discover after finishing onboarding
+// (onboarding leaves a note for that). Everyone else starts it with the Guide button.
+function pendingKey() {
+  return 'riffle.discoverGuidePending:' + userStore.user.id
+}
+function guideIsPending() {
+  if (!userStore.isLoggedIn) return false
   try {
-    return localStorage.getItem(GUIDE_SEEN_KEY) === 'yes'
+    return localStorage.getItem(pendingKey()) === 'yes'
   } catch {
     return false
   }
 }
+function clearPendingGuide() {
+  try {
+    localStorage.removeItem(pendingKey())
+  } catch {
+    // private mode: nothing to clear
+  }
+}
 
-// 'guide', 'recommended' or ''. The guide starts open for guests and first-time members on a wide screen;
-// on a phone it would cover the whole map, so it starts closed there (the Help & tour button opens it).
-const rightPanel = ref(window.innerWidth < 992 || (userStore.isLoggedIn && guideAlreadySeen()) ? '' : 'guide')
+const tourOpen = ref(false)
+const web = ref(null) // the map (it knows where the opened dot and its artists end up)
+
+// the dot the tour opens: the artist with a page whose group of linked artists covers the most genres
+function genresAround(node) {
+  const genres = new Set([node.genre])
+  graph.neighbours[node.index].forEach(index => genres.add(graph.nodes[index].genre))
+  return genres.size
+}
+const tourDot = graph.nodes
+  .filter(node => node.real)
+  .sort((a, b) => genresAround(b) - genresAround(a) || graph.neighbours[b.index].length - graph.neighbours[a.index].length)[0]
+
+// Is the map's camera still moving? (it moves with a CSS transition)
+function cameraSettled() {
+  const world = document.querySelector('.web__world')
+  return Boolean(world) && world.getAnimations().every(animation => animation.playState !== 'running')
+}
+
+// Has the animation of this element run for at least this many milliseconds (or finished)? False while the element is not there yet.
+function animationReached(element, milliseconds) {
+  if (!element) return false
+  return element
+    .getAnimations()
+    .filter(animation => animation.effect && animation.effect.getTiming().iterations !== Infinity)
+    .every(animation => animation.playState === 'finished' || (Number(animation.currentTime) || 0) >= milliseconds)
+}
+
+// "changes": the step makes the page open or close the card (and zoom the map), so the spotlight fades out first.
+// "ready": when each lit-up part is really there, read from the animations on the screen (not from a timer).
+const tourSteps = computed(() => [
+  {
+    title: 'Find a scene',
+    text: userStore.isLoggedIn
+      ? 'Search for an artist, or switch genres on and off to light up one scene at a time.'
+      : 'Search for an artist, or switch genres on and off to light up one scene at a time. Log in to use them.',
+    target: () => (isWide() ? '.filter-card' : '.search-wrap'),
+  },
+  {
+    title: 'Meet a local artist',
+    text: 'Every dot is an artist, and a line joins two artists who share fans. Press Next to open this one.',
+    target: () => '.web__dots > g:nth-child(' + (tourDot.index + 1) + ') .dot', // the visible circle of that dot
+    round: true,
+    changes: from => from === 2, // coming back: the card closes and the map zooms out again
+    ready: () => cameraSettled(),
+  },
+  {
+    title: 'Take a closer look',
+    text: 'Their picture grows and the artists who share their fans appear around it. Follow them or open their artist page from the card.',
+    // the artists around the dot are lit up (where they will end up), and so is the card with its buttons
+    target: () => [web.value ? web.value.stageBounds() : null, '.web__card.is-open'],
+    changes: () => true, // the map zooms in, the artists fly out and the card slides in
+    // the spotlight on the artists comes on as soon as the opened artist is popping up (so the lines are drawn inside it),
+    // and the spotlight on the card when the card has slid into place
+    ready: () => [
+      animationReached(document.querySelector('.stage .hero'), 200),
+      animationReached(document.querySelector('.web__card.is-open'), 650),
+    ],
+  },
+  userStore.isLoggedIn
+    ? {
+        title: 'Recommended for you',
+        text: 'Open Recommended for you to see artists picked from your taste profile, then follow the ones you like.',
+        target: () => '.top-buttons .pill-button:first-child',
+        changes: from => from === 2,
+        ready: () => cameraSettled(),
+      }
+    : {
+        title: 'Make it yours',
+        text: 'Create an account to follow artists and get recommendations based on your taste.',
+        target: () => '.nav-signup',
+        changes: from => from === 2,
+        ready: () => cameraSettled(),
+        cta: { label: 'Sign up now →', to: '/signup' },
+      },
+  {
+    title: 'Come back anytime',
+    text: 'You can reopen this guide anytime with the Guide button.',
+    target: () => '.top-buttons .pill-button:last-child',
+  },
+])
+
+function startTour() {
+  rightPanel.value = ''
+  filtersOpen.value = false
+  pickedId.value = null
+  tourOpen.value = true
+}
+
+// the tour opens the dot for its third step and closes it again for the others
+function onTourStep(number) {
+  pickedId.value = number === 2 ? tourDot.id : null
+}
+
+function endTour() {
+  tourOpen.value = false
+  pickedId.value = null
+}
+
+// 'recommended' or '': the list that sits at the top right
+const rightPanel = ref('')
 
 function openPanel(name) {
   rightPanel.value = rightPanel.value === name ? '' : name
 }
-
-function closeGuide() {
-  rightPanel.value = ''
-  try {
-    localStorage.setItem(GUIDE_SEEN_KEY, 'yes')
-  } catch {
-    // private mode: the guide just opens again next time
-  }
-}
-
-const guideSteps = [
-  { title: 'Click on the dots', text: 'One dot, one artist. Find new artists.' },
-  { title: 'Follow the lines', text: 'A line means two artists share an audience, so one band you love leads you to the next.' },
-  { title: 'Narrow the search', text: 'Search finds artists only. Use the genre filter to light up one scene at a time.' },
-  { title: 'Open anything', text: 'Click a dot for that artist’s page, gigs and more. Recentre resets the whole view.' },
-]
 
 // ---- your taste (signed in) ----
 const userGenreIds = ref([])
@@ -212,20 +307,30 @@ const insetLeft = computed(() => (isWide() ? 24 + 270 + 16 : 0))
 const insetRight = computed(() => (isWide() && rightPanel.value !== '' ? 24 + 340 + 8 : 0))
 const insetBottom = computed(() => (userStore.isLoggedIn && tasteChips.value.length ? 76 : 24))
 
+let tourStartTimer = null
 onMounted(() => {
   loadTaste()
   window.addEventListener('resize', onResize)
+
+  // a brand new account sees the guide once, after the dots have finished appearing
+  if (guideIsPending()) {
+    clearPendingGuide()
+    tourStartTimer = setTimeout(startTour, 1800)
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   clearTimeout(resizeDone)
+  clearTimeout(tourStartTimer)
 })
 </script>
 
 <template>
-  <div class="discover" :class="{ 'has-card': pickedId !== null, 'is-resizing': resizing }">
+  <div class="discover" :class="{ 'has-card': pickedId !== null, 'is-resizing': resizing, 'is-touring-dot': tourOpen && pickedId !== null }">
     <WebOfDots
+      ref="web"
+      :reduce-effects="tourOpen"
       :dimmed="dimmed"
       :following="following"
       :signed-in="userStore.isLoggedIn"
@@ -277,7 +382,10 @@ onBeforeUnmount(() => {
 
       <section class="panel-card filter-card">
         <div class="panel-body">
-          <p class="small-title"><i class="bi bi-funnel"></i> Filter by genre</p>
+          <div class="filter-head">
+            <p class="small-title"><i class="bi bi-funnel"></i> Filter by genre</p>
+            <span class="filter-count">{{ visibleGenreCount }}/{{ GENRES.length }} on</span>
+          </div>
           <div class="genre-pills">
             <button
               v-for="genre in GENRES"
@@ -285,12 +393,12 @@ onBeforeUnmount(() => {
               type="button"
               class="genre-pill"
               :class="{ 'is-active': !hiddenGenres.includes(genre.id) }"
-              :style="!hiddenGenres.includes(genre.id)
-                ? { background: genre.color, borderColor: genre.color, color: '#fff' }
-                : { borderColor: genre.color, color: genre.color }"
+              :style="{ '--genre': genre.color }"
+              :aria-pressed="!hiddenGenres.includes(genre.id)"
               @click="toggleGenre(genre.id)"
             >
-              {{ genre.label }}
+              <i class="genre-pill__dot"></i>
+              <span class="genre-pill__name">{{ genre.label }}</span>
               <small>{{ genreCount(genre.id) }}</small>
             </button>
           </div>
@@ -331,39 +439,13 @@ onBeforeUnmount(() => {
         <button v-if="userStore.isLoggedIn" type="button" class="panel-card pill-button" :class="{ 'is-on': rightPanel === 'recommended' }" @click="openPanel('recommended')">
           <i class="bi bi-stars"></i> Recommended for you
         </button>
-        <button type="button" class="panel-card pill-button" :class="{ 'is-on': rightPanel === 'guide' }" @click="openPanel('guide')">
-          <b>?</b> Help &amp; tour
+        <button type="button" class="panel-card pill-button" :class="{ 'is-on': tourOpen }" @click="startTour">
+          <i class="bi bi-compass"></i> Guide
         </button>
       </div>
 
       <Transition name="slide" mode="out-in">
-        <section v-if="rightPanel === 'guide'" key="guide" class="panel-card guide">
-          <button class="guide-close" type="button" aria-label="Close the guide" @click="closeGuide"><i class="bi bi-x-lg"></i></button>
-          <p class="small-title">How to read this map</p>
-          <h2>Your 4-step guide to the web of dots.</h2>
-          <p class="guide-intro">Every dot is an artist playing in Singapore; the lines are the audiences they share.</p>
-
-          <ol class="guide-steps list-unstyled">
-            <li v-for="(step, index) in guideSteps" :key="step.title">
-              <span class="step-number">{{ index + 1 }}</span>
-              <div>
-                <strong>{{ step.title }}</strong>
-                <p>{{ step.text }}</p>
-              </div>
-            </li>
-          </ol>
-
-          <div v-if="userStore.isLoggedIn" class="guide-footer">
-            <button type="button" class="guide-primary" @click="closeGuide">Start exploring</button>
-          </div>
-          <div v-else class="guide-footer">
-            <RouterLink to="/signup" class="guide-primary">Create an account</RouterLink>
-            <RouterLink to="/login" class="guide-secondary">Log in</RouterLink>
-            <p>Keep browsing as a guest. This guide stays available from the <b>?</b> Help icon on the map.</p>
-          </div>
-        </section>
-
-        <section v-else-if="rightPanel === 'recommended'" key="recommended" class="panel-card recommended">
+        <section v-if="rightPanel === 'recommended'" key="recommended" class="panel-card recommended">
           <button class="guide-close" type="button" aria-label="Close" @click="rightPanel = ''"><i class="bi bi-x-lg"></i></button>
           <h2>Recommended for you</h2>
           <p class="guide-intro">
@@ -393,6 +475,8 @@ onBeforeUnmount(() => {
       </span>
     </div>
 
+    <!-- the guided tour -->
+    <DiscoverTour v-if="tourOpen" :steps="tourSteps" @step="onTourStep" @finish="endTour" @skip="endTour" />
   </div>
 </template>
 
@@ -562,31 +646,86 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--riffle-border);
 }
 
+.filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.filter-head .small-title {
+  margin: 0;
+}
+.filter-count {
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #eef1fb;
+  color: var(--riffle-navy);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+/* one calm style for every genre: the colour only shows in the little dot, so the box matches the rest of the app */
 .genre-pills {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 .genre-pill {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  border: 1.5px solid;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: transparent;
-  font-size: 0.84rem;
+  color: var(--riffle-faint);
+  font-size: 0.86rem;
   font-weight: 600;
+  text-align: left;
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
 }
 .genre-pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(20, 35, 90, 0.12);
+  background: #f4f6fc;
+  transform: translateX(2px);
+}
+.genre-pill__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--genre);
+  background: transparent;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.genre-pill__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .genre-pill small {
-  opacity: 0.75;
-  font-size: 0.75em;
+  flex: none;
+  min-width: 1.6rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #f1f3fb;
+  color: var(--riffle-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+.genre-pill.is-active {
+  border-color: var(--riffle-border);
+  background: #f8f9fd;
+  color: var(--riffle-ink);
+}
+.genre-pill.is-active .genre-pill__dot {
+  background: var(--genre);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--genre) 22%, transparent);
 }
 
 .clear-button {
@@ -710,7 +849,6 @@ onBeforeUnmount(() => {
   border-color: var(--riffle-navy);
 }
 
-.guide,
 .recommended {
   position: relative;
   width: 100%;
@@ -719,7 +857,6 @@ onBeforeUnmount(() => {
   padding: 1.3rem 1.4rem;
   box-shadow: 0 14px 40px rgba(20, 35, 90, 0.16);
 }
-.guide h2,
 .recommended h2 {
   margin: 0 0 0.5rem;
   font-size: 1.25rem;
@@ -745,78 +882,6 @@ onBeforeUnmount(() => {
   background: #eef1fb;
   color: var(--riffle-ink);
 }
-.guide-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  margin: 0;
-}
-.guide-steps li {
-  display: flex;
-  gap: 0.8rem;
-}
-.step-number {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border: 1.5px solid var(--riffle-ink);
-  border-radius: 50%;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-.guide-steps strong {
-  display: block;
-  color: var(--riffle-ink);
-}
-.guide-steps p {
-  margin: 0.1rem 0 0;
-  color: var(--riffle-muted);
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-.guide-footer {
-  display: grid;
-  gap: 0.6rem;
-  margin-top: 1.2rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--riffle-border);
-}
-.guide-footer p {
-  margin: 0;
-  color: var(--riffle-muted);
-  font-size: 0.8rem;
-}
-.guide-primary,
-.guide-secondary {
-  display: block;
-  padding: 0.75rem 1rem;
-  border: 1.5px solid var(--riffle-navy);
-  border-radius: 12px;
-  font-weight: 800;
-  text-align: center;
-  text-decoration: none;
-  transition: background 0.15s, transform 0.15s;
-}
-.guide-primary {
-  background: var(--riffle-navy);
-  color: #fff;
-}
-.guide-primary:hover {
-  background: var(--riffle-navy-soft);
-  color: #fff;
-  transform: translateY(-1px);
-}
-.guide-secondary {
-  background: #fff;
-  color: var(--riffle-navy);
-}
-.guide-secondary:hover {
-  background: #eef1fb;
-  color: var(--riffle-navy);
-}
-
 .recommended-list {
   display: flex;
   flex-direction: column;
@@ -988,7 +1053,6 @@ onBeforeUnmount(() => {
     right: 12px;
     width: min(340px, calc(100% - 24px));
   }
-  .guide,
   .recommended {
     max-height: calc(100vh - var(--navbar-height) - 200px);
   }
@@ -1028,6 +1092,12 @@ onBeforeUnmount(() => {
   .has-card .taste-bar {
     display: none;
   }
+}
+/* "Take a closer look": the genre box, the legend and the taste bar are out of the way, so the tour card never sits on top of them */
+.is-touring-dot .side-panel,
+.is-touring-dot .legend-bar,
+.is-touring-dot .taste-bar {
+  visibility: hidden;
 }
 @keyframes fade {
   from {

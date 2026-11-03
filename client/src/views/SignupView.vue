@@ -133,14 +133,16 @@ async function createAccount() {
 
 <style scoped>
 .signup-page {
+  /* .app-main is a flex column: without this the page shrinks to the screen height and its glow stops partway down while the content keeps scrolling */
+  flex-shrink: 0;
   display: grid;
   place-items: start center;
   min-height: calc(100svh - var(--navbar-height, 88px));
   padding: clamp(28px, 5vw, 64px) 16px;
+  /* soft colour glows only: the standard page background (with its dot grid) shows through underneath */
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
-    radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%),
-    #f7f7fc;
+    radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
   color: #14234b;
 }
 
