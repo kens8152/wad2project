@@ -43,8 +43,10 @@ const myPosts = computed(() => {
   <div class="vstack gap-3">
     <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
       <ForumMenuButton />
-      <Forumsearch v-model="searchTerm" />
-      <Forumsort v-model="sort" />
+      <div class="forum-filter-bar">
+        <Forumsearch v-model="searchTerm" />
+        <Forumsort v-model="sort" />
+      </div>
     </div>
 
     <p v-if="!userStore.user" class="text-body-secondary mx-3">Sign in to see your posts.</p>
@@ -60,13 +62,3 @@ const myPosts = computed(() => {
     </template>
   </div>
 </template>
-
-<style scoped>
-.forum-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 1020;
-  height: var(--forum-search-height, 3.5rem);
-  background: var(--bs-body-bg);
-}
-</style>

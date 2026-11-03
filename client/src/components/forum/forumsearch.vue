@@ -29,9 +29,11 @@ defineProps({
   align-items: center;
   gap: 0.6rem;
   width: 100%;
+  min-height: 2.5rem;
   padding: 0.2rem 0.4rem 0.2rem 0.9rem;
-  border-radius: 999px;
-  background: #eef0f8;
+  border: 1px solid var(--riffle-border);
+  border-radius: 10px;
+  background: var(--riffle-surface);
   color: var(--riffle-muted);
 }
 
@@ -43,7 +45,7 @@ defineProps({
   outline: none;
   font-size: 1rem;
   color: var(--riffle-ink);
-  padding: 0.35rem 0;
+  padding: 0.2rem 0;
 }
 
 .forum-search__box input::placeholder {

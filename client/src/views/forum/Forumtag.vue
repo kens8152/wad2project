@@ -100,7 +100,9 @@ watch(
                 </div>
                 <div class="d-flex align-items-center gap-2 px-3 px-lg-0">
                     <ForumMenuButton />
-                    <Forumsearch v-model="searchTerm" class="flex-grow-1" />
+                    <div class="forum-filter-bar">
+                        <Forumsearch v-model="searchTerm" />
+                    </div>
                 </div>
                 <main  class="p-3 flex-grow-1" style="min-width: 0">
                     <div v-if="toggleDisplay" class="d-flex flex-wrap column-gap-3 row-gap-4 align-items-start pb-2">

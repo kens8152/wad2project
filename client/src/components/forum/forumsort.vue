@@ -50,10 +50,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="forumsort flex-shrink-0">
+  <div ref="root" class="forumsort flex-shrink-0 d-flex align-items-center gap-2">
+    <span class="d-none d-sm-inline small text-body-secondary text-nowrap">Sort by</span>
     <button
       type="button"
-      class="btn d-flex align-items-center gap-2 text-body-secondary bg-body-tertiary border rounded-pill px-3 py-2"
+      class="btn sort-btn d-flex align-items-center gap-2 border rounded-3 px-3 py-1"
       @click="open = !open"
     >
       <span class="sort-badge" aria-hidden="true">
@@ -103,6 +104,16 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.sort-btn {
+  min-height: 2.5rem;
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
+}
+.sort-btn:hover,
+.sort-btn:focus-visible {
+  background: var(--riffle-surface);
+  border-color: var(--riffle-muted) !important;
+}
 .sort-chevron {
   font-size: 0.75rem;
   transition: transform 0.2s ease;
