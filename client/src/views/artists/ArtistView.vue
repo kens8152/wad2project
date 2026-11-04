@@ -49,7 +49,7 @@ function openArtist(artist) {
 
         <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
           <!-- Match with artists -->
-          <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle lucky-btn match-trigger text-nowrap">
+          <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle match-trigger text-nowrap">
             <MatchCardsIcon class="me-2" /> I'm feeling lucky
           </RouterLink>
           <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
@@ -146,15 +146,6 @@ function openArtist(artist) {
   font-size: 1.05rem;
   color: var(--riffle-muted);
   font-weight: 500;
-}
-
-/* Same purple as the navbar's matchmaking button, in light and dark mode */
-.lucky-btn {
-  background: #7c4dff;
-}
-.lucky-btn:hover,
-.lucky-btn:focus-visible {
-  background: #6a3cf0;
 }
 
 .artists-shell__filter-toggle {

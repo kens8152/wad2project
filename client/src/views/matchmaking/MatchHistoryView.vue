@@ -7,8 +7,16 @@ import {
 import { toast } from '@/composables/useToast';
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
+import SortDropdown from '@/components/events/SortDropdown.vue';
 
 const userStore = useUserStore();
+
+const HISTORY_SORTS = [
+  { value: 'newest', label: 'Newest', icon: 'bi-clock-history' },
+  { value: 'oldest', label: 'Oldest', icon: 'bi-hourglass-bottom' },
+  { value: 'name', label: 'Name (A-Z)', icon: 'bi-sort-alpha-down' },
+];
+const sortBy = ref('newest');
 const busyId = ref(null);
 const savedIds = ref([]);
 
@@ -23,9 +31,20 @@ const filters = [
   { value: 'skip', label: 'Skipped' },
 ];
 
+// The chosen filter, in the chosen order
 const filteredHistory = computed(() => {
-  if (filter.value === 'all') return history.value;
-  return history.value.filter(item => item.action === filter.value);
+  const list = filter.value === 'all'
+    ? [...history.value]
+    : history.value.filter(item => item.action === filter.value);
+
+  if (sortBy.value === 'oldest') {
+    list.sort((a, b) => new Date(a.date) - new Date(b.date));
+  } else if (sortBy.value === 'name') {
+    list.sort((a, b) => a.artist.name.localeCompare(b.artist.name));
+  } else {
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+  return list;
 });
 
 function formatDate(date) {
@@ -116,133 +135,138 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-      <RouterLink :to="{ name: 'profile' }" class="small text-decoration-none">
-        <i class="bi bi-arrow-left"></i> Profile
-      </RouterLink>
-      <h1 class="fw-bold mt-1 mb-1">Artist matchmaking history</h1>
-      <p class="text-secondary mb-0">Artists you liked or skipped previously will be shown here</p>
-    </div>
-
-    <!-- Filter -->
-    <div class="btn-group mb-4" role="group" aria-label="Filter history">
-      <button
-        v-for="option in filters"
-        :key="option.value"
-        type="button"
-        class="btn btn-sm"
-        :class="filter === option.value ? 'btn-primary' : 'btn-outline-primary'"
-        @click="filter = option.value"
-      >
-        {{ option.label }}
-      </button>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+  <div v-if="userStore.isLoggedIn" class="history-page">
+    <div class="container-xxl pt-3 pb-5">
+      <!-- Header -->
+      <div class="mb-3">
+        <RouterLink :to="{ name: 'profile' }" class="small text-decoration-none">
+          <i class="bi bi-arrow-left"></i> Profile
+        </RouterLink>
+        <h1 class="page-title mt-1 mb-0">Artist matchmaking history</h1>
+        <p class="page-subtitle mb-0">Artists you liked or skipped previously will be shown here</p>
       </div>
-    </div>
 
-    <!-- Error -->
-    <div v-else-if="errorMessage" class="alert alert-danger d-flex align-items-center gap-3">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span class="flex-grow-1">{{ errorMessage }}</span>
-      <button class="btn btn-sm btn-outline-danger" @click="loadHistory()">Retry</button>
-    </div>
-
-    <!-- Empty -->
-    <div v-else-if="filteredHistory.length === 0" class="text-center py-5">
-      <i class="bi bi-clock-history display-4 text-primary"></i>
-      <h2 class="h4 fw-bold mt-3">Nothing here yet</h2>
-      <p class="text-secondary">Like or skip artists in matchmaking and they will show up here.</p>
-      <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-primary">Match artists</RouterLink>
-    </div>
-
-    <!-- History tiles -->
-    <div v-else class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
-      <div v-for="(item, i) in filteredHistory" :key="item.artist.id + i" class="col">
-        <div class="history-card card h-100 rounded-4">
-          <!-- Save button -->
+      <!-- Filter and sort -->
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="d-flex flex-wrap gap-2 me-auto" role="group" aria-label="Filter history">
           <button
+            v-for="option in filters"
+            :key="option.value"
             type="button"
-            class="btn btn-sm rounded-circle position-absolute top-0 end-0 m-2 z-2"
-            :class="savedIds.includes(item.artist.id) ? 'btn-primary' : 'btn-outline-primary'"
-            :aria-pressed="savedIds.includes(item.artist.id)"
-            :aria-label="savedIds.includes(item.artist.id) ? 'Unsave ' + item.artist.name : 'Save ' + item.artist.name"
-            @click="toggleSave(item.artist)"
+            class="btn btn-sm rounded-pill px-3"
+            :class="filter === option.value ? 'btn-primary' : 'btn-outline-primary'"
+            @click="filter = option.value"
           >
-            <i class="bi" :class="savedIds.includes(item.artist.id) ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+            {{ option.label }}
           </button>
+        </div>
+        <SortDropdown v-model="sortBy" :options="HISTORY_SORTS" />
+      </div>
 
-          <div class="card-body d-flex align-items-center gap-3 p-3 pe-5">
-            <!-- Photo with liked / skipped icon -->
-            <div class="position-relative flex-shrink-0">
-              <img
-                :src="item.artist.image"
-                :alt="item.artist.name"
-                class="history-img rounded-3 object-fit-cover"
-                :style="{ backgroundColor: item.artist.genreColor }"
-                @error="e => { e.target.alt = ''; e.target.removeAttribute('src'); }"
-              />
-              <span
-                class="history-action position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center border border-2 border-white"
-                :class="item.action === 'follow' ? 'text-bg-danger' : 'text-bg-secondary'"
-              >
-                <i class="bi" :class="item.action === 'follow' ? 'bi-heart-fill' : 'bi-x-lg'"></i>
-              </span>
-            </div>
+      <!-- Loading -->
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
 
-            <div class="overflow-hidden">
-              <RouterLink
-                :to="{ name: 'artist-detail', params: { id: item.artist.id } }"
-                class="stretched-link fw-bold text-reset text-decoration-none d-block text-truncate"
-              >
-                {{ item.artist.name }}
-              </RouterLink>
-              <div class="small text-secondary text-truncate">
-                {{ [item.artist.genre, item.artist.hometown].filter(Boolean).join(' · ') }}
-              </div>
-              <div class="small text-secondary d-flex flex-wrap column-gap-3 mt-1">
-                <span class="fw-semibold" :class="item.action === 'follow' ? 'text-danger' : 'text-body'">
-                  {{ item.action === 'follow' ? 'Liked' : 'Skipped' }}
+      <!-- Error -->
+      <div v-else-if="errorMessage" class="alert alert-danger d-flex align-items-center gap-3">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span class="flex-grow-1">{{ errorMessage }}</span>
+        <button class="btn btn-sm btn-outline-danger" @click="loadHistory()">Retry</button>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="filteredHistory.length === 0" class="text-center py-5">
+        <i class="bi bi-clock-history display-4 text-primary"></i>
+        <h2 class="h4 fw-bold mt-3">Nothing here yet</h2>
+        <p class="text-secondary">Like or skip artists in matchmaking and they will show up here.</p>
+        <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-primary">Match artists</RouterLink>
+      </div>
+
+      <!-- History tiles -->
+      <div v-else class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+        <div v-for="(item, i) in filteredHistory" :key="item.artist.id + i" class="col">
+          <div class="history-card card h-100 rounded-4">
+            <!-- Save button -->
+            <button
+              type="button"
+              class="btn btn-sm rounded-circle position-absolute top-0 end-0 m-2 z-2"
+              :class="savedIds.includes(item.artist.id) ? 'btn-primary' : 'btn-outline-primary'"
+              :aria-pressed="savedIds.includes(item.artist.id)"
+              :aria-label="savedIds.includes(item.artist.id) ? 'Unsave ' + item.artist.name : 'Save ' + item.artist.name"
+              @click="toggleSave(item.artist)"
+            >
+              <i class="bi" :class="savedIds.includes(item.artist.id) ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+            </button>
+
+            <div class="card-body d-flex align-items-center gap-3 p-3 pe-5">
+              <!-- Photo with liked / skipped icon -->
+              <div class="position-relative flex-shrink-0">
+                <img
+                  :src="item.artist.image"
+                  :alt="item.artist.name"
+                  class="history-img rounded-3 object-fit-cover"
+                  :style="{ backgroundColor: item.artist.genreColor }"
+                  @error="e => { e.target.alt = ''; e.target.removeAttribute('src'); }"
+                />
+                <span
+                  class="history-action position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center border border-2 border-white"
+                  :class="item.action === 'follow' ? 'text-bg-danger' : 'text-bg-secondary'"
+                >
+                  <i class="bi" :class="item.action === 'follow' ? 'bi-heart-fill' : 'bi-x-lg'"></i>
                 </span>
-                <span>{{ formatDate(item.date) }}</span>
+              </div>
+
+              <div class="overflow-hidden">
+                <RouterLink
+                  :to="{ name: 'artist-detail', params: { id: item.artist.id } }"
+                  class="stretched-link fw-bold text-reset text-decoration-none d-block text-truncate"
+                >
+                  {{ item.artist.name }}
+                </RouterLink>
+                <div class="small text-secondary text-truncate">
+                  {{ [item.artist.genre, item.artist.hometown].filter(Boolean).join(' · ') }}
+                </div>
+                <div class="small text-secondary d-flex flex-wrap column-gap-3 mt-1">
+                  <span class="fw-semibold" :class="item.action === 'follow' ? 'text-danger' : 'text-body'">
+                    {{ item.action === 'follow' ? 'Liked' : 'Skipped' }}
+                  </span>
+                  <span>{{ formatDate(item.date) }}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Change or undo the swipe -->
-          <div class="card-footer bg-transparent border-0 pt-0 px-3 pb-3 d-flex align-items-center gap-2 position-relative z-2">
-            <button
-              v-if="item.action === 'skip'"
-              type="button"
-              class="btn btn-sm btn-outline-danger"
-              :disabled="busyId === item.artist.id"
-              @click="changeAction(item, 'follow')"
-            >
-              <i class="bi bi-heart"></i> Like instead
-            </button>
-            <button
-              v-else
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              :disabled="busyId === item.artist.id"
-              @click="changeAction(item, 'skip')"
-            >
-              <i class="bi bi-x-lg"></i> Skip instead
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-link text-secondary text-decoration-none ms-auto"
-              :disabled="busyId === item.artist.id"
-              @click="undo(item)"
-            >
-              <i class="bi bi-arrow-counterclockwise"></i> Undo
-            </button>
+            <!-- Change or undo the swipe -->
+            <div class="card-footer bg-transparent border-0 pt-0 px-3 pb-3 d-flex align-items-center gap-2 position-relative z-2">
+              <button
+                v-if="item.action === 'skip'"
+                type="button"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                :disabled="busyId === item.artist.id"
+                @click="changeAction(item, 'follow')"
+              >
+                <i class="bi bi-heart"></i> Like instead
+              </button>
+              <button
+                v-else
+                type="button"
+                class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                :disabled="busyId === item.artist.id"
+                @click="changeAction(item, 'skip')"
+              >
+                <i class="bi bi-x-lg"></i> Skip instead
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-link text-secondary text-decoration-none ms-auto"
+                :disabled="busyId === item.artist.id"
+                @click="undo(item)"
+              >
+                <i class="bi bi-arrow-counterclockwise"></i> Undo
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -252,6 +276,22 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Same background and title sizes as the Artists page */
+.history-page {
+  flex-grow: 1;
+  background: var(--riffle-glow);
+}
+.page-title {
+  font-size: 2.3rem;
+  line-height: 1.1;
+}
+.page-subtitle {
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--riffle-muted);
+}
+
 .history-card {
   border: 1px solid #d3d8e8;
   box-shadow: 0 2px 6px rgba(20, 35, 90, 0.08);

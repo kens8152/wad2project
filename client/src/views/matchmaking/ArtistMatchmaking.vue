@@ -1417,8 +1417,6 @@ onMounted(async () => {
   background-color: rgba(0, 0, 0, 0.5);
   font-size: 0.875rem;
   min-height: 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
 }
 .info-wrap {
   min-height: 0;

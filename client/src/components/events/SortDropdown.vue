@@ -246,6 +246,13 @@ onBeforeUnmount(() => {
 .sort-dropdown__option.is-selected .bi:first-child {
   color: var(--riffle-blue);
 }
+/* Dark mode: dark highlights, so the options stay readable */
+:root[data-theme='dark'] .sort-dropdown__option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme='dark'] .sort-dropdown__option.is-selected {
+  background: rgba(124, 77, 255, 0.22);
+}
 .sort-dropdown__check {
   margin-left: auto;
   height: 13px;
