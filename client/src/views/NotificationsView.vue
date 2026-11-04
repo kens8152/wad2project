@@ -361,4 +361,25 @@ function markAll() {
   border-color: #7c4dff;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
 }
+
+/* Dark mode: the light boxes become dark, so their text stays readable */
+:root[data-theme='dark'] .tab-pill.is-active {
+  background: rgba(224, 36, 94, 0.18);
+  border-color: rgba(224, 36, 94, 0.45);
+  color: #ff8cbd;
+}
+:root[data-theme='dark'] .notification-row.is-unread {
+  background: rgba(224, 36, 94, 0.08);
+}
+:root[data-theme='dark'] .notification-row.is-unread:hover {
+  background: rgba(224, 36, 94, 0.14);
+}
+:root[data-theme='dark'] .notification-icon {
+  background: rgba(124, 77, 255, 0.2);
+  color: #cdbfff;
+}
+:root[data-theme='dark'] .setting-switch:not(:checked) {
+  border-color: var(--riffle-muted);
+  background-color: var(--riffle-surface-soft);
+}
 </style>

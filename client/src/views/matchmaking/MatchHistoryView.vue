@@ -133,7 +133,7 @@ onMounted(() => {
         :key="option.value"
         type="button"
         class="btn btn-sm"
-        :class="filter === option.value ? 'btn-dark' : 'btn-outline-dark'"
+        :class="filter === option.value ? 'btn-primary' : 'btn-outline-primary'"
         @click="filter = option.value"
       >
         {{ option.label }}
@@ -159,7 +159,7 @@ onMounted(() => {
       <i class="bi bi-clock-history display-4 text-primary"></i>
       <h2 class="h4 fw-bold mt-3">Nothing here yet</h2>
       <p class="text-secondary">Like or skip artists in matchmaking and they will show up here.</p>
-      <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-dark">Match artists</RouterLink>
+      <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-primary">Match artists</RouterLink>
     </div>
 
     <!-- History tiles -->
@@ -261,6 +261,16 @@ onMounted(() => {
   transform: translateY(-3px);
   border-color: #aab3d0;
   box-shadow: 0 8px 20px rgba(20, 35, 90, 0.15);
+}
+
+/* Dark mode: softer outline and darker shadow */
+:root[data-theme='dark'] .history-card {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='dark'] .history-card:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 .history-img {
   width: 64px;

@@ -249,7 +249,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   }
 
   /* The filter card is the thing that scrolls (so its rounded corners always show whole),
-     with the scrollbar on its left side and Apply pinned at its bottom. */
+     with Apply pinned at its bottom. */
   /* Tallest the card can be: the screen below the navbar, minus the 16px gap on top (the sticky "top" above)
      and the page's bottom padding (2.5rem). That way, at the end of the page its bottom lines up with the last row
      and its top never slides under the navbar. */
@@ -261,11 +261,9 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden; /* the heart's falling notes must not make a sideways scrollbar */
-    direction: rtl; /* puts the scrollbar on the left ... */
   }
   .events-shell__sidebar > :deep(.filters) > * {
     flex: none;
-    direction: ltr; /* ... while the content itself stays left-to-right */
   }
 
   /* the map column is as tall as the filter panel, so the scrollbar under the

@@ -537,4 +537,9 @@ const emptyMessage = computed(() => {
     font-size: 2.2rem;
   }
 }
+
+/* Dark mode: the light chips become dark, so their text stays readable */
+:root[data-theme='dark'] .meta-chip {
+  background: var(--riffle-surface-soft);
+}
 </style>

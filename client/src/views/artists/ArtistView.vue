@@ -38,84 +38,91 @@ function openArtist(artist) {
 </script>
 
 <template>
-  <div class="artists-shell container-xxl">
-    <!-- Header: title on the left, sort dropdown on the right -->
-    <header class="artists-shell__head">
-      <div>
-        <h1 class="artists-shell__title">Artists</h1>
-        <p class="artists-shell__subtitle">{{ subtitle }}</p>
+  <div class="artists-page">
+    <div class="artists-shell container-xxl">
+      <!-- Header: title on the left, sort dropdown on the right -->
+      <header class="artists-shell__head">
+        <div>
+          <h1 class="artists-shell__title">Artists</h1>
+          <p class="artists-shell__subtitle">{{ subtitle }}</p>
+        </div>
+
+        <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
+          <!-- Match with artists -->
+          <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle lucky-btn match-trigger text-nowrap">
+            <MatchCardsIcon class="me-2" /> I'm feeling lucky
+          </RouterLink>
+          <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
+        </div>
+      </header>
+
+      <!-- Filters button (phones only) -->
+      <button
+        type="button"
+        class="artists-shell__filter-toggle d-lg-none"
+        @click="filtersOpen = !filtersOpen"
+      >
+        <i class="bi bi-sliders"></i>
+        Filters
+        <span v-if="activeCount" class="artists-shell__badge">{{ activeCount }}</span>
+        <i class="bi ms-auto" :class="filtersOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+      </button>
+
+      <div class="artists-shell__body">
+        <!-- Filter sidebar -->
+        <div class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
+          <ArtistFilterSidebar :search-text="filters.searchText" :draft-genres="filters.draftGenres"
+            :draft-venues="filters.draftVenues" :genre-options="filters.genreOptions"
+            :venue-options="filters.venueOptions" :is-dirty="filters.isDirty" @apply="filters.applyFilters"
+            @reset="filters.resetFilters" @clear-search="filters.clearSearch" @applied="filtersOpen = false" />
+        </div>
+
+        <!-- Results -->
+        <section class="artists-shell__main">
+          <!-- Loading -->
+          <div v-if="eventsStore.loading" class="artists-shell__state">
+            <div class="spinner-border text-primary" role="status"></div>
+          </div>
+
+          <!-- Error -->
+          <div v-else-if="eventsStore.error" class="artists-shell__state">
+            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+            <p class="mb-3">{{ eventsStore.error }}</p>
+            <button class="btn btn-riffle" @click="eventsStore.fetchEvents()">Try again</button>
+          </div>
+
+          <!-- No results -->
+          <div v-else-if="visibleArtists.length === 0" class="artists-shell__state">
+            <i class="bi bi-person-x fs-1 text-secondary"></i>
+            <h2 class="h5 mt-2">No artists match these filters</h2>
+            <p class="text-secondary">Try fewer genres or venues.</p>
+            <button class="btn btn-riffle" @click="resetFilters()">Reset filters</button>
+          </div>
+
+          <!-- Artist grid -->
+          <div v-else class="artists-grid" :key="visibleArtists.map(a => a.id).join(',')">
+            <ArtistCard
+              v-for="artist in visibleArtists"
+              :key="artist.id"
+              :artist="artist"
+              :is-favourite="favourites.includes(artist.id)"
+              @select="openArtist"
+              @toggle-favourite="toggleFavourite"
+            />
+          </div>
+        </section>
       </div>
-
-      <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
-        <!-- Match with artists -->
-        <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle match-trigger text-nowrap">
-          <MatchCardsIcon class="me-2" /> I'm feeling lucky
-        </RouterLink>
-        <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
-      </div>
-    </header>
-
-    <!-- Filters button (phones only) -->
-    <button
-      type="button"
-      class="artists-shell__filter-toggle d-lg-none"
-      @click="filtersOpen = !filtersOpen"
-    >
-      <i class="bi bi-sliders"></i>
-      Filters
-      <span v-if="activeCount" class="artists-shell__badge">{{ activeCount }}</span>
-      <i class="bi ms-auto" :class="filtersOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-    </button>
-
-    <div class="artists-shell__body">
-      <!-- Filter sidebar -->
-      <div class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
-        <ArtistFilterSidebar :search-text="filters.searchText" :draft-genres="filters.draftGenres"
-          :draft-venues="filters.draftVenues" :genre-options="filters.genreOptions"
-          :venue-options="filters.venueOptions" :is-dirty="filters.isDirty" @apply="filters.applyFilters"
-          @reset="filters.resetFilters" @clear-search="filters.clearSearch" @applied="filtersOpen = false" />
-      </div>
-
-      <!-- Results -->
-      <section class="artists-shell__main">
-        <!-- Loading -->
-        <div v-if="eventsStore.loading" class="artists-shell__state">
-          <div class="spinner-border text-primary" role="status"></div>
-        </div>
-
-        <!-- Error -->
-        <div v-else-if="eventsStore.error" class="artists-shell__state">
-          <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-          <p class="mb-3">{{ eventsStore.error }}</p>
-          <button class="btn btn-riffle" @click="eventsStore.fetchEvents()">Try again</button>
-        </div>
-
-        <!-- No results -->
-        <div v-else-if="visibleArtists.length === 0" class="artists-shell__state">
-          <i class="bi bi-person-x fs-1 text-secondary"></i>
-          <h2 class="h5 mt-2">No artists match these filters</h2>
-          <p class="text-secondary">Try fewer genres or venues.</p>
-          <button class="btn btn-riffle" @click="resetFilters()">Reset filters</button>
-        </div>
-
-        <!-- Artist grid -->
-        <div v-else class="artists-grid" :key="visibleArtists.map(a => a.id).join(',')">
-          <ArtistCard
-            v-for="artist in visibleArtists"
-            :key="artist.id"
-            :artist="artist"
-            :is-favourite="favourites.includes(artist.id)"
-            @select="openArtist"
-            @toggle-favourite="toggleFavourite"
-          />
-        </div>
-      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
 /* ---------- page layout (same as the events page) ---------- */
+.artists-page {
+  flex-grow: 1;
+  background: var(--riffle-glow);
+}
+
 .artists-shell {
   padding-top: 1.1rem;
   padding-bottom: 2.5rem;
@@ -139,6 +146,15 @@ function openArtist(artist) {
   font-size: 1.05rem;
   color: var(--riffle-muted);
   font-weight: 500;
+}
+
+/* Same purple as the navbar's matchmaking button, in light and dark mode */
+.lucky-btn {
+  background: #7c4dff;
+}
+.lucky-btn:hover,
+.lucky-btn:focus-visible {
+  background: #6a3cf0;
 }
 
 .artists-shell__filter-toggle {
@@ -222,9 +238,23 @@ function openArtist(artist) {
     display: block !important;
     position: sticky;
     top: 16px;
-    max-height: calc(100vh - var(--navbar-height) - 32px);
-    overflow-y: auto;
     align-self: start;
+  }
+
+  /* Same as the events page: the filter card scrolls inside itself, with Apply and Reset pinned at its bottom.
+     7.5rem leaves room for the "Artists" title above it, so Apply is visible without scrolling the page */
+  .artists-shell__sidebar > :deep(.filters) {
+    height: calc(100vh - var(--navbar-height) - 7.5rem);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .artists-shell__sidebar > :deep(.filters) > * {
+    flex: none;
+  }
+  .artists-shell__sidebar > :deep(.filters .filters__footer) {
+    margin-top: auto;
   }
 }
 

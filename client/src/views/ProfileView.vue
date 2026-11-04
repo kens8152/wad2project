@@ -1554,4 +1554,43 @@ a:focus-visible {
 .reset-fade-leave-to {
   opacity: 0;
 }
+
+/* Dark mode: the light boxes become dark, so their text stays readable */
+:root[data-theme='dark'] .stat-card > i,
+:root[data-theme='dark'] .song-number,
+:root[data-theme='dark'] .activity-icon {
+  background: rgba(124, 77, 255, 0.2);
+  color: #cdbfff;
+}
+:root[data-theme='dark'] .genre-tag,
+:root[data-theme='dark'] .genre-option.selected,
+:root[data-theme='dark'] .selected-song-icon {
+  background-color: rgba(124, 77, 255, 0.22);
+  color: #e3d9ff;
+}
+:root[data-theme='dark'] .genre-option.selected {
+  border-color: #b9a4ff;
+}
+:root[data-theme='dark'] .text-input {
+  background-color: var(--riffle-surface-soft);
+}
+:root[data-theme='dark'] .remove-song-button:hover {
+  background-color: rgba(124, 77, 255, 0.15);
+}
+:root[data-theme='dark'] .unlike-button {
+  border-color: rgba(224, 36, 94, 0.45);
+  background: rgba(224, 36, 94, 0.12);
+  color: #ff8cbd;
+}
+:root[data-theme='dark'] .danger-zone {
+  border-color: rgba(240, 165, 181, 0.4);
+  background: rgba(224, 36, 94, 0.08);
+}
+:root[data-theme='dark'] .reset-icon {
+  background: rgba(214, 38, 79, 0.2);
+  color: #ff8ca5;
+}
+:root[data-theme='dark'] .reset-confirm:disabled {
+  background: rgba(214, 38, 79, 0.35);
+}
 </style>

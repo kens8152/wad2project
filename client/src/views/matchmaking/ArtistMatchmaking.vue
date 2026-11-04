@@ -353,341 +353,343 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-3 pb-xl-4">
-    <FlashMessage
-      ref="saveFlashMessage"
-      bg-color="secondary"
-    >
-      <i class="bi" :class="saveMessage.saved ? 'bi-bookmark-check-fill' : 'bi-bookmark-x'"></i>
-      {{ saveMessage.saved ? `Saved ${saveMessage.name}` : `Removed ${saveMessage.name} from saved` }}
-    </FlashMessage>
-
-    <!-- Header -->
-    <div class="text-center mb-2 pt-3">
-      <h2 class="fw-bold mb-2">Discover Local Artists</h2>
-      <p class="lead text-dark mb-0 fs-6">
-        Swipe through artists, listen to a preview, and find new music that matches your taste.
-      </p>
-      <RouterLink :to="{ name: 'match-history' }" class="small text-decoration-none">
-        <i class="bi bi-clock-history"></i> Match history
-      </RouterLink>
-      <div v-if="!showFinishedMessage" class="liked-slot mt-2">
-        <span v-if="likedThisBatch.length" :key="likedThisBatch.length" class="liked-counter badge rounded-pill">
-          <i class="bi bi-heart-fill"></i> {{ likedThisBatch.length }} liked · building your taste profile
-        </span>
-      </div>
-    </div>
-
-    <div 
-      v-if="!showFinishedMessage" 
-      class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-2"
-    >
-      <!-- Skip Btn -->
-      <div
-        class="action skip-action text-center mt-3 mt-sm-5"
-        :class="{ 'fly-up': artistsFinished }"
-        :style="{ animationDuration: '0.55s' }"
+  <div v-if="userStore.isLoggedIn" class="matchmaking-bg flex-grow-1 d-flex flex-column">
+    <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-3 pb-xl-4">
+      <FlashMessage
+        ref="saveFlashMessage"
+        bg-color="secondary"
       >
-        <button :key="'skip-' + reactionKey" class="btn btn-light rounded-circle shadow action-btn skip-btn fs-2" :class="{ 'is-popping': reaction === 'skip' }" aria-label="Skip" :disabled="actionBusy || artistsFinished || !artists.length" @click="skip()">
-          <i class="bi bi-x-lg text-secondary"></i>
-        </button>
-        <div class="fw-semibold small mt-2">Skip</div>
+        <i class="bi" :class="saveMessage.saved ? 'bi-bookmark-check-fill' : 'bi-bookmark-x'"></i>
+        {{ saveMessage.saved ? `Saved ${saveMessage.name}` : `Removed ${saveMessage.name} from saved` }}
+      </FlashMessage>
+
+      <!-- Header -->
+      <div class="text-center mb-2 pt-3">
+        <h2 class="fw-bold mb-2">Discover Local Artists</h2>
+        <p class="subtitle lead mb-0 fs-6">
+          Swipe through artists, listen to a preview, and find new music that matches your taste.
+        </p>
+        <RouterLink :to="{ name: 'match-history' }" class="small text-decoration-none">
+          <i class="bi bi-clock-history"></i> Match history
+        </RouterLink>
+        <div v-if="!showFinishedMessage" class="liked-slot mt-2">
+          <span v-if="likedThisBatch.length" :key="likedThisBatch.length" class="liked-counter badge rounded-pill">
+            <i class="bi bi-heart-fill"></i> {{ likedThisBatch.length }} liked · building your taste profile
+          </span>
+        </div>
       </div>
 
-      <!-- Artist Cards -->
-      <div class="card-stage flex-shrink-0">
+      <div 
+        v-if="!showFinishedMessage" 
+        class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-2"
+      >
+        <!-- Skip Btn -->
         <div
-          v-for="slot in displayedArtists.filter(slot => slot.artist)"
-          :key="slot.artist.id"
-          class="card drop-in text-white border-0 rounded-4 overflow-hidden shadow"
-          :style="cardStyle(slot)"
-          :class="{
-            'swipe-left': slot.offset === 0 && swipeDir === 'left',
-            'swipe-right': slot.offset === 0 && swipeDir === 'right',
-            'swipe-up': slot.offset === 0 && swipeDir === 'up',
-            'main-card h-100': slot.offset === 0,
-            'side-card d-none d-lg-block': Math.abs(slot.offset) === 1,
-            'far-card h-75 d-none d-xl-block': Math.abs(slot.offset) === 2,
-            'left-side': slot.offset < 0,
-            'right-side': slot.offset > 0,
-            'fly-up': artistsFinished,
-          }"
+          class="action skip-action text-center mt-3 mt-sm-5"
+          :class="{ 'fly-up': artistsFinished }"
+          :style="{ animationDuration: '0.55s' }"
         >
-          <template v-if="slot.artist">
-            <img
-              :src="slot.artist.image"
-              :alt="slot.artist.name"
-              class="w-100 h-100 object-fit-cover"
-              :class="{ 'backdrop-blur': coverOf(slot.artist) }"
-              :style="{ backgroundColor: slot.artist.genreColor }"
-              @error="e => { e.target.alt = ''; e.target.removeAttribute('src'); }"
-            />
+          <button :key="'skip-' + reactionKey" class="btn btn-light rounded-circle shadow action-btn skip-btn fs-2" :class="{ 'is-popping': reaction === 'skip' }" aria-label="Skip" :disabled="actionBusy || artistsFinished || !artists.length" @click="skip()">
+            <i class="bi bi-x-lg text-secondary"></i>
+          </button>
+          <div class="fw-semibold small mt-2">Skip</div>
+        </div>
 
-            <!-- The artist's picture: the cover of their own song on a spinning record -->
-            <div v-if="coverOf(slot.artist)" class="cover" :class="{ 'cover-main': slot.offset === 0 }" :style="{ '--glow': slot.artist.genreColor }">
-              <span class="cover-record"></span>
-              <img :src="coverOf(slot.artist)" :alt="slot.artist.name + ' cover'" class="cover-art" />
-            </div>
+        <!-- Artist Cards -->
+        <div class="card-stage flex-shrink-0">
+          <div
+            v-for="slot in displayedArtists.filter(slot => slot.artist)"
+            :key="slot.artist.id"
+            class="card drop-in text-white border-0 rounded-4 overflow-hidden shadow"
+            :style="cardStyle(slot)"
+            :class="{
+              'swipe-left': slot.offset === 0 && swipeDir === 'left',
+              'swipe-right': slot.offset === 0 && swipeDir === 'right',
+              'swipe-up': slot.offset === 0 && swipeDir === 'up',
+              'main-card h-100': slot.offset === 0,
+              'side-card d-none d-lg-block': Math.abs(slot.offset) === 1,
+              'far-card h-75 d-none d-xl-block': Math.abs(slot.offset) === 2,
+              'left-side': slot.offset < 0,
+              'right-side': slot.offset > 0,
+              'fly-up': artistsFinished,
+            }"
+          >
+            <template v-if="slot.artist">
+              <img
+                :src="slot.artist.image"
+                :alt="slot.artist.name"
+                class="w-100 h-100 object-fit-cover"
+                :class="{ 'backdrop-blur': coverOf(slot.artist) }"
+                :style="{ backgroundColor: slot.artist.genreColor }"
+                @error="e => { e.target.alt = ''; e.target.removeAttribute('src'); }"
+              />
 
-            <!-- Stamp that appears while the card flies away -->
-            <span v-if="slot.offset === 0 && swipeDir" class="stamp" :class="'stamp-' + swipeDir">
-              <i class="bi" :class="swipeDir === 'right' ? 'bi-heart-fill' : swipeDir === 'left' ? 'bi-skip-forward-fill' : 'bi-question-lg'"></i>
-              {{ swipeDir === 'right' ? 'Liked' : swipeDir === 'left' ? 'Skipped' : 'Unsure' }}
-            </span>
-            <!-- A light that sweeps across the card as it leaves -->
-            <span v-if="slot.offset === 0 && swipeDir" class="swipe-shine" :class="'swipe-shine-' + swipeDir"></span>
-
-            <!-- Text sits on top of the image, pushed to the bottom of the card -->
-            <div class="card-img-overlay d-flex flex-column justify-content-end px-0 pb-0 pt-5">
-              <!-- Save button -->
-              <button v-if="slot.offset === 0" :key="'save-' + saveFlash" class="btn shadow rounded-circle position-absolute top-0 start-0 m-2" :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 }]" :aria-pressed="!!slot.artist.saved" :aria-label="slot.artist.saved ? 'Unsave' : 'Save'" :disabled="actionBusy || artistsFinished || !artists.length" @click="toggleSave()">
-                <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
-              </button>
-
-              <!-- Unsure button -->
-              <button v-if="slot.offset === 0" class="unsure-btn" :disabled="actionBusy || artistsFinished || !artists.length" @click="unsure()">
-                <span class="unsure-icon"><i class="bi bi-question-lg"></i></span> Not sure yet
-              </button>
-
-              <!-- Card position / total -->
-              <span
-                v-if="slot.offset === 0"
-                class="badge rounded-pill bg-dark bg-opacity-50 position-absolute top-0 end-0 m-2"
-              >
-                {{ slot.index + 1 }} / {{ artists.length }}
-              </span>
-
-              <div class="info-wrap position-relative d-flex flex-column">
-              <!-- Collapse arrow -->
-              <div
-                v-if="slot.offset === 0"
-                class="collapse-arrow collapsed position-absolute top-0 start-50 translate-middle-x z-2 lh-1"
-                role="button"
-                aria-label="Show fewer songs"
-                data-bs-toggle="collapse"
-                :data-bs-target="'#songs-' + slot.artist.id"
-                aria-expanded="false"
-              >
-                <i class="bi bi-chevron-compact-down"></i>
+              <!-- The artist's picture: the cover of their own song on a spinning record -->
+              <div v-if="coverOf(slot.artist)" class="cover" :class="{ 'cover-main': slot.offset === 0 }" :style="{ '--glow': slot.artist.genreColor }">
+                <span class="cover-record"></span>
+                <img :src="coverOf(slot.artist)" :alt="slot.artist.name + ' cover'" class="cover-art" />
               </div>
 
-              <div class="card-info p-2 pt-3 p-sm-3 overflow-auto">
-                <!-- Main card: full details -->
-                <template v-if="slot.offset === 0">
-                  <!-- Pull-up area -->
-                  <div
-                    class="pull-area collapsed"
-                    data-bs-toggle="collapse"
-                    :data-bs-target="'#songs-' + slot.artist.id"
-                    aria-expanded="false"
-                    @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
-                  >
-                    <h3 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h3>
-                    <p class="mb-2">
-                      <i class="bi bi-geo-alt"></i> {{ slot.artist.hometown }}
-                      <span v-if="slot.artist.formed"> · Since {{ slot.artist.formed }}</span>
+              <!-- Stamp that appears while the card flies away -->
+              <span v-if="slot.offset === 0 && swipeDir" class="stamp" :class="'stamp-' + swipeDir">
+                <i class="bi" :class="swipeDir === 'right' ? 'bi-heart-fill' : swipeDir === 'left' ? 'bi-skip-forward-fill' : 'bi-question-lg'"></i>
+                {{ swipeDir === 'right' ? 'Liked' : swipeDir === 'left' ? 'Skipped' : 'Unsure' }}
+              </span>
+              <!-- A light that sweeps across the card as it leaves -->
+              <span v-if="slot.offset === 0 && swipeDir" class="swipe-shine" :class="'swipe-shine-' + swipeDir"></span>
+
+              <!-- Text sits on top of the image, pushed to the bottom of the card -->
+              <div class="card-img-overlay d-flex flex-column justify-content-end px-0 pb-0 pt-5">
+                <!-- Save button -->
+                <button v-if="slot.offset === 0" :key="'save-' + saveFlash" class="btn shadow rounded-circle position-absolute top-0 start-0 m-2" :class="[slot.artist.saved ? 'btn-primary' : 'btn-light', { 'saved': saveFlash > 0 && !slot.artist.saved, 'just-saved': saveFlash > 0 && slot.artist.saved }]" :aria-pressed="!!slot.artist.saved" :aria-label="slot.artist.saved ? 'Unsave' : 'Save'" :disabled="actionBusy || artistsFinished || !artists.length" @click="toggleSave()">
+                  <i class="bi" :class="slot.artist.saved ? 'bi-bookmark-fill' : 'bi-bookmark text-primary'"></i>
+                </button>
+
+                <!-- Unsure button -->
+                <button v-if="slot.offset === 0" class="unsure-btn" :disabled="actionBusy || artistsFinished || !artists.length" @click="unsure()">
+                  <span class="unsure-icon"><i class="bi bi-question-lg"></i></span> Not sure yet
+                </button>
+
+                <!-- Card position / total -->
+                <span
+                  v-if="slot.offset === 0"
+                  class="badge rounded-pill bg-dark bg-opacity-50 position-absolute top-0 end-0 m-2"
+                >
+                  {{ slot.index + 1 }} / {{ artists.length }}
+                </span>
+
+                <div class="info-wrap position-relative d-flex flex-column">
+                <!-- Collapse arrow -->
+                <div
+                  v-if="slot.offset === 0"
+                  class="collapse-arrow collapsed position-absolute top-0 start-50 translate-middle-x z-2 lh-1"
+                  role="button"
+                  aria-label="Show fewer songs"
+                  data-bs-toggle="collapse"
+                  :data-bs-target="'#songs-' + slot.artist.id"
+                  aria-expanded="false"
+                >
+                  <i class="bi bi-chevron-compact-down"></i>
+                </div>
+
+                <div class="card-info p-2 pt-3 p-sm-3 overflow-auto">
+                  <!-- Main card: full details -->
+                  <template v-if="slot.offset === 0">
+                    <!-- Pull-up area -->
+                    <div
+                      class="pull-area collapsed"
+                      data-bs-toggle="collapse"
+                      :data-bs-target="'#songs-' + slot.artist.id"
+                      aria-expanded="false"
+                      @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
+                    >
+                      <h3 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h3>
+                      <p class="mb-2">
+                        <i class="bi bi-geo-alt"></i> {{ slot.artist.hometown }}
+                        <span v-if="slot.artist.formed"> · Since {{ slot.artist.formed }}</span>
+                      </p>
+
+                      <!-- Genres -->
+                      <div class="d-flex flex-wrap gap-2 mb-sm-2">
+                        <span v-if="slot.artist.genre" class="badge rounded-pill border border-light fw-normal">
+                          {{ slot.artist.genre }}
+                        </span>
+                        <span v-if="slot.artist.tag" class="badge rounded-pill border border-light fw-normal">
+                          {{ slot.artist.tag }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <template v-if="artistTracks(slot.artist).length">
+                      <!-- First song -->
+                      <SongPreview
+                        class="mt-1 mb-2"
+                        :track="artistTracks(slot.artist)[0]"
+                        :open="openSong === 0"
+                        @open="openSong = 0"
+                      />
+                    </template>
+
+                    <!-- No songs -->
+                    <p v-else class="small fst-italic opacity-75 mt-1 mb-2">
+                      <i class="bi bi-music-note"></i> No song samples to show yet
                     </p>
 
-                    <!-- Genres -->
-                    <div class="d-flex flex-wrap gap-2 mb-sm-2">
-                      <span v-if="slot.artist.genre" class="badge rounded-pill border border-light fw-normal">
-                        {{ slot.artist.genre }}
-                      </span>
-                      <span v-if="slot.artist.tag" class="badge rounded-pill border border-light fw-normal">
-                        {{ slot.artist.tag }}
-                      </span>
+                    <div
+                      class="pull-area songs-hint collapsed small d-flex align-items-center gap-1"
+                      data-bs-toggle="collapse"
+                      :data-bs-target="'#songs-' + slot.artist.id"
+                      aria-expanded="false"
+                      @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
+                    >
+                      <i class="bi bi-music-note-beamed"></i> &nbsp;
+                      {{ artistTracks(slot.artist).length > 1
+                        ? `Checkout ${artistTracks(slot.artist).length - 1} more samples`
+                        : 'More about this artist' }}
+                      <i class="bi bi-chevron-up ms-auto"></i>
                     </div>
-                  </div>
 
-                  <template v-if="artistTracks(slot.artist).length">
-                    <!-- First song -->
-                    <SongPreview
-                      class="mt-1 mb-2"
-                      :track="artistTracks(slot.artist)[0]"
-                      :open="openSong === 0"
-                      @open="openSong = 0"
-                    />
+                    <!-- More songs -->
+                    <div
+                      class="collapse"
+                      :id="'songs-' + slot.artist.id"
+                      v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
+                    >
+                      <SongPreview
+                        v-for="(track, i) in artistTracks(slot.artist).slice(1)"
+                        :key="track.id"
+                        class="mb-2"
+                        :track="track"
+                        :open="openSong === i + 1"
+                        @open="openSong = i + 1"
+                      />
+
+                      <RouterLink
+                        :to="{ name: 'artist-detail', params: { id: slot.artist.id } }"
+                        class="btn btn-light btn-sm w-100 mt-2"
+                      >
+                        View artist <i class="bi bi-arrow-right"></i>
+                      </RouterLink>
+                    </div>
                   </template>
 
-                  <!-- No songs -->
-                  <p v-else class="small fst-italic opacity-75 mt-1 mb-2">
-                    <i class="bi bi-music-note"></i> No song samples to show yet
-                  </p>
-
-                  <div
-                    class="pull-area songs-hint collapsed small d-flex align-items-center gap-1"
-                    data-bs-toggle="collapse"
-                    :data-bs-target="'#songs-' + slot.artist.id"
-                    aria-expanded="false"
-                    @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
-                  >
-                    <i class="bi bi-music-note-beamed"></i> &nbsp;
-                    {{ artistTracks(slot.artist).length > 1
-                      ? `Checkout ${artistTracks(slot.artist).length - 1} more samples`
-                      : 'More about this artist' }}
-                    <i class="bi bi-chevron-up ms-auto"></i>
-                  </div>
-
-                  <!-- More songs -->
-                  <div
-                    class="collapse"
-                    :id="'songs-' + slot.artist.id"
-                    v-on="{ 'hide.bs.collapse': () => (openSong = 0) }"
-                  >
-                    <SongPreview
-                      v-for="(track, i) in artistTracks(slot.artist).slice(1)"
-                      :key="track.id"
-                      class="mb-2"
-                      :track="track"
-                      :open="openSong === i + 1"
-                      @open="openSong = i + 1"
-                    />
-
-                    <RouterLink
-                      :to="{ name: 'artist-detail', params: { id: slot.artist.id } }"
-                      class="btn btn-light btn-sm w-100 mt-2"
-                    >
-                      View artist <i class="bi bi-arrow-right"></i>
-                    </RouterLink>
-                  </div>
-                </template>
-
-                <!-- Side cards: name and genres only -->
-                <template v-else>
-                  <h5 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h5>
-                  <p class="small mb-0">{{ [slot.artist.genre, slot.artist.tag].filter(Boolean).join(' • ') }}</p>
-                </template>
+                  <!-- Side cards: name and genres only -->
+                  <template v-else>
+                    <h5 class="card-title fw-bold mb-0">{{ slot.artist.name }}</h5>
+                    <p class="small mb-0">{{ [slot.artist.genre, slot.artist.tag].filter(Boolean).join(' • ') }}</p>
+                  </template>
+                </div>
+                </div>
               </div>
-              </div>
-            </div>
-          </template>
-        </div>
-
-        <!-- Burst that plays on Like / Skip -->
-        <div v-if="reaction" :key="reactionKey" class="reaction" :class="'reaction-' + reaction" aria-hidden="true">
-          <template v-if="reaction === 'like'">
-            <span
-              v-for="(line, i) in SKIP_LINES"
-              :key="'l' + i"
-              class="like-line"
-              :style="{ top: line.top, width: line.width, animationDelay: line.delay }"
-            ></span>
-            <span class="like-badge"><i class="bi bi-heart-fill"></i></span>
-            <i
-              v-for="(note, i) in NOTE_RAIN"
-              :key="'r' + i"
-              class="bi rain-note"
-              :class="note.icon"
-              :style="{ left: note.left, '--sway': note.sway, color: note.color, fontSize: note.size, animationDelay: note.delay, animationDuration: note.time }"
-            ></i>
-            <span class="wave wave-1"></span>
-            <span class="wave wave-2"></span>
-            <span class="wave wave-3"></span>
-            <i
-              v-for="(note, i) in NOTE_BURST"
-              :key="i"
-              class="bi reaction-note"
-              :class="note.icon"
-              :style="{ '--dx': note.dx, '--dy': note.dy, color: note.color, fontSize: note.size, animationDelay: note.delay }"
-            ></i>
-          </template>
-          <template v-else>
-            <span
-              v-for="(line, i) in SKIP_LINES"
-              :key="i"
-              class="skip-line"
-              :style="{ top: line.top, width: line.width, animationDelay: line.delay }"
-            ></span>
-            <span class="skip-badge"><i class="bi bi-skip-forward-fill"></i></span>
-          </template>
-        </div>
-      </div>
-
-      <!-- Like Btn -->
-      <div
-        class="action follow-action text-center mt-3 mt-sm-5"
-        :class="{ 'fly-up': artistsFinished }"
-        :style="{ animationDuration: '0.75s' }"
-      >
-        <button :key="'like-' + reactionKey" class="btn btn-light rounded-circle shadow action-btn like-btn" :class="{ 'is-popping': reaction === 'like' }" aria-label="Like" :disabled="actionBusy || artistsFinished || !artists.length" @click="like()">
-          <i class="bi bi-heart-fill text-danger"></i>
-        </button>
-        <div class="fw-semibold small mt-2">Like</div>
-      </div>
-    </div>
-
-    <!-- Leave matchmaking early (bottom right corner) -->
-    <button v-if="!showFinishedMessage" type="button" class="finish-early btn rounded-pill shadow-sm" :disabled="artistsFinished || actionBusy" aria-label="Skip the rest" @click="finishEarly()">
-      <span class="finish-early-text">Skip the rest</span> <i class="bi bi-skip-forward-fill"></i>
-    </button>
-
-    <!-- Shown after all cards has been swiped -->
-    <div v-else class="finish drop-in">
-      <div class="finish-card">
-        <p class="finish-kicker"><i class="bi bi-stars"></i> Today's matchmaking</p>
-        <h2 class="finish-title">{{ noArtistsLeft ? "You've seen every artist we have!" : 'Your taste profile just got sharper' }}</h2>
-        <p class="finish-sub">
-          <template v-if="noArtistsLeft && !likedThisBatch.length">New local artists will show up here as they join.</template>
-          <template v-else-if="likedThisBatch.length">
-            {{ likedThisBatch.length === 1 ? 'One artist now shapes' : likedThisBatch.length + ' artists now shape' }} what Riffle plays for you. They are saved under <b>Liked</b> in your profile.
-          </template>
-          <template v-else>You did not like anyone this round, so your taste profile stays as it was. Get a new batch to try again.</template>
-        </p>
-
-        <div class="finish-stats">
-          <div class="finish-stat finish-stat-like">
-            <i class="bi bi-heart-fill"></i>
-            <strong>{{ likedThisBatch.length }}</strong>
-            <span>Liked</span>
+            </template>
           </div>
-          <div class="finish-stat">
-            <i class="bi bi-skip-forward-fill"></i>
-            <strong>{{ skippedThisBatch.length }}</strong>
-            <span>Skipped</span>
-          </div>
-          <div class="finish-stat">
-            <i class="bi bi-vinyl-fill"></i>
-            <strong>{{ tasteMix.length }}</strong>
-            <span>{{ tasteMix.length === 1 ? 'Genre' : 'Genres' }}</span>
+
+          <!-- Burst that plays on Like / Skip -->
+          <div v-if="reaction" :key="reactionKey" class="reaction" :class="'reaction-' + reaction" aria-hidden="true">
+            <template v-if="reaction === 'like'">
+              <span
+                v-for="(line, i) in SKIP_LINES"
+                :key="'l' + i"
+                class="like-line"
+                :style="{ top: line.top, width: line.width, animationDelay: line.delay }"
+              ></span>
+              <span class="like-badge"><i class="bi bi-heart-fill"></i></span>
+              <i
+                v-for="(note, i) in NOTE_RAIN"
+                :key="'r' + i"
+                class="bi rain-note"
+                :class="note.icon"
+                :style="{ left: note.left, '--sway': note.sway, color: note.color, fontSize: note.size, animationDelay: note.delay, animationDuration: note.time }"
+              ></i>
+              <span class="wave wave-1"></span>
+              <span class="wave wave-2"></span>
+              <span class="wave wave-3"></span>
+              <i
+                v-for="(note, i) in NOTE_BURST"
+                :key="i"
+                class="bi reaction-note"
+                :class="note.icon"
+                :style="{ '--dx': note.dx, '--dy': note.dy, color: note.color, fontSize: note.size, animationDelay: note.delay }"
+              ></i>
+            </template>
+            <template v-else>
+              <span
+                v-for="(line, i) in SKIP_LINES"
+                :key="i"
+                class="skip-line"
+                :style="{ top: line.top, width: line.width, animationDelay: line.delay }"
+              ></span>
+              <span class="skip-badge"><i class="bi bi-skip-forward-fill"></i></span>
+            </template>
           </div>
         </div>
 
-        <div v-if="tasteMix.length" class="taste-mix">
-          <div class="taste-mix-bar">
-            <span v-for="item in tasteMix" :key="item.name" :style="{ flexGrow: item.count, background: item.color }" :title="item.name + ' · ' + item.count"></span>
-          </div>
-          <ul class="taste-mix-legend list-unstyled">
-            <li v-for="item in tasteMix" :key="item.name"><i :style="{ background: item.color }"></i> {{ item.name }} <b>{{ item.count }}</b></li>
-          </ul>
-        </div>
-
-        <div v-if="likedThisBatch.length" class="finish-artists">
-          <RouterLink
-            v-for="(artist, i) in likedThisBatch"
-            :key="artist.id"
-            :to="{ name: 'artist-detail', params: { id: artist.id } }"
-            class="finish-artist"
-            :style="{ '--accent': artist.genreColor, animationDelay: 0.1 * i + 's' }"
-          >
-            <img :src="artist.image" :alt="artist.name" @error="e => e.target.removeAttribute('src')" />
-            <span class="finish-artist-text">
-              <strong>{{ artist.name }}</strong>
-              <small>{{ artist.genre }}</small>
-            </span>
-            <i class="bi bi-heart-fill finish-heart"></i>
-          </RouterLink>
-        </div>
-
-        <div class="finish-actions">
-          <RouterLink :to="{ name: 'profile', query: { tab: 'liked' } }" class="btn btn-primary rounded-pill px-4">
-            <i class="bi bi-balloon-heart-fill"></i> See your liked artists
-          </RouterLink>
-          <button v-if="!noArtistsLeft" type="button" class="btn btn-outline-primary rounded-pill px-3" :disabled="loadingNewBatch" @click="startNewBatch()">
-            <i class="bi bi-arrow-repeat"></i> {{ loadingNewBatch ? 'Loading…' : 'Get a new batch' }}
+        <!-- Like Btn -->
+        <div
+          class="action follow-action text-center mt-3 mt-sm-5"
+          :class="{ 'fly-up': artistsFinished }"
+          :style="{ animationDuration: '0.75s' }"
+        >
+          <button :key="'like-' + reactionKey" class="btn btn-light rounded-circle shadow action-btn like-btn" :class="{ 'is-popping': reaction === 'like' }" aria-label="Like" :disabled="actionBusy || artistsFinished || !artists.length" @click="like()">
+            <i class="bi bi-heart-fill text-danger"></i>
           </button>
-          <RouterLink :to="{ name: 'match-history' }" class="btn btn-outline-dark rounded-pill px-3">
-            <i class="bi bi-clock-history"></i> Review your swipes
-          </RouterLink>
+          <div class="fw-semibold small mt-2">Like</div>
+        </div>
+      </div>
+
+      <!-- Leave matchmaking early (bottom right corner) -->
+      <button v-if="!showFinishedMessage" type="button" class="finish-early btn rounded-pill shadow-sm" :disabled="artistsFinished || actionBusy" aria-label="Skip the rest" @click="finishEarly()">
+        <span class="finish-early-text">Skip the rest</span> <i class="bi bi-skip-forward-fill"></i>
+      </button>
+
+      <!-- Shown after all cards has been swiped -->
+      <div v-else class="finish drop-in">
+        <div class="finish-card">
+          <p class="finish-kicker"><i class="bi bi-stars"></i> Today's matchmaking</p>
+          <h2 class="finish-title">{{ noArtistsLeft ? "You've seen every artist we have!" : 'Your taste profile just got sharper' }}</h2>
+          <p class="finish-sub">
+            <template v-if="noArtistsLeft && !likedThisBatch.length">New local artists will show up here as they join.</template>
+            <template v-else-if="likedThisBatch.length">
+              {{ likedThisBatch.length === 1 ? 'One artist now shapes' : likedThisBatch.length + ' artists now shape' }} what Riffle plays for you. They are saved under <b>Liked</b> in your profile.
+            </template>
+            <template v-else>You did not like anyone this round, so your taste profile stays as it was. Get a new batch to try again.</template>
+          </p>
+
+          <div class="finish-stats">
+            <div class="finish-stat finish-stat-like">
+              <i class="bi bi-heart-fill"></i>
+              <strong>{{ likedThisBatch.length }}</strong>
+              <span>Liked</span>
+            </div>
+            <div class="finish-stat">
+              <i class="bi bi-skip-forward-fill"></i>
+              <strong>{{ skippedThisBatch.length }}</strong>
+              <span>Skipped</span>
+            </div>
+            <div class="finish-stat">
+              <i class="bi bi-vinyl-fill"></i>
+              <strong>{{ tasteMix.length }}</strong>
+              <span>{{ tasteMix.length === 1 ? 'Genre' : 'Genres' }}</span>
+            </div>
+          </div>
+
+          <div v-if="tasteMix.length" class="taste-mix">
+            <div class="taste-mix-bar">
+              <span v-for="item in tasteMix" :key="item.name" :style="{ flexGrow: item.count, background: item.color }" :title="item.name + ' · ' + item.count"></span>
+            </div>
+            <ul class="taste-mix-legend list-unstyled">
+              <li v-for="item in tasteMix" :key="item.name"><i :style="{ background: item.color }"></i> {{ item.name }} <b>{{ item.count }}</b></li>
+            </ul>
+          </div>
+
+          <div v-if="likedThisBatch.length" class="finish-artists">
+            <RouterLink
+              v-for="(artist, i) in likedThisBatch"
+              :key="artist.id"
+              :to="{ name: 'artist-detail', params: { id: artist.id } }"
+              class="finish-artist"
+              :style="{ '--accent': artist.genreColor, animationDelay: 0.1 * i + 's' }"
+            >
+              <img :src="artist.image" :alt="artist.name" @error="e => e.target.removeAttribute('src')" />
+              <span class="finish-artist-text">
+                <strong>{{ artist.name }}</strong>
+                <small>{{ artist.genre }}</small>
+              </span>
+              <i class="bi bi-heart-fill finish-heart"></i>
+            </RouterLink>
+          </div>
+
+          <div class="finish-actions">
+            <RouterLink :to="{ name: 'profile', query: { tab: 'liked' } }" class="btn btn-primary rounded-pill px-4">
+              <i class="bi bi-balloon-heart-fill"></i> See your liked artists
+            </RouterLink>
+            <button v-if="!noArtistsLeft" type="button" class="btn btn-outline-primary rounded-pill px-3" :disabled="loadingNewBatch" @click="startNewBatch()">
+              <i class="bi bi-arrow-repeat"></i> {{ loadingNewBatch ? 'Loading…' : 'Get a new batch' }}
+            </button>
+            <RouterLink :to="{ name: 'match-history' }" class="btn btn-outline-dark rounded-pill px-3">
+              <i class="bi bi-clock-history"></i> Review your swipes
+            </RouterLink>
+          </div>
         </div>
       </div>
     </div>
@@ -699,6 +701,21 @@ onMounted(async () => {
 /* Page */
 .matchmaking-page {
   overflow-y: clip;
+}
+
+/* Same background as the Discover and Events pages */
+.matchmaking-bg {
+  background: var(--riffle-glow);
+}
+
+/* Subtitle colour used on the other pages (changes with dark mode) */
+.subtitle {
+  color: var(--riffle-muted);
+}
+
+/* Info box and buttons sit above the cover photo */
+.card-img-overlay {
+  z-index: 2;
 }
 
 /* Phone layout (grid): card on top, Skip and Follow below */
@@ -844,6 +861,44 @@ onMounted(async () => {
 }
 .saved {
   animation: saved 0.2s ease-out;
+}
+
+/* Saved: a small pop with a ring that spreads out */
+.just-saved {
+  animation: save-pop 0.45s ease-out;
+}
+.just-saved::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #a98bff;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: save-ring 0.5s ease-out forwards;
+}
+@keyframes save-pop {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.3;
+  }
+  60% {
+    scale: 0.92;
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes save-ring {
+  from {
+    scale: 1;
+    opacity: 0.9;
+  }
+  to {
+    scale: 1.9;
+    opacity: 0;
+  }
 }
 
 /* ---- swipe animations ---- */

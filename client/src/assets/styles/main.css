@@ -165,6 +165,15 @@ button {
   border-color: #7c4dff;
 }
 
+/* Scrollbars: thin, rounded and see-through instead of the chunky default */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 77, 255, 0.35) transparent;
+}
+:root[data-theme='dark'] * {
+  scrollbar-color: rgba(185, 164, 255, 0.3) transparent;
+}
+
 /* White card surface used across the events screens */
 .riffle-card {
   background: var(--riffle-surface);
