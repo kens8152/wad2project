@@ -1,12 +1,30 @@
 {
-  "name": "wad2project",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "spotifyapicall",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "axios": "^1.20.0",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.2",
+    "leaflet": "^1.9.4",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.42",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "vite": "^8.2.2",
+    "vite-plugin-vue-devtools": "^8.2.1"
+  },
+  "engines": {
+    "node": "^22.18.0 || >=24.12.0"
+  }
 }
