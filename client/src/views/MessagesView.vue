@@ -741,6 +741,7 @@ function quoteText(message) {
   padding: 0.35rem 0;
   border: 0;
   outline: none;
+  background: transparent;
   color: var(--riffle-ink);
 }
 .tool-button {
@@ -865,5 +866,13 @@ function quoteText(message) {
   .bubble-wrap {
     max-width: 84%;
   }
+}
+
+/* Dark mode: the light boxes become dark, so their text stays readable */
+:root[data-theme='dark'] .is-theirs .bubble:not(.is-deleted) {
+  background: var(--riffle-surface-soft);
+}
+:root[data-theme='dark'] .send-button:disabled {
+  background: rgba(224, 36, 94, 0.35);
 }
 </style>

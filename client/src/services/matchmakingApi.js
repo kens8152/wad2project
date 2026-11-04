@@ -54,12 +54,28 @@ export async function addSongs(artists) {
   }));
 }
 
-// Artists already swiped (like / skip), so they are not shown again
+// Midnight today, on this device's clock
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date.toISOString();
+}
+
+// Cards from earlier days that were never swiped are dropped, so they can be drawn again
+async function clearOldWaitingRows() {
+  const { error } = await supabase
+    .from('matchmaking_actions')
+    .delete()
+    .is('action', null)
+    .lt('created_at', startOfToday());
+  if (error) throw error;
+}
+
+// Artists already swiped (like / skip) or waiting in today's batch, so they are not drawn again
 async function getSeenArtistIds() {
   const { data, error } = await supabase
     .from('matchmaking_actions')
-    .select('artist_id')
-    .not('action', 'is', null);
+    .select('artist_id');
   if (error) throw error;
 
   return data.map(row => row.artist_id);
@@ -71,6 +87,7 @@ export async function getArtists() {
   if (error) throw error;
 
   // only artists that have songs to play, and have not been seen yet
+  await clearOldWaitingRows();
   const seenIds = await getSeenArtistIds();
   const ids = data
     .filter(row => (row.tracks || []).length > 0)
@@ -86,14 +103,12 @@ export async function getArtists() {
 
 // Today's matchmaking rows for the logged-in user (action is null until they Skip / Follow)
 export async function getTodaysArtistRows() {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
   const { data, error } = await supabase
     .from('matchmaking_actions')
     .select('artist_id, action')
-    .gte('created_at', startOfToday.toISOString())
-    .order('id');
+    .gte('created_at', startOfToday())
+    .order('created_at')
+    .order('artist_id'); // a batch is saved at one moment, so this keeps its cards in the same order
   if (error) throw error;
   return data;
 }
@@ -156,20 +171,26 @@ export async function resetMatchmaking() {
   const { error } = await supabase
     .from('matchmaking_actions')
     .delete()
-    .gte('id', 0);
+    .not('id', 'is', null); // every row (a delete needs a filter)
   if (error) throw error;
 }
 
-// Followed / skipped artists, newest first
+// Liked / skipped artists, newest first
 export async function getMatchHistory() {
   const { data, error } = await supabase
     .from('matchmaking_actions')
     .select('artist_id, action, created_at')
     .not('action', 'is', null)
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false });
+    .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+
+  // one entry per artist: the newest swipe
+  const artistIds = [];
+  return data.filter(row => {
+    if (artistIds.includes(row.artist_id)) return false;
+    artistIds.push(row.artist_id);
+    return true;
+  });
 }
 
 // History: change a swipe to skip or follow

@@ -311,6 +311,12 @@ function startEditing() {
 
             <!-- followed artists -->
             <div v-if="activeTab === 'artists'" class="tab-panel">
+              <div class="panel-head">
+                <p class="panel-note">Artists you follow</p>
+                <RouterLink :to="{ name: 'saved-artists' }" class="panel-link">
+                  <i class="bi bi-bookmark"></i> Saved artists <i class="bi bi-chevron-right"></i>
+                </RouterLink>
+              </div>
               <div v-if="followedArtists.length" class="artist-grid">
                 <article v-for="artist in followedArtists" :key="artist.id" class="artist-tile" :style="{ '--accent': artist.genreColor }">
                   <RouterLink :to="'/artists/' + artist.id" class="artist-link">
@@ -331,15 +337,19 @@ function startEditing() {
                 <p>You are not following any artists yet.</p>
                 <RouterLink to="/matchmaking" class="profile-button">Find artists</RouterLink>
               </div>
-              <div class="d-flex flex-wrap column-gap-4">
-                <RouterLink :to="{ name: 'saved-artists' }" class="manage-link">Saved artists <i class="bi bi-bookmark"></i></RouterLink>
-                <RouterLink :to="{ name: 'match-history' }" class="manage-link">Artist Matchmaking history <i class="bi bi-clock-history"></i></RouterLink>
-              </div>
             </div>
 
             <!-- artists liked in matchmaking -->
             <div v-else-if="activeTab === 'liked'" class="tab-panel">
-              <p v-if="likedArtists.length" class="liked-intro"><i class="bi bi-stars"></i> These artists are shaping your taste profile.</p>
+              <div class="panel-head">
+                <p class="panel-note liked-intro">
+                  <template v-if="likedArtists.length"><i class="bi bi-stars"></i> These artists are shaping your taste profile.</template>
+                  <template v-else>Artists you liked in matchmaking</template>
+                </p>
+                <RouterLink :to="{ name: 'match-history' }" class="panel-link">
+                  <i class="bi bi-clock-history"></i> Matchmaking history <i class="bi bi-chevron-right"></i>
+                </RouterLink>
+              </div>
               <div v-if="likedArtists.length" class="artist-grid">
                 <article v-for="artist in likedArtists" :key="artist.id" class="artist-tile liked-tile" :style="{ '--accent': artist.genreColor }">
                   <RouterLink :to="'/artists/' + artist.id" class="artist-link">
@@ -770,6 +780,48 @@ function startEditing() {
   margin: 0 0 1rem;
   color: var(--riffle-muted);
   font-weight: 600;
+}
+
+/* Heading row of a tab: a short note on the left, a link to the related page on the right */
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 1rem;
+}
+.panel-head .panel-note {
+  margin: 0;
+  color: var(--riffle-muted);
+  font-weight: 600;
+}
+.panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 999px;
+  background: var(--riffle-surface);
+  color: var(--riffle-blue);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.panel-link:hover {
+  border-color: var(--riffle-blue);
+  background: #f3efff;
+  transform: translateY(-1px);
+}
+.panel-link .bi-chevron-right {
+  font-size: 0.75rem;
+}
+:root[data-theme='dark'] .panel-link:hover {
+  background: rgba(124, 77, 255, 0.15);
 }
 .liked-intro i {
   color: #e0245e;
@@ -1553,5 +1605,44 @@ a:focus-visible {
 .reset-fade-enter-from,
 .reset-fade-leave-to {
   opacity: 0;
+}
+
+/* Dark mode: the light boxes become dark, so their text stays readable */
+:root[data-theme='dark'] .stat-card > i,
+:root[data-theme='dark'] .song-number,
+:root[data-theme='dark'] .activity-icon {
+  background: rgba(124, 77, 255, 0.2);
+  color: #cdbfff;
+}
+:root[data-theme='dark'] .genre-tag,
+:root[data-theme='dark'] .genre-option.selected,
+:root[data-theme='dark'] .selected-song-icon {
+  background-color: rgba(124, 77, 255, 0.22);
+  color: #e3d9ff;
+}
+:root[data-theme='dark'] .genre-option.selected {
+  border-color: #b9a4ff;
+}
+:root[data-theme='dark'] .text-input {
+  background-color: var(--riffle-surface-soft);
+}
+:root[data-theme='dark'] .remove-song-button:hover {
+  background-color: rgba(124, 77, 255, 0.15);
+}
+:root[data-theme='dark'] .unlike-button {
+  border-color: rgba(224, 36, 94, 0.45);
+  background: rgba(224, 36, 94, 0.12);
+  color: #ff8cbd;
+}
+:root[data-theme='dark'] .danger-zone {
+  border-color: rgba(240, 165, 181, 0.4);
+  background: rgba(224, 36, 94, 0.08);
+}
+:root[data-theme='dark'] .reset-icon {
+  background: rgba(214, 38, 79, 0.2);
+  color: #ff8ca5;
+}
+:root[data-theme='dark'] .reset-confirm:disabled {
+  background: rgba(214, 38, 79, 0.35);
 }
 </style>

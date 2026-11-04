@@ -4,6 +4,10 @@ import { ref } from 'vue'
 const props = defineProps({
   artist: { type: Object, required: true },
   isFavourite: { type: Boolean, default: false },
+  // 'follow' shows the heart; 'save' shows a bookmark instead (used on the Saved artists page)
+  mode: { type: String, default: 'follow' },
+  // an optional small line under the chips, e.g. "Saved Nov 4"
+  footnote: { type: String, default: '' },
 })
 
 // tell the parent page when the card or the heart is clicked
@@ -40,6 +44,18 @@ function handleHeartClick() {
 
       <!-- .stop stops the click from also opening the artist -->
       <button
+        v-if="mode === 'save'"
+        type="button"
+        class="artist-card__heart is-bookmark"
+        :class="{ 'is-saved': isFavourite }"
+        :aria-pressed="isFavourite"
+        :aria-label="isFavourite ? 'Remove from saved' : 'Save'"
+        @click.stop="handleHeartClick"
+      >
+        <i class="bi" :class="isFavourite ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+      </button>
+      <button
+        v-else
         type="button"
         class="artist-card__heart"
         :class="{ 'is-saved': isFavourite }"
@@ -64,6 +80,8 @@ function handleHeartClick() {
         <span v-if="artist.tag" class="chip chip--tag">#{{ artist.tag }}</span>
         <span class="chip chip--price">{{ artist.events.length }} {{ artist.events.length === 1 ? 'event' : 'events' }}</span>
       </div>
+
+      <p v-if="footnote" class="artist-card__time artist-card__footnote">{{ footnote }}</p>
     </div>
   </article>
 </template>
@@ -96,7 +114,7 @@ function handleHeartClick() {
 .artist-card:hover,
 .artist-card:focus-within {
   transform: translateY(-6px) scale(1.02);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, var(--riffle-surface)), var(--riffle-surface) 65%);
   box-shadow:
     0 0 0 2px var(--genre),
     0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);
@@ -197,6 +215,13 @@ function handleHeartClick() {
 .artist-card__heart:not(.is-saved) {
   color: var(--riffle-muted);
 }
+/* bookmark version: purple instead of red */
+.artist-card__heart.is-bookmark.is-saved {
+  color: var(--riffle-blue);
+}
+.artist-card__footnote {
+  margin-top: 0.6rem;
+}
 
 .artist-card__body {
   padding: 0.85rem 0.35rem 0.4rem;
@@ -235,7 +260,16 @@ function handleHeartClick() {
   color: #5b45c9;
 }
 .chip--price {
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 14%, var(--riffle-surface));
   color: var(--genre);
+}
+
+/* Dark mode: softer shine and a dark tag chip */
+:root[data-theme='dark'] .artist-card::after {
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+:root[data-theme='dark'] .chip--tag {
+  background: rgba(124, 77, 255, 0.2);
+  color: #cdbfff;
 }
 </style>

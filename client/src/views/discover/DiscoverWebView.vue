@@ -630,7 +630,6 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   overflow-y: auto;
   padding-bottom: 4px;
-  scrollbar-width: thin;
 }
 .drawer-close {
   display: none;
