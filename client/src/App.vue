@@ -66,14 +66,10 @@ body {
 }
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.15s ease;
 }
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
+.page-enter-from,
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
 }
 </style>
