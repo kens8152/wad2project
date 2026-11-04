@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const CLIENT_ID = 'aa4e949f8a06492bbfaac8ecad2c7e52'
-const REDIRECT_URI = 'http://127.0.0.1:5173/spotify-demo'
+const REDIRECT_URI = `${import.meta.env.VITE_APP_URL}/spotify-demo`
 const SCOPES = 'user-read-private user-read-email playlist-read-private user-top-read'
 
 const AUTH_URL = 'https://accounts.spotify.com/authorize'
