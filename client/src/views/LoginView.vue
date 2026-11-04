@@ -73,8 +73,10 @@ async function login() {
         <p>Your favourite artists and next discoveries are waiting.</p>
       </header>
 
+      <!-- .prevent stops the normal form reload. aria-busy indicates that login is processing. -->
       <form @submit.prevent="login" :aria-busy="loading">
         <div class="login-field">
+          <!-- for links the label to the input with the matching ID. -->
           <label for="login-email">Email address</label>
           <div class="input-wrap">
             <i class="bi bi-envelope field-icon" aria-hidden="true"></i>
@@ -87,6 +89,8 @@ async function login() {
           <div class="input-wrap">
             <i class="bi bi-lock field-icon" aria-hidden="true"></i>
             <input id="login-password" v-model="password" class="form-control password-input" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" placeholder="Enter your password" required :disabled="loading">
+             <!-- type="button" prevents submission. ! switches showPassword between true and false. -->
+            <!-- aria-label describes the action, aria-pressed reports its state, and aria-controls identifies the affected input. -->
             <button class="password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" aria-controls="login-password" :disabled="loading" @click="showPassword = !showPassword">
               <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
             </button>
@@ -120,19 +124,32 @@ async function login() {
 
 <style scoped>
 .login-page {
-  /* .app-main is a flex column: without this the page shrinks to the screen height and its glow stops partway down while the content keeps scrolling */
+  /* Prevent this page from shrinking inside its parent flex layout. */
   flex-shrink: 0;
+
+  /* Place the card at the top and centre it horizontally. */
   display: grid;
   place-items: start center;
+
+  /* Use the small viewport height minus the navbar height.
+     var uses --navbar-height when defined, otherwise it uses 88px. */
   min-height: calc(100svh - var(--navbar-height, 88px));
+
+  /* Responsive vertical padding: minimum 28px, preferred 5vw, maximum 64px.
+     Horizontal padding stays at 16px. */
   padding: clamp(28px, 5vw, 64px) 16px;
-  /* soft colour glows only: the standard page background (with its dot grid) shows through underneath */
+
+  /* Layer two soft colour gradients over the existing page background.
+     rgba's final number controls colour transparency. */
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
+
   color: #14234b;
 }
 
+/* * selects all elements inside the page.
+   Include padding and borders within their widths, including pseudo-elements. */
 .login-page *,
 .login-page *::before,
 .login-page *::after {
@@ -140,17 +157,28 @@ async function login() {
 }
 
 .login-box {
+  /* Provide the positioning reference for the decorative accent strip. */
   position: relative;
+
+  /* Fill the available width, up to 480px. */
   width: 100%;
   max-width: 480px;
+
+  /* Clip content to the card's rounded edges. */
   overflow: hidden;
+
+  /* Let padding grow with the screen width, between 24px and 40px. */
   padding: clamp(24px, 5vw, 40px);
+
   border: 1px solid #e3e5f1;
   border-radius: 28px;
   background: #fff;
+
+  /* Add a soft shadow beneath the card. */
   box-shadow: 0 16px 50px rgba(20, 35, 75, 0.07);
 }
 
+/* Position a thin colour strip across the top of the card. */
 .login-accent {
   position: absolute;
   top: 0;
@@ -165,12 +193,16 @@ async function login() {
   text-align: center;
 }
 
+/* Centre the soundwave icon inside its coloured square. */
 .login-icon {
   display: grid;
   place-items: center;
   width: 62px;
   height: 62px;
+
+  /* auto centres the square horizontally. */
   margin: 0 auto 18px;
+
   border: 1px solid #e9def9;
   border-radius: 20px;
   background: linear-gradient(135deg, #fff0f7, #eee9ff);
@@ -178,6 +210,7 @@ async function login() {
   font-size: 32px;
 }
 
+/* Small introductory text above the main heading. */
 .login-eyebrow {
   display: block;
   margin-bottom: 10px;
@@ -190,7 +223,10 @@ async function login() {
 .login-heading h1 {
   margin: 0 0 10px;
   color: #14234b;
+
+  /* Scale the heading between 28px and 34px depending on screen width. */
   font-size: clamp(28px, 5vw, 34px);
+
   font-weight: 800;
   letter-spacing: -1px;
   line-height: 1.2;
@@ -204,6 +240,7 @@ async function login() {
   line-height: 1.7;
 }
 
+/* Leave space between the form fields. */
 .login-field {
   margin-bottom: 20px;
 }
@@ -215,6 +252,7 @@ async function login() {
   font-weight: 700;
 }
 
+/* Keep absolutely positioned icons and buttons relative to their input wrapper. */
 .input-wrap {
   position: relative;
 }
@@ -223,29 +261,41 @@ async function login() {
   position: absolute;
   top: 50%;
   left: 16px;
+
+  /* Move the icon up by half its own height to centre it vertically. */
   transform: translateY(-50%);
+
   color: #7b85a1;
+
+  /* Let clicks pass through the decorative icon to the input underneath. */
   pointer-events: none;
 }
 
 .input-wrap .form-control {
   width: 100%;
   min-height: 52px;
+
+  /* Extra left padding leaves room for the field icon. */
   padding: 12px 16px 12px 44px;
+
   border: 1px solid #dce1ee;
   border-radius: 14px;
   background: #f8f9fd;
   color: #14234b;
   font-family: inherit;
   font-size: 16px;
+
+  /* Smoothly animate changes when the input receives focus. */
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
+/* Style the hint text displayed inside empty inputs. */
 .input-wrap .form-control::placeholder {
   color: #7b85a1;
   font-size: 14px;
 }
 
+/* Highlight the input currently selected by the user. */
 .input-wrap .form-control:focus {
   border-color: #8b73df;
   outline: none;
@@ -253,10 +303,12 @@ async function login() {
   box-shadow: 0 0 0 4px rgba(112, 84, 220, 0.12);
 }
 
+/* Leave space on the right for the password visibility button. */
 .input-wrap .password-input {
   padding-right: 52px;
 }
 
+/* Position the eye button inside the right side of the password field. */
 .password-toggle {
   position: absolute;
   top: 50%;
@@ -274,6 +326,7 @@ async function login() {
   cursor: pointer;
 }
 
+/* Arrange the error icon and message beside each other. */
 .login-error {
   display: flex;
   align-items: flex-start;
@@ -288,16 +341,19 @@ async function login() {
   line-height: 1.6;
 }
 
+/* > selects a direct child. Keep the error icon from shrinking. */
 .login-error > i {
   flex-shrink: 0;
   margin-top: 1px;
 }
 
+/* Allow long error messages to wrap instead of overflowing. */
 .login-error > span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
+/* Centre the spinner, text, and arrow inside the full-width login button. */
 .login-button {
   display: flex;
   align-items: center;
@@ -314,9 +370,12 @@ async function login() {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 5px 14px rgba(20, 35, 75, 0.12);
+
+  /* Smoothly animate the hover colour, movement, and shadow. */
   transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
+/* Visually indicate that these buttons cannot currently be used. */
 .login-button:disabled,
 .password-toggle:disabled {
   opacity: 0.65;
@@ -337,6 +396,7 @@ async function login() {
   text-decoration: none;
 }
 
+/* Arrange the divider lines and text in one row. */
 .login-divider {
   display: flex;
   align-items: center;
@@ -346,14 +406,19 @@ async function login() {
   font-size: 11px;
 }
 
+/* Create decorative lines before and after the divider text. */
 .login-divider::before,
 .login-divider::after {
   content: '';
+
+  /* Let both lines share the available space equally. */
   flex: 1;
+
   height: 1px;
   background: #e8ebf3;
 }
 
+/* Style the Continue browsing link as an outlined button. */
 .back-link {
   display: flex;
   align-items: center;
@@ -370,6 +435,7 @@ async function login() {
   transition: background-color 180ms ease, border-color 180ms ease;
 }
 
+/* Centre the footer content and allow wrapping on narrow screens. */
 .login-footer {
   display: flex;
   justify-content: center;
@@ -386,13 +452,16 @@ async function login() {
   color: #9b73cd;
 }
 
+/* Show a visible outline when buttons or links receive keyboard focus. */
 .login-page button:focus-visible,
 .login-page a:focus-visible {
   outline: 3px solid #7054dc;
   outline-offset: 3px;
 }
 
+/* Apply hover effects on devices that support hovering, such as a mouse. */
 @media (hover: hover) {
+  /* :not(:disabled) prevents the hover effect on a disabled button. */
   .login-button:not(:disabled):hover {
     transform: translateY(-2px);
     background: #253969;
@@ -415,6 +484,7 @@ async function login() {
   }
 }
 
+/* Adjust the card's appearance on screens narrower than 576px. */
 @media (max-width: 575.98px) {
   .login-box {
     border-radius: 22px;
@@ -425,6 +495,8 @@ async function login() {
   }
 }
 
+/* Respect the user's device setting to reduce motion by disabling transitions.
+   !important gives this rule priority over the earlier transition declarations. */
 @media (prefers-reduced-motion: reduce) {
   .login-page * {
     transition: none !important;

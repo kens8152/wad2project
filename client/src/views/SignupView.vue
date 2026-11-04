@@ -1,26 +1,40 @@
 <script setup>
+// ref creates reactive variables: when their values change, Vue updates the page.
 import { ref } from 'vue'
+
+// Vue Router lets us navigate between pages without reloading the whole website.
 import { useRouter } from 'vue-router'
+
+// This is the project's configured Supabase client.
 import { supabase } from '@/services/supabase'
 
 const router = useRouter()
+
+// These variables store the values entered into the form.
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+
+// These control whether each password field displays text or hidden characters.
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
+// loading prevents repeated submissions and controls the loading indicator.
 const loading = ref(false)
+
+// The template displays these messages only when they contain text.
 const errorMessage = ref('')
 const successMessage = ref('')
 
 async function createAccount() {
-
+  // Stop if an account creation request is already running.
   if (loading.value) return
 
+  // Clear messages from the previous attempt.
   errorMessage.value = ''
   successMessage.value = ''
 
+  // Check that both passwords match before contacting Supabase.
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Your passwords do not match.'
     return
@@ -29,27 +43,37 @@ async function createAccount() {
   loading.value = true
 
   try {
+    // Send the email and password to Supabase Authentication.
+    // await waits for the request to finish before continuing.
+    // data contains the result; error contains any reported failure.
     const { data, error } = await supabase.auth.signUp({
-    email: email.value.trim(),
-    password: password.value,
-    options: {
+      email: email.value.trim(),
+      password: password.value,
+      options: {
+        // Destination after email confirmation during local development.
         emailRedirectTo: 'http://127.0.0.1:5173/onboarding'
-    }
+      }
     })
 
+    // Pass Supabase's error to the catch block below.
     if (error) throw error
 
+    // Clear both password fields after a successful signup request.
     password.value = ''
     confirmPassword.value = ''
 
+    // A session means the user is already signed in.
+    // Otherwise, ask the user to confirm their email before logging in.
     if (data.session) {
       await router.push('/onboarding')
     } else {
       successMessage.value = 'Check your email for a confirmation link. Confirm your email before logging in.'
     }
   } catch (error) {
+    // Show the error message, or a fallback if no message is available.
     errorMessage.value = error.message || 'Account creation failed. Please try again.'
   } finally {
+    // Runs after success or failure, allowing the user to submit again.
     loading.value = false
   }
 }
@@ -66,12 +90,13 @@ async function createAccount() {
         <h1 id="signup-heading">Find your sound.</h1>
         <p>Join Riffle to save your favourites and discover more local music.</p>
       </header>
-
+<!-- Run createAccount when submitted. .prevent stops the browser's normal page reload. aria-busy tells assistive technology that the form is processing. -->
       <form @submit.prevent="createAccount" :aria-busy="loading">
         <div class="signup-field">
           <label for="signup-email">Email address</label>
           <div class="input-wrap">
             <i class="bi bi-envelope field-icon" aria-hidden="true"></i>
+<!-- v-model.trim updates email and removes spaces at the start and end. HTML checks the email format and required field before submission. -->
             <input id="signup-email" v-model.trim="email" class="form-control" type="email" autocomplete="email" placeholder="you@example.com" required :disabled="loading">
           </div>
         </div>
@@ -81,6 +106,7 @@ async function createAccount() {
           <div class="input-wrap">
             <i class="bi bi-lock field-icon" aria-hidden="true"></i>
             <input id="signup-password" v-model="password" class="form-control password-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="8" placeholder="Create a password" aria-describedby="password-hint" required :disabled="loading">
+            <!-- type="button" prevents form submission. Clicking reverses showPassword, while the icon and accessible label update to match. -->
             <button class="password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" aria-controls="signup-password" :disabled="loading" @click="showPassword = !showPassword">
               <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
             </button>
@@ -93,31 +119,32 @@ async function createAccount() {
           <div class="input-wrap">
             <i class="bi bi-shield-check field-icon" aria-hidden="true"></i>
             <input id="signup-confirm-password" v-model="confirmPassword" class="form-control password-input" :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" minlength="8" placeholder="Repeat your password" required :disabled="loading">
+<!-- Store the confirmation separately so createAccount can compare the two passwords. -->
             <button class="password-toggle" type="button" :aria-label="showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'" :aria-pressed="showConfirmPassword" aria-controls="signup-confirm-password" :disabled="loading" @click="showConfirmPassword = !showConfirmPassword">
               <i class="bi" :class="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
             </button>
           </div>
         </div>
-
+<!-- v-if displays this error only when errorMessage contains text. role="alert" announces the error to screen readers. -->
         <div v-if="errorMessage" class="signup-alert signup-alert--error" role="alert">
           <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
           <span>{{ errorMessage }}</span>
         </div>
-
+<!-- Display confirmation instructions after signup when email verification is needed. -->
         <div v-if="successMessage" class="signup-alert signup-alert--success" role="status">
           <i class="bi bi-envelope-check" aria-hidden="true"></i>
           <span>{{ successMessage }}</span>
         </div>
-
+<!-- Disable submission while loading and show Bootstrap's spinner until the request finishes. -->
         <button class="signup-button" type="submit" :disabled="loading">
           <span v-if="loading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
           <span>{{ loading ? 'Creating account…' : 'Create my account' }}</span>
           <i v-if="!loading" class="bi bi-arrow-right" aria-hidden="true"></i>
         </button>
-
+<!-- Bootstrap's visually-hidden class hides this message visually while keeping it available to screen readers. -->
         <span class="visually-hidden" role="status">{{ loading ? 'Creating your account. Please wait.' : '' }}</span>
       </form>
-
+<!-- RouterLink navigates to another Vue route without a full page reload. -->
       <p class="login-link">Already part of Riffle? <RouterLink to="/login">Log in</RouterLink></p>
 
       <div class="signup-divider"><span>or explore first</span></div>
@@ -133,12 +160,12 @@ async function createAccount() {
 
 <style scoped>
 .signup-page {
-  /* .app-main is a flex column: without this the page shrinks to the screen height and its glow stops partway down while the content keeps scrolling */
-  flex-shrink: 0;
-  display: grid;
-  place-items: start center;
-  min-height: calc(100svh - var(--navbar-height, 88px));
-  padding: clamp(28px, 5vw, 64px) 16px;
+  /* Centre the card horizontally and leave space around the page.calc() subtracts the assumed navbar height from the browser height */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 88px);
+  padding: 48px 16px;
   /* soft colour glows only: the standard page background (with its dot grid) shows through underneath */
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
@@ -146,6 +173,7 @@ async function createAccount() {
   color: #14234b;
 }
 
+/* Apply border-box to all elements inside the signup page, including their before and after pseudo-elements, so padding and borders are included in their widths. */
 .signup-page *,
 .signup-page *::before,
 .signup-page *::after {
@@ -157,7 +185,7 @@ async function createAccount() {
   width: 100%;
   max-width: 480px;
   overflow: hidden;
-  padding: clamp(24px, 5vw, 40px);
+  padding: 40px;
   border: 1px solid #e3e5f1;
   border-radius: 28px;
   background: #fff;
@@ -179,8 +207,9 @@ async function createAccount() {
 }
 
 .signup-icon {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 62px;
   height: 62px;
   margin: 0 auto 18px;
@@ -204,7 +233,7 @@ async function createAccount() {
 .signup-heading h1 {
   margin: 0 0 10px;
   color: #14234b;
-  font-size: clamp(28px, 5vw, 34px);
+  font-size: 34px;
   font-weight: 800;
   letter-spacing: -1px;
   line-height: 1.2;
@@ -275,8 +304,9 @@ async function createAccount() {
   position: absolute;
   top: 50%;
   right: 5px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 44px;
   height: 44px;
   padding: 0;
@@ -445,13 +475,23 @@ async function createAccount() {
   }
 }
 
+/* Use smaller spacing and text on screens narrower than 576px. */
 @media (max-width: 575.98px) {
+  .signup-page {
+    padding: 28px 16px;
+  }
+
   .signup-box {
+    padding: 24px;
     border-radius: 22px;
   }
 
   .signup-heading {
     margin-bottom: 24px;
+  }
+
+  .signup-heading h1 {
+    font-size: 28px;
   }
 }
 

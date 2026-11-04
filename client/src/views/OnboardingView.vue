@@ -1,7 +1,7 @@
 <script setup>
 
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import { searchSongs, fetchTopArtists } from '@/services/spotifyApi'
 import { getTopGenres } from '@/services/lastFM'
@@ -13,13 +13,16 @@ import { findApplePreview } from '@/services/applePreviewApi'
 
 import { supabase } from '@/services/supabase.js'
 
-import { loginWithSpotify, refreshAccessToken } from '@/services/spotifyAuth'
+import { loginWithSpotify, refreshAccessToken, logout as clearSpotifySession } from '@/services/spotifyAuth'
 
 
 const userStore = useUserStore()
 
 const saving = ref(false)
 const connectingSpotify = ref(false)
+const spotifyConnected = ref(Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token')))
+
+let alreadyOnboarded = false
 
 const hasSavedPreferences = ref(false)
 const songFeedback = ref('')
@@ -42,7 +45,7 @@ const favouriteSongs = ref('')
 
 const selectedSongs = computed(() => {
   return favouriteSongs.value
-    .split('\n')
+    .split('\n') // Separate the string into individual lines.
     .map(song => song.trim())
     .filter(song => song !== '')
     .map(text => {
@@ -51,7 +54,7 @@ const selectedSongs = computed(() => {
       return {
         text,
         title: parts[0],
-        artist: parts.slice(1).join(' — ')
+        artist: parts.slice(1).join(' — ') // Join everything after the title as the artist text.
       }
     })
 })
@@ -118,6 +121,8 @@ const songError = ref('')
 const errorMessage = ref('')
 
 const router = useRouter()
+const route = useRoute()
+
 const storageKey = 'riffle-preferences-v1:' + userStore.user.id
 const draftKey = 'riffle-onboarding-draft:' + userStore.user.id
 
@@ -169,13 +174,27 @@ onMounted(async () => {
     errorMessage.value = 'Your unfinished form could not be restored. Please check your preferences.'
   }
 
-  loadMissingCovers()
+  loadMissingCovers().catch(error => {
+    console.warn('Could not load song artwork:', error)
+  })
+
+  spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
+
+  if (route.query.spotify === 'connected') {
+    const query = { ...route.query }
+    delete query.spotify
+
+    await router.replace({ path: route.path, query })
+    await importSpotifyGenres()
+  }
 })
 
 async function connectSpotify() {
-  if (!userStore.isLoggedIn || connectingSpotify.value) return
+  if (!userStore.isLoggedIn || connectingSpotify.value || importingGenres.value || saving.value || songLoading.value) return
 
   errorMessage.value = ''
+  genreImportMessage.value = ''
+  genreImportError.value = ''
   connectingSpotify.value = true
 
   try {
@@ -192,6 +211,18 @@ async function connectSpotify() {
   } finally {
     connectingSpotify.value = false
   }
+}
+
+function disconnectSpotify() {
+  if (saving.value || connectingSpotify.value || importingGenres.value || songLoading.value) return
+
+  clearSpotifySession()
+  spotifyConnected.value = false
+  openSongId.value = ''
+  songResults.value = []
+  songError.value = ''
+  genreImportError.value = ''
+  genreImportMessage.value = 'Spotify disconnected from this browser. Your selected genres and favourite songs have been kept.'
 }
 
 
@@ -246,7 +277,7 @@ function addSong(song) {
 }
 
 async function savePreferences() {
-  if (!userStore.isLoggedIn || saving.value) return
+  if (!userStore.isLoggedIn || saving.value || importingGenres.value || connectingSpotify.value) return
 
   errorMessage.value = ''
 
@@ -263,10 +294,12 @@ async function savePreferences() {
   saving.value = true
 
   try {
+    // Insert or update the current user's profile, matching existing profiles by id.
+    // await waits for Supabase to respond; error contains any reported failure.
     const { error } = await supabase.from('profiles').upsert({
       id: userStore.user.id,
       display_name: displayName.value.trim(),
-      genres: [...selectedGenres.value],
+      genres: [...selectedGenres.value], // Copy the selected genres into a new array.
       favourite_songs: favouriteSongs.value.trim(),
       onboarding_completed: true
     }, { onConflict: 'id' })
@@ -332,7 +365,8 @@ async function importSpotifyGenres() {
     let token = localStorage.getItem('access_token')
 
     if (!token) {
-      genreImportError.value = 'Connect Spotify first, then click Import Spotify genres.'
+      spotifyConnected.value = false
+      genreImportError.value = 'Please connect Spotify to get genre suggestions.'
       return
     }
 
@@ -369,7 +403,7 @@ async function importSpotifyGenres() {
     const status = error.response?.status
 
     if (status === 401 || status === 403) {
-      genreImportError.value = 'Spotify access was denied or expired. Reconnect Spotify, then try importing again.'
+      genreImportError.value = 'Spotify access was denied or expired. Disconnect Spotify, then connect again to retry.'
     } else {
       genreImportError.value = 'Genres could not be imported. Please try again or select them manually.'
     }
@@ -404,12 +438,12 @@ async function importSpotifyGenres() {
         <div class="connection-box spotify-box">
           <div>
             <h2>Connect Spotify</h2>
-            <p>Connect your account, then import suggested genres from your top artists.</p>
+            <p>Connect Spotify to automatically suggest genres from your top artists. Review your selections below before saving.</p>
           </div>
 
-          <div class="d-flex flex-wrap gap-2">
-            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="connectSpotify">{{ connectingSpotify ? 'Connecting…' : 'Connect Spotify' }}</button>
-            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres" @click="importSpotifyGenres">{{ importingGenres ? 'Importing genres…' : 'Import Spotify genres' }}</button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span v-if="spotifyConnected" class="small fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>Spotify connected</span>
+            <button class="connect-button" type="button" :disabled="connectingSpotify || saving || importingGenres || songLoading" @click="spotifyConnected ? disconnectSpotify() : connectSpotify()">{{ connectingSpotify ? 'Connecting…' : importingGenres ? 'Suggesting genres…' : spotifyConnected ? 'Disconnect Spotify' : 'Connect Spotify' }}</button>
           </div>
         </div>
 
@@ -417,7 +451,7 @@ async function importSpotifyGenres() {
         <p v-if="genreImportError" class="mt-2 error-message" role="alert">{{ genreImportError }}</p>
       </div>
     </div>
-
+<!-- Prevent the normal form reload and run savePreferences when submitted. -->
     <form @submit.prevent="savePreferences">
 
       <div class="name-section">
@@ -490,10 +524,15 @@ async function importSpotifyGenres() {
                 <li v-for="song in songResults" :key="song.id" class="song-result-item">
                   <div class="song-result-row">
                     <div class="song-cover" :class="{ 'is-playing': openSongId === 'result:' + song.id }">
+                       <!--  checks whether album and images exist before accessing their properties. -->
+                      <!-- Show album artwork when available. loading="lazy" lets the browser delay loading images until needed. -->
                       <img v-if="song.album?.images?.length" :src="song.album.images[0].url" :alt="song.album.name + ' album cover'" loading="lazy">
+                      <!-- Show a music icon if no album artwork is available. -->
                       <span v-else class="cover-placeholder"><i class="bi bi-music-note-beamed" aria-hidden="true"></i></span>
 
+                      <!-- aria-expanded tells screen readers whether the player is open. -->
                       <button class="preview-button" type="button" :aria-label="openSongId === 'result:' + song.id ? 'Close the player for ' + song.name : 'Play a 30 second preview of ' + song.name" :aria-expanded="openSongId === 'result:' + song.id" @click="togglePlayer('result:' + song.id)">
+                        <!-- Show a close icon when open, or a play icon when closed. -->
                         <i class="bi" :class="openSongId === 'result:' + song.id ? 'bi-x-lg' : 'bi-play-fill'" aria-hidden="true"></i>
                       </button>
                     </div>
@@ -534,12 +573,16 @@ async function importSpotifyGenres() {
               </div>
 
               <ul v-else class="selected-song-list">
+                <!-- Selected songs use their full saved text as the key because Spotify IDs are not stored in this list. -->
                 <li v-for="song in selectedSongs" :key="song.text" class="selected-song-item">
                   <div class="selected-song-row">
                     <div class="song-cover" :class="{ 'is-playing': openSongId === 'saved:' + song.text }">
+                    
                       <img v-if="songCovers[song.text]" :src="songCovers[song.text]" :alt="song.title + ' album cover'" loading="lazy">
+                      <!-- Use a placeholder when no cached artwork exists. -->
                       <span v-else class="cover-placeholder"><i class="bi bi-music-note-beamed" aria-hidden="true"></i></span>
 
+                      <!-- Use the saved: prefix to identify a player in the selected songs list. -->
                       <button class="preview-button" type="button" :aria-label="openSongId === 'saved:' + song.text ? 'Close the player for ' + song.title : 'Play a 30 second preview of ' + song.title" :aria-expanded="openSongId === 'saved:' + song.text" @click="togglePlayer('saved:' + song.text)">
                         <i class="bi" :class="openSongId === 'saved:' + song.text ? 'bi-x-lg' : 'bi-play-fill'" aria-hidden="true"></i>
                       </button>
@@ -944,12 +987,16 @@ async function importSpotifyGenres() {
 
 /* Consistent page width and flexible spacing */
 .onboarding-page {
+  /* Leave 32px of horizontal space outside the page's width. */
   width: calc(100% - 32px);
   max-width: 1100px;
+  /* Scale top and bottom padding with screen width, between 24px and 40px.
+     Left and right padding are zero. vw means a percentage of viewport width. */
   padding: clamp(24px, 4vw, 40px) 0;
 }
 
 .page-heading h1 {
+  /* Scale the heading with screen width, keeping it between 25px and 34px. */
   font-size: clamp(25px, 4vw, 34px);
   line-height: 1.25;
 }
@@ -958,13 +1005,15 @@ async function importSpotifyGenres() {
   line-height: 1.6;
 }
 
-/* Stop the genre card stretching to the song card's height */
+/* > selects .row elements directly inside the form.
+   Align their columns at the top instead of stretching them to equal heights. */
 form > .row {
   align-items: flex-start;
 }
 
 .preference-box {
   height: auto;
+  /* Scale padding on all four sides with screen width, between 18px and 28px. */
   padding: clamp(18px, 2.5vw, 28px);
 }
 
@@ -993,19 +1042,22 @@ form > .row {
   min-height: 44px;
 }
 
+/* Show a visible outline when an input or button receives keyboard focus. */
 .text-input:focus-visible,
 button:focus-visible {
   outline: 3px solid #7054dc;
   outline-offset: 3px;
 }
 
+/* Make the disabled Next button appear faded and show an unavailable cursor. */
 .next-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Stack both connection cards and preference cards below 992px */
+/* Apply these layout changes on screens narrower than 992px. */
 @media (max-width: 991.98px) {
+  /* Make these Bootstrap columns full width so the cards stack vertically. */
   .onboarding-page > .row > .col-md-6,
   form > .row > .col-md-6 {
     flex: 0 0 100%;
@@ -1013,53 +1065,64 @@ button:focus-visible {
   }
 }
 
+/* Adjust the page layout for screens narrower than 576px. */
 @media (max-width: 575.98px) {
+  
   .page-heading {
     text-align: left;
   }
 
+  
   .connection-box {
     align-items: flex-start;
     padding: 18px;
   }
 
+  
   .connection-box > div {
     width: 100%;
   }
 
+  
   .connection-box .connect-button {
     width: 100%;
   }
 
+  
   .taste-summary {
     flex-direction: column;
     align-items: flex-start;
     padding: 18px;
   }
 
+  
   .selected-genres {
     width: 100%;
   }
 
+  /* Keep genre tags within their container and allow long names to wrap. */
   .genre-tag {
     max-width: 100%;
     overflow-wrap: anywhere;
   }
 
+  
   .next-button {
     width: 100%;
   }
 
-  /* on a small screen the Remove button is just the bin icon */
+  
   .remove-song-button {
     width: 40px;
     padding: 0;
   }
 
+  
   .remove-text {
     display: none;
   }
 }
+
 
 .search-label {
   display: flex;
@@ -1068,36 +1131,44 @@ button:focus-visible {
   margin-bottom: 12px;
 }
 
+/* Arrange the search input and button in a row with equal stretched heights. */
 .song-search-bar {
   display: flex;
   align-items: stretch;
   gap: 16px;
 }
 
+/* Let the input wrapper use the remaining row space and shrink when needed. */
 .song-search-input {
   flex: 1;
   min-width: 0;
 }
+
 
 .song-search-input .text-input {
   margin: 0;
   padding-left: 14px;
 }
 
+
 .search-button {
   margin: 0;
 }
 
+/* Adjust the search controls for screens narrower than 576px. */
 @media (max-width: 575.98px) {
+  
   .song-search-bar {
     flex-direction: column;
     gap: 14px;
   }
 
+ 
   .search-button {
     width: 100%;
   }
 }
+
 
 .search-results {
   margin-top: 20px;
@@ -1107,6 +1178,7 @@ button:focus-visible {
   background: #f8f9fd;
 }
 
+/* Style the results heading; !important overrides competing normal font-size rules. */
 .results-label {
   margin: 0 0 8px;
   font-size: 11px !important;
@@ -1114,12 +1186,15 @@ button:focus-visible {
   letter-spacing: 1px;
 }
 
+/* Remove the list's default bullets, margins, and padding. */
 .song-result-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* Create three columns: fixed artwork, flexible song details, and an Add button.
+   minmax(0, 1fr) lets the details column shrink so long text can wrap. */
 .song-result-row {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto;
@@ -1128,19 +1203,24 @@ button:focus-visible {
   padding: 14px 0;
 }
 
-/* a song and its music player (which opens under the row) are one block, with a line under the whole block */
+/* Keep the song and player in one layout block, containing the player's margins,
+   and place a separator beneath the complete item. */
 .song-result-item {
-  display: flow-root; /* keeps the player's bottom space inside the block, so the line stays right below the player */
+  display: flow-root;
   border-bottom: 1px solid #e6e9f3;
 }
+
+
 .song-result-item:last-child {
   border-bottom: 0;
 }
+
+
 .song-result-item :deep(.song-player) {
   margin-bottom: 10px;
 }
 
-/* Album cover */
+/* Create a fixed artwork box and a positioning reference for its preview button. */
 .song-cover {
   position: relative;
   width: 52px;
@@ -1150,12 +1230,14 @@ button:focus-visible {
   background: #eee7ff;
 }
 
+
 .song-cover img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 
 .cover-placeholder {
   display: grid;
@@ -1166,7 +1248,8 @@ button:focus-visible {
   font-size: 22px;
 }
 
-/* Play button appears over the cover */
+/* Cover the artwork with a centred preview control.
+   inset: 0 sets all four position offsets to zero. */
 .preview-button {
   position: absolute;
   inset: 0;
@@ -1183,45 +1266,54 @@ button:focus-visible {
   transition: background 180ms ease;
 }
 
+/* Darken the preview overlay when hovered, when a control inside has focus,
+   or when this song's player is open. */
 .song-cover:hover .preview-button,
 .song-cover:focus-within .preview-button,
 .song-cover.is-playing .preview-button {
   background: rgba(20, 35, 75, 0.65);
 }
 
+/* Draw the keyboard focus outline inside the preview button to avoid clipping. */
 .preview-button:focus-visible {
   outline: 3px solid white;
   outline-offset: -4px;
 }
 
-/* Song details */
+/* Allow the song details column to shrink within the grid. */
 .result-info {
   min-width: 0;
 }
 
+/* Put the title and artist on separate lines and allow long text to wrap. */
 .result-info strong,
 .result-info small {
   display: block;
   overflow-wrap: anywhere;
 }
 
+/* Set the song title's text size. */
 .result-info strong {
   font-size: 13px;
 }
 
+/* Style the artist names as smaller, muted text beneath the title. */
 .result-info small {
   margin-top: 3px;
   color: #64708a;
   font-size: 12px;
 }
 
+/* Highlight preview status text in green. */
 .preview-status {
   color: #18754a !important;
 }
 
+/* Use smaller text for the preview unavailable message. */
 .preview-unavailable {
   font-size: 11px !important;
 }
+
 
 .spotify-track-link {
   display: inline-block;
@@ -1231,7 +1323,7 @@ button:focus-visible {
   font-weight: 600;
 }
 
-/* Add / Added button */
+
 .song-add-button {
   display: inline-flex;
   align-items: center;
@@ -1249,33 +1341,41 @@ button:focus-visible {
   cursor: pointer;
 }
 
+
 .song-add-button.is-added {
   border-color: #cae7d9;
   background: #edfaf5;
   color: #18754a;
 }
 
+/* Use the normal cursor when the Add button is disabled. */
 .song-add-button:disabled {
   cursor: default;
 }
 
+/* Style the feedback confirming that a song was added. */
 .song-feedback {
   color: #18754a !important;
   font-size: 12px !important;
 }
 
+
 .song-feedback:empty {
   display: none;
 }
 
+/* Make the search results more compact on screens narrower than 576px. */
 @media (max-width: 575.98px) {
+
   .search-results {
     padding: 10px;
   }
 
+
   .song-result-row {
     gap: 8px;
   }
+
 
   .song-add-button {
     min-width: 64px;
@@ -1283,7 +1383,9 @@ button:focus-visible {
   }
 }
 
+/* Respect the device's reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
+
   .preview-button {
     transition: none;
   }
