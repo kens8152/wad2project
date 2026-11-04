@@ -2,23 +2,20 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import DrumShape from './DrumShape.vue'
 import { playDrum, muted, setMuted } from '../../composables/forum/useDrumSound.js'
-import { tagColor } from '../../composables/forum/tagColor.js'
 
 
 const props = defineProps({
   tags: { type: Array, default: () => [] },
-  selected: { type: String, default: '' },
   title: { type: String, default: 'Top tags' },
 })
-const emit = defineEmits(['select'])
 
 
 const KINDS = [
-  { shape: 'kick', sound: 'kick', height: 130 },
-  { shape: 'tom', sound: 'tomLow', height: 104 },
-  { shape: 'tom', sound: 'tomMid', height: 84 },
-  { shape: 'snare', sound: 'snare', height: 64 },
-  { shape: 'tomHigh', sound: 'tomHigh', height: 48 },
+  { shape: 'kick', sound: 'kick', body: 150, color: '#7c4dff' },
+  { shape: 'tom', sound: 'tomLow', body: 118, color: '#ff4d8d' },
+  { shape: 'tom', sound: 'tomMid', body: 92, color: '#1f6feb' },
+  { shape: 'snare', sound: 'snare', body: 66, color: '#0f9d8a' },
+  { shape: 'tomHigh', sound: 'tomHigh', body: 44, color: '#f59e0b' },
 ]
 
 
@@ -29,7 +26,7 @@ const hits = ref([0, 0, 0, 0, 0])
 const slots = computed(() =>
   ORDER.filter((rank) => rank <= props.tags.length).map((rank) => {
     const tag = props.tags[rank - 1]
-    return { rank, tag, color: tag.color ?? tagColor(tag.key), ...KINDS[rank - 1] }
+    return { rank, tag, ...KINDS[rank - 1] }
   }),
 )
 
@@ -50,12 +47,15 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 const postWord = (n) => (n === 1 ? 'post' : 'posts')
+const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
 </script>
 
 <template>
-  <section class="drums px-3">
-    <div class="d-flex align-items-center justify-content-between mb-1">
-      <h2 class="drums__title h5 mb-0">{{ title }}</h2>
+  <section class="mx-3">
+    <h2 class="drums__title h5 mb-2">{{ title }}</h2>
+
+    <div class="drums">
+    <div class="d-flex justify-content-end">
       <button
         type="button"
         class="btn btn-sm btn-link text-body-secondary p-0"
@@ -67,53 +67,83 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
       </button>
     </div>
 
-    <div class="podium">
-      <div
-        v-for="s in slots"
-        :key="s.rank"
-        class="slot"
-        :class="{ 'is-selected': s.tag.key === selected }"
-        :style="{ '--c': s.color, '--h': s.height }"
-      >
+    <div class="kit">
+      <div v-for="s in slots" :key="s.rank" class="slot" :class="{ 'has-medal': s.rank <= 3 }" :style="{ '--c': s.color }">
+        <div class="label">
+          <svg v-if="s.rank === 1" class="crown" viewBox="0 0 64 36" aria-hidden="true">
+            <defs>
+              <linearGradient id="crown-gold" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffe680" />
+                <stop offset="0.55" stop-color="#ffc824" />
+                <stop offset="1" stop-color="#e09a00" />
+              </linearGradient>
+            </defs>
+            <g fill="#ffcf2e" stroke="#e6a400" stroke-width="0.8" stroke-linejoin="round">
+              <path d="M3 9 L11 14 L9 16.5 Z" />
+              <path d="M1 21 L10 20 L10 23 Z" />
+              <path d="M61 9 L53 14 L55 16.5 Z" />
+              <path d="M63 21 L54 20 L54 23 Z" />
+            </g>
+            <path d="M19 28 L16.5 11 L24.5 18.5 L32 7 L39.5 18.5 L47.5 11 L45 28 Z" fill="url(#crown-gold)" stroke="#c98a00" stroke-width="1.2" stroke-linejoin="round" />
+            <rect x="18.5" y="27.5" width="27" height="5" rx="1.6" fill="#f2b400" stroke="#c98a00" stroke-width="1" />
+            <g fill="#ffd84a" stroke="#c98a00" stroke-width="0.8">
+              <circle cx="16.5" cy="10.5" r="2.4" />
+              <circle cx="24.5" cy="17.5" r="1.7" />
+              <circle cx="32" cy="5" r="2.8" />
+              <circle cx="39.5" cy="17.5" r="1.7" />
+              <circle cx="47.5" cy="10.5" r="2.4" />
+            </g>
+            <path d="M32 16 L35.5 20.5 L32 25 L28.5 20.5 Z" fill="#7c4dff" stroke="#5b34e6" stroke-width="0.8" />
+            <path d="M32 16 L33.6 20.5 L32 25 Z" fill="#a98bff" />
+          </svg>
+          <RouterLink
+            :to="{ name: 'forum-tags', query: { tag: s.tag.name } }"
+            class="tag-btn"
+            :title="`See posts tagged #${s.tag.name}`"
+          >
+            <span class="tag-btn__rank">{{ PLACES[s.rank - 1] }}</span>
+            <span class="tag-btn__name">#{{ s.tag.name }}</span>
+          </RouterLink>
+          <p class="label__count">{{ s.tag.count }} {{ postWord(s.tag.count) }}</p>
+        </div>
+
         <button type="button" class="drum-btn" @click="hit(s.rank)">
           <DrumShape
             :key="hits[s.rank - 1]"
             :kind="s.shape"
             :color="s.color"
             :uid="s.rank"
+            :body="s.body"
             :lit="hits[s.rank - 1] > 0"
           />
+          <span v-if="s.rank <= 3" class="medal" :class="`medal--${s.rank}`" aria-hidden="true">
+            <span class="medal__coin">{{ s.rank }}</span>
+          </span>
           <span class="visually-hidden">Play the #{{ s.tag.name }} drum</span>
         </button>
-
-        <div class="block">
-          <span class="block__rank">{{ s.rank }}</span>
-        </div>
-
-        <div class="label">
-          <p class="label__name text-truncate" :title="'#' + s.tag.name">#{{ s.tag.name }}</p>
-          <p class="label__count">{{ s.tag.count }} {{ postWord(s.tag.count) }}</p>
-          <button type="button" class="btn btn-sm btn-link p-0" @click="emit('select', s.tag.name)">
-            {{ s.tag.key === selected ? 'Hide posts' : 'See posts' }}
-          </button>
-        </div>
       </div>
     </div>
-
-    <p class="small text-body-secondary text-center mt-2 mb-0">
-      Tap a drum, or press 1{{ slots.length > 1 ? ` to ${slots.length}` : '' }}
-    </p>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.drums {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 1rem 1.25rem 1.1rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 16px;
+  background: var(--riffle-surface);
+  box-shadow: var(--riffle-shadow-sm);
+}
 .drums__title {
   color: var(--riffle-ink);
   font-weight: 800;
 }
-.podium {
+.kit {
   --u: clamp(0.4px, 0.085vw, 0.85px);
-  --k: 1;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -125,7 +155,6 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 0 0 auto;
   min-width: 3.6rem;
 }
 
@@ -137,7 +166,6 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
   border: 0;
   background: transparent;
   cursor: pointer;
-  margin-bottom: calc(var(--u) * -9);
   transition: transform 0.15s ease;
 }
 .drum-btn:hover {
@@ -152,66 +180,222 @@ const postWord = (n) => (n === 1 ? 'post' : 'posts')
   border-radius: 0.5rem;
 }
 
-.block {
+
+.medal {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--u) * -46);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
+}
+.medal::before,
+.medal::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--u) * 40);
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 30);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+.medal::before {
+  left: calc(var(--u) * 9);
+  background: var(--ribbon-a);
+  transform: rotate(14deg);
+}
+.medal::after {
+  right: calc(var(--u) * 9);
+  background: var(--ribbon-b);
+  transform: rotate(-14deg);
+}
+.medal__coin {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
-  align-self: stretch;
-  height: calc(var(--h) * var(--k) * 1px);
-  border-radius: 0.6rem 0.6rem 0 0;
-  color: #fff;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--c) 60%, #fff),
-    color-mix(in srgb, var(--c) 85%, #000)
-  );
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4);
-}
-.block__rank {
-  font-size: clamp(1.4rem, 4vw, 2.3rem);
+  width: calc(var(--u) * 56);
+  height: calc(var(--u) * 56);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--medal-light), var(--medal-mid) 55%, var(--medal-dark));
+  box-shadow:
+    inset 0 0 0 calc(var(--u) * 3) var(--medal-rim),
+    inset 0 0 0 calc(var(--u) * 7) var(--medal-light),
+    inset 0 0 0 calc(var(--u) * 8) var(--medal-rim);
+  color: var(--medal-text);
+  font-size: calc(var(--u) * 28);
   font-weight: 800;
   line-height: 1;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-
-.slot.is-selected .block {
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 3px var(--c);
+.medal--1 {
+  --medal-light: #fff4b8;
+  --medal-mid: #ffc824;
+  --medal-dark: #d99400;
+  --medal-rim: #e8a800;
+  --medal-text: #7a4f00;
+  --ribbon-a: #e8323c;
+  --ribbon-b: #c81e2a;
 }
-.slot.is-selected .label__name {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.medal--2 {
+  --medal-light: #ffffff;
+  --medal-mid: #d3d8e0;
+  --medal-dark: #9aa3b0;
+  --medal-rim: #aab2be;
+  --medal-text: #4a5260;
+  --ribbon-a: #2f7bff;
+  --ribbon-b: #1f5fd6;
+}
+.medal--3 {
+  --medal-light: #ffe0c2;
+  --medal-mid: #e09a5c;
+  --medal-dark: #a8602a;
+  --medal-rim: #b86d33;
+  --medal-text: #5e3110;
+  --ribbon-a: #ff8a1f;
+  --ribbon-b: #e06b00;
 }
 
 .label {
-  width: 0;
-  min-width: 100%;
-  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 0.35rem;
   text-align: center;
 }
-.label__name {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--c);
+.slot.has-medal .label {
+  padding-bottom: calc(var(--u) * 56);
+}
+.crown {
+  width: 5rem;
+  height: auto;
+  margin-bottom: 0.1rem;
+  overflow: visible;
+  filter: drop-shadow(0 2px 3px rgba(201, 138, 0, 0.35));
+  transform-origin: 50% 100%;
+  animation: crown-hop 1.6s ease-in-out infinite;
+}
+
+@keyframes crown-hop {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0) scale(1, 1);
+  }
+  12% {
+    transform: translateY(0) rotate(0) scale(1.1, 0.88);
+  }
+  35% {
+    transform: translateY(-9px) rotate(-5deg) scale(0.96, 1.06);
+  }
+  55% {
+    transform: translateY(0) rotate(0) scale(1.06, 0.92);
+  }
+  65% {
+    transform: translateY(-3px) rotate(3deg) scale(1, 1);
+  }
+  75% {
+    transform: translateY(0) rotate(0) scale(1, 1);
+  }
+}
+
+.tag-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 5rem;
+  padding: 0 0.25rem 0.25rem;
+  border-radius: 14px;
+  background: var(--c);
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow:
+    0 3px 0 color-mix(in srgb, var(--c) 65%, #000),
+    0 6px 14px color-mix(in srgb, var(--c) 30%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.tag-btn:hover,
+.tag-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 0 color-mix(in srgb, var(--c) 65%, #000),
+    0 10px 20px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.tag-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 65%, #000);
+}
+.tag-btn__rank {
+  padding: 0.2rem 0.5rem 0.15rem;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.tag-btn__name {
+  padding: 0.3rem 0.7rem;
+  border-radius: 10px;
+  background: var(--riffle-surface);
+  color: color-mix(in srgb, var(--c) 85%, var(--riffle-ink));
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
 }
 .label__count {
-  margin: 0;
+  display: inline-block;
+  margin: 0.4rem 0 0;
+  padding: 0.1rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 14%, var(--riffle-surface));
+  color: color-mix(in srgb, var(--c) 85%, var(--riffle-ink));
   font-size: 0.75rem;
-  color: var(--bs-secondary-color);
-}
-.label .btn {
-  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 @media (max-width: 575.98px) {
-  .podium {
-    --k: 0.7;
+  .kit {
     gap: 0.25rem;
+  }
+  .label {
+    width: 0;
+    min-width: 100%;
+  }
+  .tag-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.15rem 0.15rem;
+    border-radius: 10px;
+  }
+  .tag-btn__rank {
+    padding: 0.1rem 0;
+    font-size: 0.55rem;
+  }
+  .tag-btn__name {
+    min-width: 0;
+    padding: 0.2rem 0.2rem;
+    border-radius: 7px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.68rem;
+  }
+  .label__count {
+    padding: 0.05rem 0.4rem;
+    font-size: 0.62rem;
+  }
+  .crown {
+    width: 3.2rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .crown {
+    animation: none;
+  }
   .drum-btn {
     transition: none;
   }
