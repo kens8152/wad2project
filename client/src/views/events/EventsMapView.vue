@@ -222,7 +222,6 @@ watch(filters.results, (list) => {
   padding: 14px 28px 26px;
   overflow-x: auto;
   overflow-anchor: none; /* do not follow a card to its new place when the order changes */
-  scrollbar-width: thin;
 }
 /* the flex padding at the end of a scrolling row is ignored by some browsers */
 .map-stage__cards::after {

@@ -1390,4 +1390,38 @@ button:focus-visible {
     transition: none;
   }
 }
+
+/* Dark mode: the light boxes become dark, so their text stays readable */
+:root[data-theme='dark'] .spotify-box {
+  background-color: rgba(30, 215, 96, 0.08);
+}
+:root[data-theme='dark'] .genre-option:hover {
+  background-color: rgba(124, 77, 255, 0.12);
+}
+:root[data-theme='dark'] .genre-option.selected {
+  background-color: rgba(124, 77, 255, 0.22);
+  border-color: #b9a4ff;
+  color: #e3d9ff;
+}
+:root[data-theme='dark'] .text-input {
+  background-color: var(--riffle-surface-soft);
+}
+:root[data-theme='dark'] .taste-summary {
+  background-color: var(--riffle-surface-soft);
+}
+:root[data-theme='dark'] .selected-badge,
+:root[data-theme='dark'] .song-cover {
+  background: rgba(124, 77, 255, 0.22);
+  color: #d9ccff;
+}
+:root[data-theme='dark'] .remove-song-button:hover:not(:disabled) {
+  border-color: rgba(224, 36, 94, 0.5);
+  background-color: rgba(224, 36, 94, 0.15);
+  color: #ff8cbd;
+}
+:root[data-theme='dark'] .song-add-button.is-added {
+  border-color: rgba(30, 215, 96, 0.35);
+  background: rgba(30, 215, 96, 0.12);
+  color: #6fe3a8;
+}
 </style>

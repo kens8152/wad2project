@@ -10,7 +10,7 @@ defineProps({
   <div class="forum-search d-flex align-items-center flex-grow-1">
     <div class="forum-search__box">
       <i class="bi bi-search"></i>
-      <input v-model="term" type="search" :placeholder="placeholder" aria-label="Search the forum" />
+      <input v-model="term" type="search" :placeholder="placeholder" :aria-label="placeholder" />
       <button v-if="term" type="button" class="forum-search__clear" aria-label="Clear search" @click="term = ''">
         <i class="bi bi-x-lg"></i>
       </button>
