@@ -157,14 +157,14 @@ function markAll() {
   padding: 0.5rem 1rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-weight: 700;
   font-size: 0.9rem;
   transition: background 0.15s, border-color 0.15s;
 }
 .mark-all:hover:not(:disabled) {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   border-color: var(--riffle-faint);
 }
 .mark-all:disabled {
@@ -185,7 +185,7 @@ function markAll() {
   padding: 0.4rem 1rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-muted);
   font-size: 0.9rem;
   font-weight: 700;
@@ -217,7 +217,7 @@ function markAll() {
   overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
 .notification-list li + li {
@@ -237,7 +237,7 @@ function markAll() {
   animation: row-in 0.3s ease backwards;
 }
 .notification-row:hover {
-  background: #f6f7fc;
+  background: var(--riffle-surface-soft);
 }
 .notification-row.is-unread {
   background: #fff8fb;
@@ -319,7 +319,7 @@ function markAll() {
   padding: 1.4rem;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
 .settings-card h2 {
@@ -357,8 +357,8 @@ function markAll() {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236b7694'/%3e%3c/svg%3e");
 }
 .setting-switch:checked {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  background-color: #7c4dff;
+  border-color: #7c4dff;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
 }
 </style>

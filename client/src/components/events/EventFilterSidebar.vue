@@ -219,13 +219,13 @@ function apply() {
   transition: background-color 0.2s, border-color 0.2s, background-position 0.2s;
 }
 .filters__prefs .form-check-input:checked {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  background-color: #7c4dff;
+  border-color: #7c4dff;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 2px 8px rgba(124, 77, 255, 0.4);
 }
 .filters__prefs .form-check-input:focus {
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.25);
 }
 .filters__prefs .form-check-input:disabled {
   cursor: not-allowed;
@@ -338,7 +338,7 @@ function apply() {
   --delay: 0.14s;
 }
 .filters__note--4 {
-  color: #2563eb;
+  color: #7c4dff;
   --dx: 52px;
   --up: -22px;
   --spin: 60deg;
@@ -451,7 +451,7 @@ function apply() {
   z-index: 5;
   margin: auto -1rem -0.75rem; /* when the sidebar is taller than its content, Apply sits at the bottom */
   padding: 0.5rem 1rem 0.45rem;
-  background: #fff;
+  background: var(--riffle-surface);
   border-top: 1px solid var(--riffle-border);
   border-radius: 0 0 var(--riffle-radius) var(--riffle-radius);
   box-shadow: 0 -8px 16px rgba(20, 35, 90, 0.05);
@@ -461,15 +461,20 @@ function apply() {
   width: 100%;
   padding: 0.55rem;
   font-size: 1rem;
+  background: #7c4dff;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
 }
-/* Unapplied changes: the button lights up electric blue, with a little music equalizer */
+.filters__apply:hover,
+.filters__apply:focus-visible {
+  background: #6a3cf0;
+}
+/* Unapplied changes: the button lights up pink-purple, with a little music equalizer */
 .filters__apply.is-dirty {
-  background: linear-gradient(135deg, #1b3fbf 0%, #2f7bff 60%, #22c1e8 100%);
+  background: linear-gradient(135deg, #ff4d8d 0%, #7c4dff 100%);
   animation: apply-pulse 1.6s ease-in-out infinite;
 }
 .filters__apply.is-dirty:hover {
-  background: linear-gradient(135deg, #1535a8 0%, #2a6cf0 60%, #14b3dc 100%);
+  background: linear-gradient(135deg, #f23d7f 0%, #6a3cf0 100%);
   transform: translateY(-1px);
 }
 .filters__apply:active {
@@ -478,10 +483,10 @@ function apply() {
 @keyframes apply-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(47, 123, 255, 0.5);
+    box-shadow: 0 0 0 0 rgba(124, 77, 255, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(47, 123, 255, 0);
+    box-shadow: 0 0 0 10px rgba(124, 77, 255, 0);
   }
 }
 
@@ -498,7 +503,7 @@ function apply() {
   width: 3px;
   height: 100%;
   border-radius: 2px;
-  background: #fff;
+  background: var(--riffle-surface);
   transform-origin: bottom;
   animation: eq-bounce 0.9s ease-in-out infinite;
 }

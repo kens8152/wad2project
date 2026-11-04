@@ -148,7 +148,7 @@ const goingLabel = computed(() => {
   min-width: 52px;
   padding: 0.25rem 0.5rem 0.3rem;
   border-radius: 10px;
-  background: #fff;
+  background: var(--riffle-surface);
   border: 2px solid var(--genre);
   line-height: 1.1;
 }
@@ -173,7 +173,7 @@ const goingLabel = computed(() => {
   right: 10px;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.75rem;
   font-weight: 800;
@@ -192,7 +192,7 @@ const goingLabel = computed(() => {
   gap: 0.4rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;

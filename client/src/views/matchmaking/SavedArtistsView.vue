@@ -163,7 +163,7 @@ onMounted(() => {
   gap: 0.6rem;
   padding: 0.2rem 0.4rem 0.2rem 0.9rem;
   border-radius: 999px;
-  background: #eef0f8;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-muted);
 }
 .filters-search input {

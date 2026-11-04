@@ -111,7 +111,7 @@ function zoomStep(amount) {
   inset: 0;
   z-index: 0;
   isolation: isolate;
-  background: #e9edf4;
+  background: var(--riffle-surface-soft);
 }
 
 .mini-map__zoom {
@@ -123,7 +123,7 @@ function zoomStep(amount) {
   flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow);
 }
 .mini-map__zoom button {
@@ -138,7 +138,7 @@ function zoomStep(amount) {
   border-top: 1px solid var(--riffle-border);
 }
 .mini-map__zoom button:hover:not(:disabled) {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .mini-map__zoom button:disabled {
   color: var(--riffle-faint);
@@ -192,6 +192,6 @@ function zoomStep(amount) {
   height: 9px;
   margin: -4.5px 0 0 -4.5px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--riffle-surface);
 }
 </style>

@@ -30,6 +30,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
 </script>
 
 <template>
+  <div class="events-page">
   <div class="events-shell container-xxl">
     <button
       type="button"
@@ -92,9 +93,15 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
       </section>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
+.events-page {
+  flex-grow: 1;
+  background: var(--riffle-glow);
+}
+
 .events-shell {
   padding-top: 0.9rem;
   padding-bottom: 2.5rem;
@@ -121,7 +128,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   padding: 0.5rem 0.85rem;
   border: 1px solid var(--riffle-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 4px 16px rgba(20, 35, 90, 0.07);
   color: var(--riffle-ink);
   font-size: 0.85rem;
@@ -130,7 +137,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   transition: background 0.15s, transform 0.15s, border-color 0.15s;
 }
 .events-tool-btn:hover {
-  background: #f1f3fb;
+  background: var(--riffle-surface-soft);
   transform: translateY(-1px);
 }
 .events-guide-btn.is-on {
@@ -139,8 +146,10 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
 .view-toggle {
   display: inline-flex;
   padding: 4px;
+  border: 1px solid var(--riffle-glow-line);
   border-radius: 12px;
-  background: #e9ecf6;
+  background: color-mix(in srgb, var(--riffle-surface) 85%, transparent);
+  box-shadow: var(--riffle-glow-shadow);
 }
 .view-toggle__btn {
   min-width: 72px;
@@ -157,7 +166,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   color: var(--riffle-ink);
 }
 .view-toggle__btn.is-active {
-  background: var(--riffle-navy);
+  background: #7c4dff;
   color: #fff;
 }
 
@@ -168,9 +177,10 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   width: 100%;
   margin-bottom: 0.9rem;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--riffle-border);
+  border: 1px solid var(--riffle-glow-line);
   border-radius: 12px;
-  background: #fff;
+  background: color-mix(in srgb, var(--riffle-surface) 90%, transparent);
+  box-shadow: var(--riffle-glow-shadow);
   font-weight: 700;
   color: var(--riffle-ink);
 }
@@ -206,7 +216,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   padding: 0.35rem 0.8rem;
   border: 0;
   border-radius: 999px;
-  background: #e5ebff;
+  background: #efeaff;
   color: var(--riffle-blue);
   font-weight: 700;
   font-size: 0.85rem;
@@ -221,7 +231,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
   padding: 2rem;
   text-align: center;
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   border: 1px dashed var(--riffle-border);
 }
 

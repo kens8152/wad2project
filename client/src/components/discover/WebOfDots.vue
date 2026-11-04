@@ -789,9 +789,12 @@ const tastePillStyle = computed(() => {
   cursor: grab;
   user-select: none;
   touch-action: none;
-  background-color: var(--riffle-bg);
-  background-image: radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px);
-  background-size: 30px 30px;
+  background-color: var(--web-bg);
+  background-image:
+    radial-gradient(var(--web-grid) 1.2px, transparent 1.2px),
+    radial-gradient(ellipse at 0% 0%, var(--web-glow-a), transparent 45%),
+    radial-gradient(ellipse at 100% 100%, var(--web-glow-b), transparent 50%);
+  background-size: 30px 30px, 100% 100%, 100% 100%;
 }
 .web.is-dragging {
   cursor: grabbing;
@@ -830,7 +833,7 @@ const tastePillStyle = computed(() => {
 
 /* lines */
 .web__edges {
-  stroke: #666a82;
+  stroke: var(--web-edge);
   stroke-width: 1;
   opacity: 0.6;
   vector-effect: non-scaling-stroke;
@@ -845,7 +848,7 @@ const tastePillStyle = computed(() => {
   filter: blur(2px);
 }
 .web__edges--focus {
-  stroke: #0f1f4b;
+  stroke: var(--riffle-ink);
   stroke-width: 2px;
   opacity: 1;
   animation: lines-in 0.3s ease backwards;
@@ -861,7 +864,7 @@ const tastePillStyle = computed(() => {
 
 /* dots */
 .dot {
-  stroke: #fff;
+  stroke: var(--web-halo);
   stroke-width: 1.5px;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
@@ -887,12 +890,12 @@ const tastePillStyle = computed(() => {
   opacity: 0.16;
 }
 .dot.is-neighbour {
-  stroke: #0f1f4b;
+  stroke: var(--riffle-ink);
   stroke-width: 2px;
 }
 .dot.is-focus {
   transform: scale(1.4);
-  stroke: #0f1f4b;
+  stroke: var(--riffle-ink);
   stroke-width: 2.5px;
 }
 .dot.is-following {
@@ -976,7 +979,7 @@ const tastePillStyle = computed(() => {
   fill: var(--riffle-ink);
   font-weight: 800;
   text-anchor: middle;
-  stroke: #fff;
+  stroke: var(--web-halo);
   stroke-linejoin: round;
   paint-order: stroke;
   pointer-events: none;
@@ -1083,7 +1086,7 @@ const tastePillStyle = computed(() => {
   padding: 0.35rem 0.9rem;
   border: 1px solid #e0245e;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.85rem;
   font-weight: 800;
@@ -1110,8 +1113,8 @@ const tastePillStyle = computed(() => {
   padding: 0.85rem 0.95rem;
   border: 1px solid var(--riffle-border);
   border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 14px 36px rgba(20, 35, 90, 0.18);
+  background: var(--riffle-surface);
+  box-shadow: var(--web-pop-shadow);
   pointer-events: none;
   animation: card-pop 0.2s cubic-bezier(0.3, 1.4, 0.5, 1);
   transform-origin: left top;
@@ -1205,7 +1208,7 @@ const tastePillStyle = computed(() => {
   font-size: 0.75rem;
 }
 .card-close:hover {
-  background: #eef1fb;
+  background: var(--web-hover);
   color: var(--riffle-ink);
 }
 .card-shares {
@@ -1249,7 +1252,7 @@ const tastePillStyle = computed(() => {
   transition: background 0.12s, transform 0.12s;
 }
 .card-link:hover {
-  background: #eef1fb;
+  background: var(--web-hover);
   transform: translateX(2px);
 }
 .card-link span {
@@ -1281,7 +1284,7 @@ const tastePillStyle = computed(() => {
   padding: 0.5rem 0.6rem;
   border: 1.5px solid var(--riffle-ink);
   border-radius: 10px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.82rem;
   font-weight: 700;
@@ -1291,17 +1294,17 @@ const tastePillStyle = computed(() => {
   transition: background 0.15s, transform 0.15s;
 }
 .card-button:hover {
-  background: #eef1fb;
+  background: var(--web-hover);
   color: var(--riffle-ink);
   transform: translateY(-1px);
 }
 .card-button--primary {
-  border-color: var(--riffle-navy);
-  background: var(--riffle-navy);
+  border-color: #7c4dff;
+  background: #7c4dff;
   color: #fff;
 }
 .card-button--primary:hover {
-  background: var(--riffle-navy-soft);
+  background: #6a3cf0;
   color: #fff;
 }
 .card-button--on {
@@ -1351,8 +1354,8 @@ const tastePillStyle = computed(() => {
 .control-card {
   border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(20, 35, 90, 0.07);
+  background: var(--web-panel);
+  box-shadow: var(--web-panel-shadow);
 }
 .recentre {
   display: inline-flex;
@@ -1365,7 +1368,7 @@ const tastePillStyle = computed(() => {
   transition: background 0.15s, transform 0.15s;
 }
 .recentre:hover {
-  background: #fff5f4;
+  background: var(--web-hover);
   transform: translateY(-1px);
 }
 .recentre-dot {
@@ -1392,7 +1395,7 @@ const tastePillStyle = computed(() => {
   border-top: 1px solid var(--riffle-border);
 }
 .zoom button:hover {
-  background: #eef1fb;
+  background: var(--web-hover);
 }
 .map-controls.is-hidden {
   display: none;

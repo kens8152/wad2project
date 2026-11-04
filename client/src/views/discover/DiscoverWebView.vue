@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useTheme } from '@/composables/useTheme'
 import { supabase } from '@/services/supabase'
 import { useFavouriteArtists } from '@/composables/artists/useFavouriteArtists'
 import { toast } from '@/composables/useToast'
@@ -66,6 +67,9 @@ const searchResults = computed(() => {
   if (term === '') return []
   return graph.nodes.filter(node => node.name.toLowerCase().includes(term)).slice(0, 6)
 })
+
+const { theme } = useTheme()
+const darkMode = computed(() => theme.value === 'dark')
 
 // ---- guests: the "log in first" notice ----
 const nudgeOpen = ref(false)
@@ -327,7 +331,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="discover" :class="{ 'has-card': pickedId !== null, 'is-resizing': resizing, 'is-touring-dot': tourOpen && pickedId !== null }">
+  <div class="discover" :class="{ 'has-card': pickedId !== null, 'is-resizing': resizing, 'is-touring-dot': tourOpen && pickedId !== null, 'is-dark': darkMode }">
     <WebOfDots
       ref="web"
       :reduce-effects="tourOpen"
@@ -482,18 +486,61 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .discover {
+  --web-bg: #f7f5fc;
+  --web-grid: #e2dcf2;
+  --web-glow-a: rgba(255, 170, 210, 0.45);
+  --web-glow-b: rgba(170, 200, 255, 0.5);
+  --web-edge: #666a82;
+  --web-halo: #fff;
+  --web-hover: rgba(124, 77, 255, 0.07);
+  --web-line: #ece8f8;
+  --web-panel: rgba(255, 255, 255, 0.9);
+  --web-panel-hover: rgba(255, 255, 255, 0.98);
+  --web-panel-shadow: 0 4px 16px rgba(60, 40, 140, 0.08);
+  --web-pop-shadow: 0 14px 36px rgba(60, 40, 140, 0.16);
+  --web-accent-text: #5b34e6;
+  --web-pink-text: #c2185b;
   position: relative;
   flex: 1;
   min-height: 560px;
   overflow: hidden;
   color: var(--riffle-ink);
+  background: var(--web-bg);
+}
+.discover.is-dark {
+  --riffle-ink: #f1effb;
+  --riffle-text: #cfcae6;
+  --riffle-muted: #a29cc4;
+  --riffle-faint: #77729a;
+  --riffle-border: rgba(255, 255, 255, 0.12);
+  --riffle-surface: #17142b;
+  --riffle-navy: #7c4dff;
+  --riffle-navy-soft: #6a3cf0;
+  --bs-body-color: var(--riffle-text);
+  --bs-secondary-color: var(--riffle-muted);
+  --bs-border-color: var(--riffle-border);
+  --web-bg: #0b0a14;
+  --web-grid: rgba(255, 255, 255, 0.07);
+  --web-glow-a: rgba(255, 77, 141, 0.16);
+  --web-glow-b: rgba(90, 120, 255, 0.18);
+  --web-edge: #8d88ad;
+  --web-halo: #0b0a14;
+  --web-hover: rgba(255, 255, 255, 0.08);
+  --web-line: rgba(255, 255, 255, 0.12);
+  --web-panel: rgba(23, 20, 43, 0.85);
+  --web-panel-hover: rgba(35, 30, 62, 0.95);
+  --web-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --web-pop-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+  --web-accent-text: #b9a4ff;
+  --web-pink-text: #ff8cbd;
+  color-scheme: dark;
 }
 
 .panel-card {
-  border: 1px solid var(--riffle-border);
+  border: 1px solid var(--web-line);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(20, 35, 90, 0.07);
+  background: var(--web-panel);
+  box-shadow: var(--web-panel-shadow);
 }
 .dot {
   display: inline-block;
@@ -528,7 +575,7 @@ onBeforeUnmount(() => {
 }
 .search-card:focus-within {
   border-color: var(--riffle-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.14);
 }
 .search-card input {
   flex: 1;
@@ -541,6 +588,7 @@ onBeforeUnmount(() => {
 .search-results {
   margin: 0.4rem 0 0;
   padding: 0.3rem;
+  background: var(--riffle-surface);
   animation: pop 0.15s ease;
 }
 .search-results button {
@@ -557,7 +605,7 @@ onBeforeUnmount(() => {
   text-align: left;
 }
 .search-results button:hover {
-  background: #eef1fb;
+  background: rgba(124, 77, 255, 0.07);
 }
 .search-results span {
   flex: 1;
@@ -659,7 +707,7 @@ onBeforeUnmount(() => {
 .filter-count {
   padding: 0.12rem 0.55rem;
   border-radius: 999px;
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-navy);
   font-size: 0.72rem;
   font-weight: 800;
@@ -712,7 +760,7 @@ onBeforeUnmount(() => {
   min-width: 1.6rem;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background: #f1f3fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-muted);
   font-size: 0.72rem;
   font-weight: 700;
@@ -720,7 +768,7 @@ onBeforeUnmount(() => {
 }
 .genre-pill.is-active {
   border-color: var(--riffle-border);
-  background: #f8f9fd;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-ink);
 }
 .genre-pill.is-active .genre-pill__dot {
@@ -752,9 +800,9 @@ onBeforeUnmount(() => {
   gap: 0.8rem;
   width: min(420px, calc(100% - 24px));
   padding: 1rem 1.1rem;
-  border: 1px solid #ffc9dc;
+  border: 1px solid rgba(255, 77, 141, 0.4);
   border-radius: 16px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 16px 40px rgba(20, 35, 90, 0.22);
   transform: translateX(-50%);
 }
@@ -765,8 +813,8 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #ffe6ee;
-  color: #c2185b;
+  background: rgba(255, 77, 141, 0.18);
+  color: var(--web-pink-text);
 }
 .nudge strong {
   color: var(--riffle-ink);
@@ -782,7 +830,7 @@ onBeforeUnmount(() => {
 }
 .nudge-button {
   padding: 0.45rem 0.9rem;
-  border: 1.5px solid var(--riffle-navy);
+  border: 1.5px solid #7c4dff;
   border-radius: 10px;
   color: var(--riffle-navy);
   font-size: 0.85rem;
@@ -790,7 +838,7 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 .nudge-button--primary {
-  background: var(--riffle-navy);
+  background: #7c4dff;
   color: #fff;
 }
 .nudge-close {
@@ -842,11 +890,12 @@ onBeforeUnmount(() => {
   transition: background 0.15s, transform 0.15s, border-color 0.15s;
 }
 .pill-button:hover {
-  background: #f1f3fb;
+  background: var(--web-panel-hover);
   transform: translateY(-1px);
 }
 .pill-button.is-on {
-  border-color: var(--riffle-navy);
+  border-color: #7c4dff;
+  color: var(--web-accent-text);
 }
 
 .recommended {
@@ -855,7 +904,7 @@ onBeforeUnmount(() => {
   max-height: calc(100vh - var(--navbar-height) - 150px);
   overflow-y: auto;
   padding: 1.3rem 1.4rem;
-  box-shadow: 0 14px 40px rgba(20, 35, 90, 0.16);
+  box-shadow: 0 14px 40px rgba(60, 40, 140, 0.14);
 }
 .recommended h2 {
   margin: 0 0 0.5rem;
@@ -879,7 +928,7 @@ onBeforeUnmount(() => {
   color: var(--riffle-muted);
 }
 .guide-close:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-ink);
 }
 .recommended-list {
@@ -901,7 +950,7 @@ onBeforeUnmount(() => {
   transition: background 0.12s, transform 0.12s;
 }
 .recommended-row:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   transform: translateX(2px);
 }
 .recommended-avatar {
@@ -1044,7 +1093,7 @@ onBeforeUnmount(() => {
     height: 34px;
     border: 0;
     border-radius: 50%;
-    background: #fff;
+    background: var(--riffle-surface);
     color: var(--riffle-ink);
   }
 

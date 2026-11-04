@@ -349,7 +349,7 @@ function quoteText(message) {
   overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
 
@@ -368,7 +368,7 @@ function quoteText(message) {
   margin: 1rem;
   padding: 0.6rem 1rem;
   border-radius: 999px;
-  background: #eef0f8;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-muted);
 }
 .search-box:focus-within {
@@ -399,10 +399,10 @@ function quoteText(message) {
   transition: background 0.15s;
 }
 .conversation:hover {
-  background: #f6f7fc;
+  background: var(--riffle-surface-soft);
 }
 .conversation.is-current {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .conversation-text {
   display: flex;
@@ -506,7 +506,7 @@ function quoteText(message) {
   transition: background 0.15s;
 }
 .view-profile:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 
 .thread {
@@ -603,7 +603,7 @@ function quoteText(message) {
   padding: 0 0.35rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   font-size: 0.85rem;
   box-shadow: var(--riffle-shadow-sm);
 }
@@ -653,7 +653,7 @@ function quoteText(message) {
   color: var(--riffle-muted);
 }
 .message-actions button:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-ink);
 }
 .message-time {
@@ -672,7 +672,7 @@ function quoteText(message) {
   padding: 0.25rem 0.4rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow);
   animation: pop 0.15s ease;
 }
@@ -705,7 +705,7 @@ function quoteText(message) {
   margin: 0 1.25rem;
   padding: 0.45rem 0.9rem;
   border-radius: 12px 12px 0 0;
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-muted);
   font-size: 0.85rem;
 }
@@ -733,7 +733,7 @@ function quoteText(message) {
 }
 .composer-box:focus-within {
   border-color: var(--riffle-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.12);
 }
 .composer-box > input[type='text'] {
   flex: 1;
@@ -753,7 +753,7 @@ function quoteText(message) {
   font-size: 1.1rem;
 }
 .tool-button:hover:not(:disabled) {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-ink);
 }
 .tool-button:disabled {
@@ -773,7 +773,7 @@ function quoteText(message) {
   padding: 0.5rem;
   border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow);
   animation: pop 0.15s ease;
 }
@@ -786,7 +786,7 @@ function quoteText(message) {
   font-size: 1.25rem;
 }
 .emoji-panel button:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .send-button {
   flex: none;

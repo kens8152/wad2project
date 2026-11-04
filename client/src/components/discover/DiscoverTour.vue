@@ -504,7 +504,7 @@ onBeforeUnmount(() => {
   width: min(360px, calc(100vw - 24px));
   padding: 1.1rem 1.3rem 1.05rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 24px 60px rgba(8, 14, 40, 0.4);
   will-change: transform;
   transition: opacity 0.3s;

@@ -200,10 +200,10 @@ onBeforeUnmount(() => {
   max-height: calc(100% - 250px);
   overflow-y: auto;
   padding: 20px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 18px;
-  background-color: white;
-  color: #14234b;
+  background-color: var(--riffle-surface);
+  color: var(--riffle-ink);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -223,14 +223,14 @@ onBeforeUnmount(() => {
 .close-button {
   border: none;
   background-color: transparent;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 28px;
   cursor: pointer;
 }
 
 .recommendation-subtitle {
   margin: 8px 0 18px;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 14px;
 }
 
@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 12px;
   padding: 15px 0;
-  border-bottom: 1px solid #e0e5f0;
+  border-bottom: 1px solid var(--riffle-border);
 }
 
 .song-artwork {
@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
 
 .song-title {
   display: block;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-weight: bold;
   text-decoration: none;
 }
@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
 .song-details small {
   display: block;
   margin-top: 3px;
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 .song-details .song-genre {
@@ -307,7 +307,7 @@ onBeforeUnmount(() => {
   padding: 10px 15px;
   border: none;
   border-radius: 20px;
-  background-color: #14234b;
+  background-color: #7c4dff;
   color: white;
   font-size: 13px;
   text-decoration: none;

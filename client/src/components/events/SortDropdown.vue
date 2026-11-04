@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
   padding: 0.5rem 0.9rem 0.5rem 0.8rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.92rem;
   box-shadow: var(--riffle-shadow-sm);
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
 }
 .sort-dropdown__button.is-open {
   border-color: var(--riffle-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.15);
 }
 .sort-dropdown__badge {
   flex: none;
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
   width: 3px;
   height: 100%;
   border-radius: 2px;
-  background: #fff;
+  background: var(--riffle-surface);
   transform: scaleY(0.4);
   transform-origin: bottom;
 }
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
   list-style: none;
   border: 1px solid var(--riffle-border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 14px 34px rgba(20, 35, 90, 0.16);
 }
 .sort-dropdown__option {

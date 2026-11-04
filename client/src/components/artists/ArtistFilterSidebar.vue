@@ -86,7 +86,7 @@ function apply() {
   gap: 0.6rem;
   padding: 0.2rem 0.4rem 0.2rem 0.9rem;
   border-radius: 999px;
-  background: #eef0f8;
+  background: var(--riffle-surface-soft);
   color: var(--riffle-muted);
 }
 .filters__search input {
@@ -181,7 +181,7 @@ function apply() {
   z-index: 5;
   margin: 0.5rem -1rem -0.75rem;
   padding: 0.5rem 1rem 0.45rem;
-  background: #fff;
+  background: var(--riffle-surface);
   border-top: 1px solid var(--riffle-border);
   border-radius: 0 0 var(--riffle-radius) var(--riffle-radius);
   box-shadow: 0 -8px 16px rgba(20, 35, 90, 0.05);

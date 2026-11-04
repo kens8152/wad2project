@@ -1081,14 +1081,14 @@ onMounted(async () => {
   bottom: 20px;
   z-index: 20;
   padding: 0.55rem 1.1rem;
-  border: 1px solid #dfe3ef;
-  background: #fff;
-  color: #14234b;
+  border: 1px solid var(--riffle-border);
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
   font-weight: 700;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
 .finish-early:hover:not(:disabled) {
-  background: #14234b;
+  background: #7c4dff;
   color: #fff;
   transform: translateY(-2px);
 }
@@ -1102,7 +1102,7 @@ onMounted(async () => {
 .finish-card {
   width: min(640px, 100%);
   padding: 2rem 1.75rem;
-  border: 1px solid #e6e9f3;
+  border: 1px solid var(--riffle-border);
   border-radius: 1.5rem;
   background:
     radial-gradient(ellipse at 0% 0%, rgba(238, 214, 246, 0.7), transparent 55%),
@@ -1127,14 +1127,14 @@ onMounted(async () => {
 }
 .finish-title {
   margin: 0 0 0.5rem;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 800;
 }
 .finish-sub {
   margin: 0 auto 1.4rem;
   max-width: 480px;
-  color: #5a6788;
+  color: var(--riffle-muted);
 }
 .finish-stats {
   display: grid;
@@ -1146,16 +1146,16 @@ onMounted(async () => {
   display: grid;
   gap: 0.1rem;
   padding: 0.8rem 0.5rem;
-  border: 1px solid #e6e9f3;
+  border: 1px solid var(--riffle-border);
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.85);
-  color: #5a6788;
+  background: color-mix(in srgb, var(--riffle-surface) 85%, transparent);
+  color: var(--riffle-muted);
 }
 .finish-stat i {
   font-size: 1.1rem;
 }
 .finish-stat strong {
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 1.7rem;
   line-height: 1.1;
 }
@@ -1191,7 +1191,7 @@ onMounted(async () => {
   justify-content: center;
   gap: 0.4rem 1rem;
   margin: 0.6rem 0 0;
-  color: #5a6788;
+  color: var(--riffle-muted);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -1203,7 +1203,7 @@ onMounted(async () => {
   border-radius: 50%;
 }
 .taste-mix-legend b {
-  color: #14234b;
+  color: var(--riffle-ink);
 }
 
 /* the liked artists */
@@ -1219,11 +1219,11 @@ onMounted(async () => {
   align-items: center;
   gap: 0.7rem;
   padding: 0.5rem 0.75rem 0.5rem 0.5rem;
-  border: 1px solid #e6e9f3;
+  border: 1px solid var(--riffle-border);
   border-left: 4px solid var(--accent, #ff7ab8);
   border-radius: 0.9rem;
-  background: #fff;
-  color: #14234b;
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
   text-decoration: none;
   transition: transform 0.15s, box-shadow 0.15s;
   animation: chip-in 0.45s ease-out backwards;
@@ -1252,7 +1252,7 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .finish-artist-text small {
-  color: #5a6788;
+  color: var(--riffle-muted);
 }
 .finish-heart {
   color: #e0245e;

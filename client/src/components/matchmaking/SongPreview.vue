@@ -140,18 +140,18 @@ onBeforeUnmount(() => {
 <style scoped>
 /* Song row */
 .song-row {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: color-mix(in srgb, var(--riffle-surface) 10%, transparent);
   font-size: 0.875em;
   height: 2.25em;
   line-height: 2.25em;
 }
 .song-row:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: color-mix(in srgb, var(--riffle-surface) 20%, transparent);
 }
 
 /* Player */
 .song-player {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: color-mix(in srgb, var(--riffle-surface) 15%, transparent);
   height: 64px;
 }
 .song-art {

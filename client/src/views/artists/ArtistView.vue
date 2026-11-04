@@ -49,7 +49,7 @@ function openArtist(artist) {
       <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
         <!-- Match with artists -->
         <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle match-trigger text-nowrap">
-          <MatchCardsIcon fill="#0c1e4a" class="me-2" /> I'm feeling lucky
+          <MatchCardsIcon class="me-2" /> I'm feeling lucky
         </RouterLink>
         <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
       </div>
@@ -150,7 +150,7 @@ function openArtist(artist) {
   padding: 0.75rem 1rem;
   border: 1px solid var(--riffle-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--riffle-surface);
   font-weight: 700;
   color: var(--riffle-ink);
 }
@@ -192,7 +192,7 @@ function openArtist(artist) {
   padding: 2rem;
   text-align: center;
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   border: 1px dashed var(--riffle-border);
 }
 

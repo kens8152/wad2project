@@ -291,7 +291,7 @@ const emptyMessage = computed(() => {
   padding: 2rem;
   text-align: center;
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   border: 1px dashed var(--riffle-border);
 }
 
@@ -355,7 +355,7 @@ const emptyMessage = computed(() => {
   gap: 0.4rem;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;
@@ -386,7 +386,7 @@ const emptyMessage = computed(() => {
   padding: 0.75rem 1.1rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--riffle-surface) 18%, transparent);
   backdrop-filter: blur(8px);
   color: #fff;
   font-weight: 700;
@@ -394,7 +394,7 @@ const emptyMessage = computed(() => {
   transition: background 0.15s, transform 0.15s;
 }
 .glass-pill:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--riffle-surface) 30%, transparent);
   transform: translateY(-1px);
 }
 .glass-pill[aria-pressed='true'] .bi-heart-fill {
@@ -498,7 +498,7 @@ const emptyMessage = computed(() => {
   min-width: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #eef0f8;
+  background: var(--riffle-surface-soft);
   font-size: 0.75rem;
   line-height: 22px;
   text-align: center;
@@ -514,7 +514,7 @@ const emptyMessage = computed(() => {
   color: var(--riffle-muted);
   border: 1px dashed var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   min-height: 400px;
   display: flex;
   align-items: center;

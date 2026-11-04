@@ -651,7 +651,7 @@ async function importSpotifyGenres() {
   max-width: 1100px;
   margin: 0 auto;
   padding: 35px 0;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 16px;
 }
 
@@ -668,7 +668,7 @@ async function importSpotifyGenres() {
 }
 
 .page-heading p {
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 
@@ -680,7 +680,7 @@ async function importSpotifyGenres() {
   gap: 12px;
   height: 100%;
   padding: 20px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 15px;
 }
 
@@ -697,14 +697,14 @@ async function importSpotifyGenres() {
 .connection-box p {
   font-size: 13px;
   margin: 0;
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 .connect-button {
   padding: 9px 18px;
   border: none;
   border-radius: 25px;
-  background-color: #14234b;
+  background-color: #7c4dff;
   color: white;
   font-size: 13px;
 }
@@ -726,9 +726,9 @@ async function importSpotifyGenres() {
 .preference-box {
   height: 100%;
   padding: 20px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 15px;
-  background-color: white;
+  background-color: var(--riffle-surface);
 }
 
 .preference-box h2 {
@@ -738,7 +738,7 @@ async function importSpotifyGenres() {
 }
 
 .preference-box p {
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 14px;
 }
 
@@ -754,9 +754,9 @@ async function importSpotifyGenres() {
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
-  border: 1px solid #d8deeb;
+  border: 1px solid var(--riffle-border);
   border-radius: 25px;
-  background-color: white;
+  background-color: var(--riffle-surface);
   font-size: 14px;
   cursor: pointer;
 }
@@ -782,10 +782,10 @@ async function importSpotifyGenres() {
   width: 100%;
   margin-top: 8px;
   padding: 12px;
-  border: 1px solid #d8deeb;
+  border: 1px solid var(--riffle-border);
   border-radius: 10px;
   background-color: #f8f9fc;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 15px;
   font-family: inherit;
 }
@@ -799,7 +799,7 @@ async function importSpotifyGenres() {
   gap: 15px;
   margin-top: 5px;
   padding: 20px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 15px;
   background-color: #f3efff;
 }
@@ -813,7 +813,7 @@ async function importSpotifyGenres() {
 .taste-summary p {
   font-size: 13px;
   margin: 0;
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 .selected-genres {
@@ -824,9 +824,9 @@ async function importSpotifyGenres() {
 
 .genre-tag {
   padding: 8px 12px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 25px;
-  background-color: white;
+  background-color: var(--riffle-surface);
   font-size: 13px;
 }
 
@@ -840,20 +840,20 @@ async function importSpotifyGenres() {
   padding: 12px 40px;
   border: none;
   border-radius: 25px;
-  background-color: #14234b;
+  background-color: #7c4dff;
   color: white;
   font-size: 16px;
   cursor: pointer;
 }
 
 .next-button:hover {
-  background-color: #304779;
+  background-color: #6a3cf0;
 }
 
 .selected-song-section {
   margin-top: 25px;
   padding-top: 20px;
-  border-top: 1px solid #e0e5f0;
+  border-top: 1px solid var(--riffle-border);
 }
 
 .selected-head {
@@ -887,8 +887,8 @@ async function importSpotifyGenres() {
   padding: 26px 16px;
   border: 1.5px dashed #d8ccef;
   border-radius: 16px;
-  background: #faf8ff;
-  color: #64708a;
+  background: var(--riffle-surface-soft);
+  color: var(--riffle-muted);
   text-align: center;
 }
 
@@ -898,7 +898,7 @@ async function importSpotifyGenres() {
 }
 
 .selected-empty strong {
-  color: #14234b;
+  color: var(--riffle-ink);
 }
 
 /* the added songs, in the same card style as the search results */
@@ -906,14 +906,14 @@ async function importSpotifyGenres() {
   list-style: none;
   margin: 0;
   padding: 4px 14px;
-  border: 1px solid #e6e9f3;
+  border: 1px solid var(--riffle-border);
   border-radius: 16px;
-  background: #f8f9fd;
+  background: var(--riffle-surface-soft);
 }
 
 .selected-song-item {
   display: flow-root; /* keeps the player's bottom space inside the block, so the line stays right below the player */
-  border-bottom: 1px solid #e6e9f3;
+  border-bottom: 1px solid var(--riffle-border);
 }
 
 .selected-song-item:last-child {
@@ -948,7 +948,7 @@ async function importSpotifyGenres() {
 
 .selected-song-info small {
   margin-top: 3px;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 12px;
 }
 
@@ -959,9 +959,9 @@ async function importSpotifyGenres() {
   gap: 6px;
   min-height: 40px;
   padding: 8px 12px;
-  border: 1px solid #e3d9d9;
+  border: 1px solid var(--riffle-border);
   border-radius: 12px;
-  background-color: white;
+  background-color: var(--riffle-surface);
   color: #8a3b3b;
   font-size: 12px;
   font-weight: 700;
@@ -1173,9 +1173,9 @@ button:focus-visible {
 .search-results {
   margin-top: 20px;
   padding: 14px;
-  border: 1px solid #e6e9f3;
+  border: 1px solid var(--riffle-border);
   border-radius: 16px;
-  background: #f8f9fd;
+  background: var(--riffle-surface-soft);
 }
 
 /* Style the results heading; !important overrides competing normal font-size rules. */
@@ -1207,7 +1207,7 @@ button:focus-visible {
    and place a separator beneath the complete item. */
 .song-result-item {
   display: flow-root;
-  border-bottom: 1px solid #e6e9f3;
+  border-bottom: 1px solid var(--riffle-border);
 }
 
 
@@ -1300,7 +1300,7 @@ button:focus-visible {
 /* Style the artist names as smaller, muted text beneath the title. */
 .result-info small {
   margin-top: 3px;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 12px;
 }
 
@@ -1334,7 +1334,7 @@ button:focus-visible {
   padding: 8px 10px;
   border: 1px solid #d8ccef;
   border-radius: 12px;
-  background: white;
+  background: var(--riffle-surface);
   color: #513ba0;
   font-size: 12px;
   font-weight: 700;

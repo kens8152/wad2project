@@ -75,7 +75,7 @@ onBeforeUnmount(() => recognition?.abort())
   padding: 0.2rem 0.4rem 0.2rem 1rem;
   border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 4px 16px rgba(20, 35, 90, 0.07);
   color: var(--riffle-muted);
   transition: box-shadow 0.15s, border-color 0.15s;

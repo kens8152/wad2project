@@ -77,9 +77,9 @@ const pos = (v) => `${((v - props.min) / (props.max - props.min)) * 100}%`
   height: var(--thumb);
   margin-top: calc((var(--track) - var(--thumb)) / 2);
   border-radius: 50%;
-  background: #fff;
+  background: var(--riffle-surface);
   border: 2px solid var(--riffle-blue);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 6px rgba(124, 77, 255, 0.3);
 }
 .range-slider__input::-moz-range-track {
   height: var(--track);
@@ -95,9 +95,9 @@ const pos = (v) => `${((v - props.min) / (props.max - props.min)) * 100}%`
   width: calc(var(--thumb) - 4px);
   height: calc(var(--thumb) - 4px);
   border-radius: 50%;
-  background: #fff;
+  background: var(--riffle-surface);
   border: 2px solid var(--riffle-blue);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 6px rgba(124, 77, 255, 0.3);
 }
 
 .range-slider__ticks {

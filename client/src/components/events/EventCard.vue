@@ -66,7 +66,7 @@ const props = defineProps({
   padding: 4px 8px;
   text-align: center;
   line-height: 1.15;
-  background: #fff;
+  background: var(--riffle-surface);
   border: 2px solid;
   border-radius: 10px;
 }
@@ -89,7 +89,7 @@ const props = defineProps({
   position: absolute;
   left: 10px;
   bottom: 10px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;

@@ -184,6 +184,7 @@ async function onShare() {
 </script>
 
 <template>
+  <div class="events-detail-page">
   <div class="container-xxl event-page">
     <!-- loading -->
     <div v-if="data.loading.value && !event" class="event-page__state">
@@ -333,9 +334,14 @@ async function onShare() {
       <DiscoverTour v-if="tourOpen" label="Event" :steps="tourSteps" @step="onTourStep" @finish="endTour" @skip="endTour" />
     </template>
   </div>
+  </div>
 </template>
 
 <style scoped>
+.events-detail-page {
+  flex-grow: 1;
+  background: var(--riffle-glow);
+}
 .event-page {
   padding-top: 1.25rem;
   padding-bottom: 3rem;
@@ -391,7 +397,7 @@ async function onShare() {
   padding: 0.5rem 0.95rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--riffle-surface) 16%, transparent);
   backdrop-filter: blur(6px);
   color: #fff;
   font-size: 0.88rem;
@@ -401,7 +407,7 @@ async function onShare() {
 }
 .event-guide-btn:hover,
 .event-guide-btn.is-on {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--riffle-surface) 30%, transparent);
 }
 .event-guide-btn:hover {
   transform: translateY(-1px);
@@ -611,7 +617,7 @@ async function onShare() {
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--riffle-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--riffle-surface);
 }
 .tile__icon,
 .side-head__icon {

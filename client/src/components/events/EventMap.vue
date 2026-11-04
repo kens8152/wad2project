@@ -412,7 +412,7 @@ watch(
   height: 100%;
   min-height: 420px;
   border-radius: var(--riffle-radius);
-  background: #e9edf4;
+  background: var(--riffle-surface-soft);
   user-select: none;
 }
 
@@ -422,7 +422,7 @@ watch(
   inset: 0;
   z-index: 0;
   isolation: isolate;
-  background: #e9edf4;
+  background: var(--riffle-surface-soft);
 }
 
 /* the markers sit over the map; empty space lets mouse and touch through to the map below */
@@ -521,7 +521,7 @@ watch(
   height: 8px;
   margin: -4px 0 0 -4px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--riffle-surface);
 }
 .event-map__marker.is-active .event-map__pin {
   box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--pin), 0 3px 10px rgba(0, 0, 0, 0.45); /* a white ring and a ring in the genre colour */
@@ -537,7 +537,7 @@ watch(
   transform-origin: 50% 100%;
   padding: 0.38rem 0.85rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.82rem;
   font-weight: 700;
@@ -556,7 +556,7 @@ watch(
   height: 10px;
   margin-left: -5px;
   border-radius: 2px;
-  background: #fff;
+  background: var(--riffle-surface);
   transform: rotate(45deg);
 }
 @keyframes label-pop {
@@ -579,7 +579,7 @@ watch(
   min-width: 150px;
   padding: 0.45rem 0.65rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
+  background: color-mix(in srgb, var(--riffle-surface) 96%, transparent);
   box-shadow: var(--riffle-shadow);
   cursor: default;
 }
@@ -638,14 +638,14 @@ watch(
   height: 44px;
   border: 0;
   border-radius: 12px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow);
   color: var(--riffle-ink);
   font-size: 1.2rem;
   transition: background 0.15s, color 0.15s;
 }
 .event-map__locate:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .event-map__locate.is-on {
   color: var(--riffle-blue);
@@ -663,7 +663,7 @@ watch(
   flex-direction: column;
   border-radius: 12px;
   overflow: hidden;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow);
 }
 .event-map__zoom button {
@@ -678,7 +678,7 @@ watch(
   border-top: 1px solid var(--riffle-border);
 }
 .event-map__zoom button:hover:not(:disabled) {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .event-map__zoom button:disabled {
   color: var(--riffle-faint);

@@ -145,7 +145,7 @@ async function login() {
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
 
-  color: #14234b;
+  color: var(--riffle-ink);
 }
 
 /* * selects all elements inside the page.
@@ -170,9 +170,9 @@ async function login() {
   /* Let padding grow with the screen width, between 24px and 40px. */
   padding: clamp(24px, 5vw, 40px);
 
-  border: 1px solid #e3e5f1;
+  border: 1px solid var(--riffle-border);
   border-radius: 28px;
-  background: #fff;
+  background: var(--riffle-surface);
 
   /* Add a soft shadow beneath the card. */
   box-shadow: 0 16px 50px rgba(20, 35, 75, 0.07);
@@ -222,7 +222,7 @@ async function login() {
 
 .login-heading h1 {
   margin: 0 0 10px;
-  color: #14234b;
+  color: var(--riffle-ink);
 
   /* Scale the heading between 28px and 34px depending on screen width. */
   font-size: clamp(28px, 5vw, 34px);
@@ -235,7 +235,7 @@ async function login() {
 .login-heading p {
   max-width: 300px;
   margin: 0 auto;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -265,7 +265,7 @@ async function login() {
   /* Move the icon up by half its own height to centre it vertically. */
   transform: translateY(-50%);
 
-  color: #7b85a1;
+  color: var(--riffle-muted);
 
   /* Let clicks pass through the decorative icon to the input underneath. */
   pointer-events: none;
@@ -280,8 +280,8 @@ async function login() {
 
   border: 1px solid #dce1ee;
   border-radius: 14px;
-  background: #f8f9fd;
-  color: #14234b;
+  background: var(--riffle-surface-soft);
+  color: var(--riffle-ink);
   font-family: inherit;
   font-size: 16px;
 
@@ -291,7 +291,7 @@ async function login() {
 
 /* Style the hint text displayed inside empty inputs. */
 .input-wrap .form-control::placeholder {
-  color: #7b85a1;
+  color: var(--riffle-muted);
   font-size: 14px;
 }
 
@@ -299,7 +299,7 @@ async function login() {
 .input-wrap .form-control:focus {
   border-color: #8b73df;
   outline: none;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 0 0 4px rgba(112, 84, 220, 0.12);
 }
 
@@ -322,7 +322,7 @@ async function login() {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #64708a;
+  color: var(--riffle-muted);
   cursor: pointer;
 }
 
@@ -364,7 +364,7 @@ async function login() {
   padding: 12px 20px;
   border: none;
   border-radius: 14px;
-  background: #14234b;
+  background: #7c4dff;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
@@ -384,7 +384,7 @@ async function login() {
 
 .signup-link {
   margin: 22px 0 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 13px;
   line-height: 1.8;
   text-align: center;
@@ -402,7 +402,7 @@ async function login() {
   align-items: center;
   gap: 12px;
   margin: 24px 0 14px;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 11px;
 }
 
@@ -426,9 +426,9 @@ async function login() {
   gap: 8px;
   min-height: 48px;
   padding: 10px 16px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -443,7 +443,7 @@ async function login() {
   flex-wrap: wrap;
   gap: 6px;
   margin: 24px 0 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 11px;
   text-align: center;
 }

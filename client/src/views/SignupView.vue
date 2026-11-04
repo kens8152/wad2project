@@ -170,7 +170,7 @@ async function createAccount() {
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
-  color: #14234b;
+  color: var(--riffle-ink);
 }
 
 /* Apply border-box to all elements inside the signup page, including their before and after pseudo-elements, so padding and borders are included in their widths. */
@@ -186,9 +186,9 @@ async function createAccount() {
   max-width: 480px;
   overflow: hidden;
   padding: 40px;
-  border: 1px solid #e3e5f1;
+  border: 1px solid var(--riffle-border);
   border-radius: 28px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 16px 50px rgba(20, 35, 75, 0.07);
 }
 
@@ -232,7 +232,7 @@ async function createAccount() {
 
 .signup-heading h1 {
   margin: 0 0 10px;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -1px;
@@ -242,7 +242,7 @@ async function createAccount() {
 .signup-heading p {
   max-width: 310px;
   margin: 0 auto;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -267,7 +267,7 @@ async function createAccount() {
   top: 50%;
   left: 16px;
   transform: translateY(-50%);
-  color: #7b85a1;
+  color: var(--riffle-muted);
   pointer-events: none;
 }
 
@@ -277,22 +277,22 @@ async function createAccount() {
   padding: 12px 16px 12px 44px;
   border: 1px solid #dce1ee;
   border-radius: 14px;
-  background: #f8f9fd;
-  color: #14234b;
+  background: var(--riffle-surface-soft);
+  color: var(--riffle-ink);
   font-family: inherit;
   font-size: 16px;
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .input-wrap .form-control::placeholder {
-  color: #7b85a1;
+  color: var(--riffle-muted);
   font-size: 14px;
 }
 
 .input-wrap .form-control:focus {
   border-color: #8b73df;
   outline: none;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 0 0 4px rgba(112, 84, 220, 0.12);
 }
 
@@ -314,13 +314,13 @@ async function createAccount() {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #64708a;
+  color: var(--riffle-muted);
   cursor: pointer;
 }
 
 .field-hint {
   margin: 7px 0 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 12px;
 }
 
@@ -368,7 +368,7 @@ async function createAccount() {
   padding: 12px 20px;
   border: none;
   border-radius: 14px;
-  background: #14234b;
+  background: #7c4dff;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
@@ -385,7 +385,7 @@ async function createAccount() {
 
 .login-link {
   margin: 22px 0 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 13px;
   line-height: 1.8;
   text-align: center;
@@ -402,7 +402,7 @@ async function createAccount() {
   align-items: center;
   gap: 12px;
   margin: 24px 0 14px;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 11px;
 }
 
@@ -421,9 +421,9 @@ async function createAccount() {
   gap: 8px;
   min-height: 48px;
   padding: 10px 16px;
-  border: 1px solid #e0e5f0;
+  border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -437,7 +437,7 @@ async function createAccount() {
   flex-wrap: wrap;
   gap: 6px;
   margin: 24px 0 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 11px;
   text-align: center;
 }

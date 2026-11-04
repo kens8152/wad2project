@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
   right: 4px;
   padding: 0.3rem;
   font-size: 0.55rem;
-  background-color: rgba(255, 255, 255, 0.85);
+  background-color: color-mix(in srgb, var(--riffle-surface) 85%, transparent);
   border-radius: 50%;
   opacity: 1;
 }

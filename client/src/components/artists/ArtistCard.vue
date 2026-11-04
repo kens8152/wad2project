@@ -162,7 +162,7 @@ function handleHeartClick() {
   gap: 0.4rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;
@@ -185,7 +185,7 @@ function handleHeartClick() {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--riffle-surface);
   color: #ee4a4a;
   font-size: 1.1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);

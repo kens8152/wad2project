@@ -6,12 +6,14 @@ import { useNotificationsStore } from '@/stores/notifications'
 import { useMessagesStore } from '@/stores/messages'
 import { supabase } from '@/services/supabase'
 import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
+import { useTheme } from '@/composables/useTheme'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const notifications = useNotificationsStore()
 const messages = useMessagesStore()
+const { theme, toggleTheme } = useTheme()
 
 const user = computed(() => userStore.user)
 const logoutError = ref('')
@@ -112,6 +114,15 @@ async function logoutUser() {
           <MatchCardsIcon />
           <span class="match-btn__label">Match artists</span>
         </RouterLink>
+        <button
+          class="riffle-nav__icon-btn"
+          type="button"
+          :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          :title="theme === 'dark' ? 'Light mode' : 'Dark mode'"
+          @click="toggleTheme"
+        >
+          <i class="bi" :class="theme === 'dark' ? 'bi-sun' : 'bi-moon-stars'"></i>
+        </button>
 
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
@@ -184,7 +195,7 @@ async function logoutUser() {
   top: 0;
   z-index: 1030;
   height: var(--navbar-height);
-  background: rgba(255, 255, 255, 0.92);
+  background: color-mix(in srgb, var(--riffle-surface) 92%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--riffle-border);
   overflow: visible;
@@ -196,6 +207,9 @@ async function logoutUser() {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+:root[data-theme='dark'] .riffle-nav__waves {
+  opacity: 0.3;
 }
 
 .riffle-nav__inner {
@@ -274,12 +288,12 @@ async function logoutUser() {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--riffle-surface) 80%, transparent);
   color: var(--riffle-ink);
   font-size: 1.15rem;
 }
 .riffle-nav__icon-btn:hover {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .riffle-nav__icon-btn {
   position: relative;
@@ -304,14 +318,14 @@ async function logoutUser() {
   height: 40px;
   padding: 0 11px;
   border-radius: 12px;
-  background: #1d2b64;
+  background: #7c4dff;
   color: #fff;
   text-decoration: none;
   box-shadow: 0 4px 12px rgba(29, 43, 100, 0.3);
   transition: background 0.2s;
 }
 .match-btn:hover {
-  background: #26388a;
+  background: #6a3cf0;
   color: #fff;
 }
 
@@ -359,7 +373,7 @@ async function logoutUser() {
   padding: 0.35rem 0;
   border: 1px solid var(--riffle-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 12px 32px rgba(20, 35, 90, 0.16);
   transform-origin: top right;
   animation: menu-pop 0.16s ease;
@@ -397,7 +411,7 @@ async function logoutUser() {
   transition: background 0.12s;
 }
 .riffle-nav__menu-item:hover {
-  background: #f1f3fb;
+  background: var(--riffle-surface-soft);
 }
 .riffle-nav__menu-divider {
   height: 1px;
@@ -457,9 +471,9 @@ async function logoutUser() {
     flex-direction: column;
     gap: 0;
     padding: 0.5rem 1.25rem 1rem;
-    background: #fff;
+    background: var(--riffle-glow);
     border-bottom: 1px solid var(--riffle-border);
-    box-shadow: var(--riffle-shadow);
+    box-shadow: 0 16px 40px rgba(60, 40, 140, 0.18);
     display: none;
   }
   .riffle-nav__links.is-open {
@@ -503,9 +517,9 @@ async function logoutUser() {
 }
 
 .nav-login {
-  border: 1px solid #cbd2e5;
-  background-color: rgba(255, 255, 255, 0.8);
-  color: #14234b;
+  border: 1px solid var(--riffle-border);
+  background-color: color-mix(in srgb, var(--riffle-surface) 80%, transparent);
+  color: var(--riffle-ink);
 }
 
 .nav-login:hover,
@@ -517,16 +531,16 @@ async function logoutUser() {
 
 .nav-signup {
   margin-left: 8px;
-  border: 1px solid #14234b;
-  background-color: #14234b;
+  border: 1px solid #7c4dff;
+  background-color: #7c4dff;
   color: white;
   box-shadow: 0 4px 12px rgba(20, 35, 75, 0.12);
 }
 
 .nav-signup:hover,
 .nav-signup:active {
-  border-color: #304779;
-  background-color: #304779;
+  border-color: #6a3cf0;
+  background-color: #6a3cf0;
   color: white;
 }
 

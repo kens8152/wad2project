@@ -89,7 +89,7 @@ const eventsLabel = computed(
 
 .link-card:hover {
   transform: translateY(-6px) scale(1.02);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 14%, var(--riffle-surface)), var(--riffle-surface) 65%);
   box-shadow:
     0 0 0 2px var(--genre),
     0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);
@@ -102,7 +102,7 @@ const eventsLabel = computed(
   bottom: 0;
   left: -60%;
   width: 45%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
   transform: skewX(-18deg);
   opacity: 0;
   pointer-events: none;
@@ -153,7 +153,7 @@ const eventsLabel = computed(
   min-width: 52px;
   padding: 0.25rem 0.5rem 0.3rem;
   border-radius: 10px;
-  background: #fff;
+  background: var(--riffle-surface);
   border: 2px solid var(--genre);
   line-height: 1.1;
 }
@@ -181,7 +181,7 @@ const eventsLabel = computed(
   gap: 0.4rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-ink, #1f2430);
   font-size: 0.8rem;
   font-weight: 700;
@@ -226,16 +226,16 @@ const eventsLabel = computed(
   font-weight: 700;
 }
 .chip--tag {
-  background: #ece9ff;
-  color: #5b45c9;
+  background: color-mix(in srgb, #7c4dff 16%, var(--riffle-surface));
+  color: color-mix(in srgb, #7c4dff 75%, var(--riffle-ink));
 }
 .chip--price {
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 20%, var(--riffle-surface));
   color: var(--genre);
 }
 .chip--going {
-  background: #e6efff;
-  color: #2d5fd0;
+  background: color-mix(in srgb, #2d5fd0 16%, var(--riffle-surface));
+  color: color-mix(in srgb, #2d5fd0 75%, var(--riffle-ink));
 }
 
 @media (prefers-reduced-motion: reduce) {

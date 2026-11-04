@@ -1,3 +1,23 @@
+.forum-page,
+.forum-dark {
+  --forum-line: var(--riffle-glow-line);
+  --forum-panel: color-mix(in srgb, var(--riffle-surface) 90%, transparent);
+  --forum-card: color-mix(in srgb, var(--riffle-surface) 92%, transparent);
+  --forum-active: #5b34e6;
+  --forum-shadow: var(--riffle-glow-shadow);
+  --forum-shadow-hover: 0 10px 28px rgba(60, 40, 140, 0.14);
+  --forum-glow: var(--riffle-glow);
+  color: var(--riffle-text);
+}
+:root[data-theme='dark'] :is(.forum-page, .forum-dark) {
+  --forum-active: #b9a4ff;
+  --forum-shadow-hover: 0 10px 28px rgba(124, 77, 255, 0.25);
+}
+.forum-page {
+  flex-grow: 1;
+  background: var(--forum-glow);
+}
+
 .forum-icon-btn {
   --bs-btn-color: var(--bs-secondary-color);
   --bs-btn-hover-color: var(--bs-secondary-color);
@@ -85,9 +105,10 @@ a.forum-tag:focus-visible {
   flex-grow: 1;
   min-width: 0;
   padding: 0.4rem;
-  border: 1px solid var(--riffle-border);
+  border: 1px solid var(--forum-line);
   border-radius: 14px;
-  background: var(--riffle-surface);
+  background: var(--forum-panel);
+  box-shadow: var(--forum-shadow);
   --forum-search-height: auto;
 }
 
@@ -97,5 +118,5 @@ a.forum-tag:focus-visible {
   z-index: 1020;
   padding-block: 0.75rem 0.5rem;
   margin-bottom: -0.5rem;
-  background: var(--bs-body-bg);
+  background: var(--forum-glow);
 }

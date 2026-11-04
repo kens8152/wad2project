@@ -31,7 +31,7 @@ defineProps({
   width: 100%;
   min-height: 2.5rem;
   padding: 0.2rem 0.4rem 0.2rem 0.9rem;
-  border: 1px solid var(--riffle-border);
+  border: 1px solid var(--forum-line, var(--riffle-border));
   border-radius: 10px;
   background: var(--riffle-surface);
   color: var(--riffle-muted);

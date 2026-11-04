@@ -86,7 +86,7 @@ function onSelect(item) {
 <template>
   <div v-if="isMobile && !collapsed" class="forumnav-backdrop" @click="toggleCollapsed"></div>
   <aside
-    class="forumnav flex-shrink-0 border-end border-bottom bg-body px-2 py-2"
+    class="forumnav flex-shrink-0 px-2 py-2"
     :class="{ 'is-collapsed': collapsed, 'is-peeking': collapsed && peek, 'is-hidden-mobile': collapsed && searchButtons > 0 }"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
@@ -153,7 +153,9 @@ function onSelect(item) {
     height: auto;
     overflow-y: auto;
     z-index: 1045;
-    box-shadow: var(--bs-box-shadow-lg);
+    border-right: 1px solid var(--forum-line, var(--riffle-glow-line));
+    background: var(--forum-glow, var(--riffle-glow));
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -161,7 +163,8 @@ function onSelect(item) {
   position: fixed;
   inset: var(--navbar-height, 0px) 0 0 0;
   z-index: 1044;
-  background: rgba(15, 31, 75, 0.25);
+  background: rgba(45, 25, 110, 0.18);
+  backdrop-filter: blur(3px);
 }
 
 @media (min-width: 992px) {
@@ -182,7 +185,9 @@ function onSelect(item) {
     width: var(--nav-wide);
     margin-right: calc(var(--nav-narrow) - var(--nav-wide));
     z-index: 1025;
-    box-shadow: var(--bs-box-shadow);
+    border-right: 1px solid var(--forum-line, var(--riffle-glow-line));
+    background: var(--forum-glow, var(--riffle-glow));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -193,10 +198,11 @@ function onSelect(item) {
 }
 
 .forumnav__item:hover {
-  background-color: var(--bs-secondary-bg);
+  background-color: rgba(124, 77, 255, 0.07);
 }
 .forumnav__item.is-active {
-  background-color: var(--bs-secondary-bg);
+  background-color: rgba(124, 77, 255, 0.2);
+  color: var(--forum-active, #5b34e6) !important;
   font-weight: 600;
 }
 .forumnav__item:focus-visible {

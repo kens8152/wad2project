@@ -4,7 +4,7 @@ defineProps({
   // Front card fill, same as the button background so the back card hides behind it
   fill: {
     type: String,
-    default: '#1d2b64',
+    default: '#7c4dff',
   },
 })
 </script>

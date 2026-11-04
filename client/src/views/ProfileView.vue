@@ -509,7 +509,7 @@ function startEditing() {
   overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: 20px;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
 .hero-banner {
@@ -604,7 +604,7 @@ function startEditing() {
   padding: 0.25rem 0.8rem;
   border: 1px solid var(--riffle-border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-muted);
   font-size: 0.82rem;
   font-weight: 600;
@@ -631,7 +631,7 @@ function startEditing() {
   padding: 1rem 1.2rem;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .stat-card:hover {
@@ -725,7 +725,7 @@ function startEditing() {
   padding: 1rem;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .artist-tile:hover {
@@ -842,7 +842,7 @@ function startEditing() {
   transition: background 0.15s;
 }
 .event-row:hover {
-  background: #f6f7fc;
+  background: var(--riffle-surface-soft);
 }
 .date-box {
   display: flex;
@@ -922,7 +922,7 @@ function startEditing() {
   padding: 2.5rem 1rem;
   border: 1px dashed var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
   color: var(--riffle-muted);
   text-align: center;
 }
@@ -940,7 +940,7 @@ function startEditing() {
   padding: 1.2rem 1.3rem;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: #fff;
+  background: var(--riffle-surface);
 }
 .side-card h2 {
   margin: 0 0 0.5rem;
@@ -1025,7 +1025,7 @@ function startEditing() {
   padding: 25px;
   border: 1px solid var(--riffle-border);
   border-radius: 15px;
-  background-color: white;
+  background-color: var(--riffle-surface);
 }
 
 .profile-box h2 {
@@ -1039,7 +1039,7 @@ function startEditing() {
 }
 
 .profile-box p {
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 .text-input {
@@ -1048,10 +1048,10 @@ function startEditing() {
   width: 100%;
   margin-top: 8px;
   padding: 12px;
-  border: 1px solid #d8deeb;
+  border: 1px solid var(--riffle-border);
   border-radius: 10px;
   background-color: #f8f9fc;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 16px;
   font-family: inherit;
 }
@@ -1076,7 +1076,7 @@ function startEditing() {
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
-  border: 1px solid #d8deeb;
+  border: 1px solid var(--riffle-border);
   border-radius: 25px;
   cursor: pointer;
 }
@@ -1092,7 +1092,7 @@ function startEditing() {
   padding: 10px 22px;
   border: none;
   border-radius: 25px;
-  background-color: #14234b;
+  background-color: #7c4dff;
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -1102,7 +1102,7 @@ function startEditing() {
 }
 
 .profile-button:hover {
-  background-color: #304779;
+  background-color: #6a3cf0;
   color: #fff;
   transform: translateY(-1px);
 }
@@ -1112,16 +1112,16 @@ function startEditing() {
   padding: 10px 22px;
   border: 1px solid #14234b;
   border-radius: 25px;
-  background-color: white;
-  color: #14234b;
+  background-color: var(--riffle-surface);
+  color: var(--riffle-ink);
   font-size: 16px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
 .cancel-button:hover {
-  background-color: #eef1fb;
-  color: #14234b;
+  background-color: var(--riffle-surface-soft);
+  color: var(--riffle-ink);
 }
 
 .actions {
@@ -1138,7 +1138,7 @@ function startEditing() {
 .selected-song-section {
   margin-top: 25px;
   padding-top: 20px;
-  border-top: 1px solid #e0e5f0;
+  border-top: 1px solid var(--riffle-border);
 }
 
 .selected-song-section h3 {
@@ -1187,15 +1187,15 @@ function startEditing() {
 .selected-song-info small {
   display: block;
   margin-top: 4px;
-  color: #64708a;
+  color: var(--riffle-muted);
 }
 
 .remove-song-button {
   padding: 8px 14px;
-  border: 1px solid #d8deeb;
+  border: 1px solid var(--riffle-border);
   border-radius: 20px;
-  background-color: white;
-  color: #14234b;
+  background-color: var(--riffle-surface);
+  color: var(--riffle-ink);
   cursor: pointer;
 }
 
@@ -1211,7 +1211,7 @@ function startEditing() {
 .selected-song-count {
   margin-top: 15px;
   margin-bottom: 0;
-  color: #64708a;
+  color: var(--riffle-muted);
   font-size: 14px;
 }
 
@@ -1439,7 +1439,7 @@ a:focus-visible {
   padding: 0.5rem 1.1rem;
   border: 2px solid #d6264f;
   border-radius: 999px;
-  background: #fff;
+  background: var(--riffle-surface);
   color: #d6264f;
   font-weight: 800;
   font-size: 0.9rem;
@@ -1466,7 +1466,7 @@ a:focus-visible {
   overflow-y: auto;
   padding: 1.75rem 1.5rem 1.5rem;
   border-radius: 1.25rem;
-  background: #fff;
+  background: var(--riffle-surface);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   text-align: left;
 }
@@ -1483,7 +1483,7 @@ a:focus-visible {
 }
 .reset-dialog h2 {
   margin: 0 0 0.5rem;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-size: 1.4rem;
   font-weight: 800;
 }
@@ -1494,12 +1494,12 @@ a:focus-visible {
 .reset-dialog ul {
   margin: 0 0 0.75rem;
   padding-left: 1.2rem;
-  color: #14234b;
+  color: var(--riffle-ink);
 }
 .reset-keep {
   padding: 0.6rem 0.8rem;
   border-radius: 0.75rem;
-  background: #f4f6fb;
+  background: var(--riffle-surface-soft);
   font-size: 0.9rem;
 }
 .reset-check {
@@ -1507,7 +1507,7 @@ a:focus-visible {
   align-items: center;
   gap: 0.5rem;
   margin: 0.9rem 0 1.1rem;
-  color: #14234b;
+  color: var(--riffle-ink);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1531,11 +1531,11 @@ a:focus-visible {
 }
 .reset-cancel {
   border: 1px solid var(--riffle-border);
-  background: #fff;
-  color: #14234b;
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
 }
 .reset-cancel:hover:not(:disabled) {
-  background: #eef1fb;
+  background: var(--riffle-surface-soft);
 }
 .reset-confirm {
   border: 0;

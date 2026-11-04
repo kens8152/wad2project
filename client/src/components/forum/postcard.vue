@@ -64,7 +64,7 @@ async function removePost() {
 </script>
 
 <template>
-  <article class="post-card card mx-3 border border-3">
+  <article class="post-card card mx-3">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-start mb-1">
         <p class="card-subtitle small text-body-secondary mb-0">
@@ -86,7 +86,7 @@ async function removePost() {
         </RouterLink>
       </h5>
 
-      <p v-if="post.content && !post.images?.length" class="card-text">{{ post.content }}</p>
+      <p v-if="post.content && !post.images?.length" class="card-text post-caption">{{ post.content }}</p>
 
       <PostImages :images="post.images ?? []" :max="4" class="mb-3" />
 
@@ -117,12 +117,19 @@ async function removePost() {
   </article>
 </template>
 <style scoped>
+.post-caption {
+  color: var(--riffle-muted);
+}
 .post-card {
-  background-color: var(--riffle-surface);
-  transition: background-color 0.2s ease;
+  border: 1px solid var(--forum-line, var(--riffle-border));
+  border-radius: 16px;
+  background-color: var(--forum-card, var(--riffle-surface));
+  box-shadow: var(--forum-shadow, none);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .post-card:hover,
 .post-card:has(.stretched-link:focus-visible) {
-  background-color: #f2f3f7;
+  transform: translateY(-2px);
+  box-shadow: var(--forum-shadow-hover, none);
 }
 </style>

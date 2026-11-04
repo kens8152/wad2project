@@ -58,7 +58,7 @@ const friendsLabel = computed(() => {
   width: 100%;
   overflow: hidden;
   border-radius: 12px;
-  background: #fff;
+  background: var(--riffle-surface);
   border-left: 4px solid var(--genre);
   box-shadow: 0 4px 14px rgba(20, 35, 90, 0.14);
   transition: transform 0.15s, box-shadow 0.15s;
