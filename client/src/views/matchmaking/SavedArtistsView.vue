@@ -1,17 +1,21 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getSavedArtists, getArtistDetails, removeSavedArtist } from '@/services/matchmakingApi';
+import { getArtistDetails } from '@/services/matchmakingApi';
+import { useSavedArtists } from '@/composables/artists/useSavedArtists';
 import { useUserStore } from '@/stores/user';
 import { useEventsStore } from '@/stores/events';
 import { buildArtists } from '@/utils/artists/artists';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
+import PageHeader from '@/components/layout/PageHeader.vue';
 import SortDropdown from '@/components/events/SortDropdown.vue';
+import ForumSearch from '@/components/forum/forumsearch.vue';
 import ArtistCard from '@/components/artists/ArtistCard.vue';
 
 const userStore = useUserStore();
 const eventsStore = useEventsStore();
 const router = useRouter();
+const { loadSaved, toggleSaved } = useSavedArtists();
 
 const SAVED_SORTS = [
   { value: 'recent', label: 'Recently saved', icon: 'bi-clock-history' },
@@ -69,7 +73,7 @@ async function loadSavedArtists() {
     // the cards show venues and events, which come from the events data (same as the Artists page)
     if (eventsStore.events.length === 0) await eventsStore.fetchEvents();
 
-    const rows = await getSavedArtists();
+    const rows = await loadSaved();
     const details = await getArtistDetails(rows.map(row => row.artist_id));
     const eventArtists = buildArtists(eventsStore.events);
 
@@ -103,7 +107,7 @@ async function unsave(artist) {
   savedArtists.value = savedArtists.value.filter(a => a.id !== artist.id);
 
   try {
-    await removeSavedArtist(artist.id);
+    await toggleSaved(artist.id);
   } catch (err) {
     console.error('Could not unsave artist', err);
     await loadSavedArtists();  // put the list back to what's really saved
@@ -116,28 +120,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="saved-page">
+  <div v-if="userStore.isLoggedIn" class="riffle-page-bg">
     <div class="container-xxl pt-3 pb-5">
       <!-- Header -->
-      <div class="mb-3">
-        <RouterLink :to="{ name: 'profile' }" class="small text-decoration-none">
-          <i class="bi bi-arrow-left"></i> Profile
-        </RouterLink>
-        <h1 class="page-title mt-1 mb-0">Saved artists</h1>
-        <p class="page-subtitle mb-0">
-          {{ savedArtists.length }} {{ savedArtists.length === 1 ? 'artist' : 'artists' }} saved to look at later
-        </p>
-      </div>
+      <PageHeader
+        title="Saved artists"
+        :subtitle="savedArtists.length + (savedArtists.length === 1 ? ' artist' : ' artists') + ' saved'"
+        :back-to="{ name: 'profile' }"
+        back-label="Profile"
+      />
 
       <!-- Search and sort -->
       <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-        <div class="filters-search flex-grow-1">
-          <i class="bi bi-search"></i>
-          <input v-model="search" type="search" placeholder="Search artists" />
-          <button v-if="search" type="button" class="filters-clear" @click="search = ''">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
+        <ForumSearch v-model="search" placeholder="Search saved artists" />
         <SortDropdown v-model="sortBy" :options="SAVED_SORTS" />
       </div>
 
@@ -188,71 +183,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Same background and title sizes as the Artists page */
-.saved-page {
-  flex-grow: 1;
-  background: var(--riffle-glow);
-}
-.page-title {
-  font-size: 2.3rem;
-  line-height: 1.1;
-}
-.page-subtitle {
-  margin-top: 0.2rem;
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--riffle-muted);
-}
-
 /* Same grid as the Artists page */
 .saved-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1.1rem;
-}
-
-/* Search box (same as the Artists page) */
-.filters-search {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.2rem 0.4rem 0.2rem 0.9rem;
-  border-radius: 999px;
-  background: var(--riffle-surface-soft);
-  color: var(--riffle-muted);
-}
-.filters-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  outline: none;
-  font-size: 1rem;
-  color: var(--riffle-ink);
-  padding: 0.35rem 0;
-}
-.filters-search input::placeholder {
-  color: var(--riffle-muted);
-}
-.filters-search:focus-within {
-  box-shadow: 0 0 0 2px var(--riffle-blue);
-}
-.filters-search input::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
-}
-.filters-clear {
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--riffle-muted);
-  font-size: 0.8rem;
-}
-.filters-clear:hover {
-  background: #fee2e2;
-  color: #dc2626;
 }
 </style>

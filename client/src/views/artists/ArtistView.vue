@@ -38,7 +38,7 @@ function openArtist(artist) {
 </script>
 
 <template>
-  <div class="artists-page">
+  <div class="riffle-page-bg">
     <div class="artists-shell container-xxl">
       <!-- Header: title on the left, sort dropdown on the right -->
       <header class="artists-shell__head">
@@ -118,11 +118,6 @@ function openArtist(artist) {
 
 <style scoped>
 /* ---------- page layout (same as the events page) ---------- */
-.artists-page {
-  flex-grow: 1;
-  background: var(--riffle-glow);
-}
-
 .artists-shell {
   padding-top: 1.1rem;
   padding-bottom: 2.5rem;

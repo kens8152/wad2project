@@ -207,6 +207,12 @@ button {
   }
 }
 
+/* Full-width page background with the pink and blue glow (Artists, matchmaking, Saved artists, Match history) */
+.riffle-page-bg {
+  flex-grow: 1;
+  background: var(--riffle-glow);
+}
+
 /* White card surface used across the events screens */
 .riffle-card {
   background: var(--riffle-surface);

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
 import { useUserStore } from '@/stores/user'
 import { toast } from '@/composables/useToast'
-import { getSavedArtists, addSavedArtist, removeSavedArtist } from '@/services/matchmakingApi'
+import { useSavedArtists } from '@/composables/artists/useSavedArtists'
 import ProfileEventCard from '../../components/artists/ProfileEventCard.vue'
 import { useArtistProfile } from '../../composables/artists/useArtistProfile.js'
 import { useFavouriteArtists } from '../../composables/artists/useFavouriteArtists'
@@ -57,21 +57,20 @@ function onFavourite() {
 
 // ----- save (a separate bookmark list, not the same as following) -----
 const userStore = useUserStore()
-const isSaved = ref(false)
+const { loadSaved, isSaved: isArtistSaved, toggleSaved } = useSavedArtists()
+const isSaved = computed(() => isArtistSaved(artistId.value))
 const savingArtist = ref(false)
 
-async function loadSaved() {
-  isSaved.value = false
+async function loadSavedList() {
   if (!userStore.isLoggedIn) return
 
   try {
-    const rows = await getSavedArtists()
-    isSaved.value = rows.some(row => row.artist_id === artistId.value)
+    await loadSaved()
   } catch (error) {
     console.error('Could not load saved artists', error)
   }
 }
-watch(artistId, loadSaved, { immediate: true })
+watch(artistId, loadSavedList, { immediate: true })
 
 async function onSave() {
   if (!userStore.isLoggedIn) {
@@ -82,13 +81,8 @@ async function onSave() {
 
   savingArtist.value = true
   try {
-    if (isSaved.value) {
-      await removeSavedArtist(artistId.value)
-    } else {
-      await addSavedArtist(artistId.value)
-    }
-    isSaved.value = !isSaved.value
-    toast(isSaved.value ? 'Artist saved' : 'Artist removed from saved')
+    const nowSaved = await toggleSaved(artistId.value)
+    toast(nowSaved ? 'Artist saved' : 'Artist removed from saved')
   } catch (error) {
     console.error('Could not update saved artist', error)
     toast('Could not update this artist. Please try again.')

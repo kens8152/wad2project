@@ -2,8 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import {
   getArtists, getArtistDetails, addSongs, getTodaysArtistRows, saveTodaysArtists, setArtistAction, removeArtistAction,
-  getSavedArtists, addSavedArtist, removeSavedArtist,
 } from '@/services/matchmakingApi'
+import { useSavedArtists } from '@/composables/artists/useSavedArtists'
 import { toast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
@@ -11,6 +11,7 @@ import FlashMessage from '@/components/layout/FlashMessage.vue';
 import SongPreview from '@/components/matchmaking/SongPreview.vue';
 
 const userStore = useUserStore();
+const { loadSaved, isSaved, toggleSaved } = useSavedArtists()
 
 const actionBusy = ref(false)
 const saveFlash = ref(0)
@@ -218,13 +219,7 @@ async function toggleSave() {
   actionBusy.value = true
 
   try {
-    if (artist.saved) {
-      await removeSavedArtist(artist.id)
-    } else {
-      await addSavedArtist(artist.id)
-    }
-
-    artist.saved = !artist.saved
+    artist.saved = await toggleSaved(artist.id)
     saveFlash.value++
     showSaveMessage(artist)
   } catch (error) {
@@ -238,8 +233,8 @@ async function toggleSave() {
 // Mark which of the loaded artists are already saved
 async function markSavedArtists() {
   try {
-    const savedIds = (await getSavedArtists()).map(row => row.artist_id);
-    artists.value.forEach(artist => (artist.saved = savedIds.includes(artist.id)));
+    await loadSaved();
+    artists.value.forEach(artist => (artist.saved = isSaved(artist.id)));
   } catch (err) {
     console.error('Could not load saved artists', err);
   }
@@ -353,7 +348,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="matchmaking-bg flex-grow-1 d-flex flex-column">
+  <div v-if="userStore.isLoggedIn" class="riffle-page-bg d-flex flex-column">
     <div class="matchmaking-page container flex-grow-1 d-flex flex-column pb-2 pb-lg-3 pb-xl-4">
       <FlashMessage
         ref="saveFlashMessage"
@@ -701,11 +696,6 @@ onMounted(async () => {
 /* Page */
 .matchmaking-page {
   overflow-y: clip;
-}
-
-/* Same background as the Discover and Events pages */
-.matchmaking-bg {
-  background: var(--riffle-glow);
 }
 
 /* Subtitle colour used on the other pages (changes with dark mode) */

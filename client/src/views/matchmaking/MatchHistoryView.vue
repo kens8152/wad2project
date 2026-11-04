@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import {
-  getMatchHistory, getArtistDetails, changeMatchAction, undoMatchAction,
-  getSavedArtists, addSavedArtist, removeSavedArtist,
-} from '@/services/matchmakingApi';
+import { getMatchHistory, getArtistDetails, changeMatchAction, undoMatchAction } from '@/services/matchmakingApi';
+import { useSavedArtists } from '@/composables/artists/useSavedArtists';
 import { toast } from '@/composables/useToast';
 import { useUserStore } from '@/stores/user';
 import LoginPrompt from '@/components/layout/LoginPrompt.vue';
+import PageHeader from '@/components/layout/PageHeader.vue';
 import SortDropdown from '@/components/events/SortDropdown.vue';
 
 const userStore = useUserStore();
+const { savedIds, loadSaved, toggleSaved } = useSavedArtists();
 
 const HISTORY_SORTS = [
   { value: 'newest', label: 'Newest', icon: 'bi-clock-history' },
@@ -18,7 +18,6 @@ const HISTORY_SORTS = [
 ];
 const sortBy = ref('newest');
 const busyId = ref(null);
-const savedIds = ref([]);
 
 const history = ref([]);
 const loading = ref(true);
@@ -71,18 +70,10 @@ async function changeAction(item, action) {
 
 // Bookmark (separate from liking and following)
 async function toggleSave(artist) {
-  const wasSaved = savedIds.value.includes(artist.id);
-  savedIds.value = wasSaved ? savedIds.value.filter(id => id !== artist.id) : [...savedIds.value, artist.id];
-
   try {
-    if (wasSaved) {
-      await removeSavedArtist(artist.id);
-    } else {
-      await addSavedArtist(artist.id);
-    }
-    toast(wasSaved ? 'Removed ' + artist.name + ' from saved' : 'Saved ' + artist.name);
+    const nowSaved = await toggleSaved(artist.id);
+    toast(nowSaved ? 'Saved ' + artist.name : 'Removed ' + artist.name + ' from saved');
   } catch (err) {
-    savedIds.value = wasSaved ? [...savedIds.value, artist.id] : savedIds.value.filter(id => id !== artist.id);
     console.error('Could not update saved artist', err);
     toast('Could not update this artist. Please try again.');
   }
@@ -110,9 +101,8 @@ async function loadHistory() {
   errorMessage.value = '';
 
   try {
-    const [rows, savedRows] = await Promise.all([getMatchHistory(), getSavedArtists()]);
+    const [rows] = await Promise.all([getMatchHistory(), loadSaved()]);
     const details = await getArtistDetails([...new Set(rows.map(row => row.artist_id))]);
-    savedIds.value = savedRows.map(row => row.artist_id);
 
     history.value = rows
       .map(row => ({
@@ -135,16 +125,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="userStore.isLoggedIn" class="history-page">
+  <div v-if="userStore.isLoggedIn" class="riffle-page-bg">
     <div class="container-xxl pt-3 pb-5">
       <!-- Header -->
-      <div class="mb-3">
-        <RouterLink :to="{ name: 'profile' }" class="small text-decoration-none">
-          <i class="bi bi-arrow-left"></i> Profile
-        </RouterLink>
-        <h1 class="page-title mt-1 mb-0">Artist matchmaking history</h1>
-        <p class="page-subtitle mb-0">Artists you liked or skipped previously will be shown here</p>
-      </div>
+      <PageHeader
+        title="Artist matchmaking history"
+        subtitle="Artists you liked or skipped previously will be shown here"
+        :back-to="{ name: 'profile' }"
+        back-label="Profile"
+      />
 
       <!-- Filter and sort -->
       <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
@@ -276,22 +265,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Same background and title sizes as the Artists page */
-.history-page {
-  flex-grow: 1;
-  background: var(--riffle-glow);
-}
-.page-title {
-  font-size: 2.3rem;
-  line-height: 1.1;
-}
-.page-subtitle {
-  margin-top: 0.2rem;
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--riffle-muted);
-}
-
 .history-card {
   border: 1px solid #d3d8e8;
   box-shadow: 0 2px 6px rgba(20, 35, 90, 0.08);
