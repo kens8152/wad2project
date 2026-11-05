@@ -160,17 +160,18 @@ async function createAccount() {
 
 <style scoped>
 .signup-page {
-  /* Centre the card horizontally and leave space around the page.calc() subtracts the assumed navbar height from the browser height */
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - 88px);
+  width: 100%;
+  min-height: calc(100svh - var(--navbar-height, 88px));
   padding: 48px 16px;
-  /* soft colour glows only: the standard page background (with its dot grid) shows through underneath */
+  box-sizing: border-box;
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
-  color: var(--riffle-ink);
+  color: #14234b;
 }
 
 /* Apply border-box to all elements inside the signup page, including their before and after pseudo-elements, so padding and borders are included in their widths. */

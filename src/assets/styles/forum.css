@@ -124,3 +124,8 @@ a.forum-tag:focus-visible {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
+
+/* lets the page column shrink to the screen width on phones, instead of sticking out past both edges */
+.forum-page main > .vstack {
+  min-width: 0;
+}

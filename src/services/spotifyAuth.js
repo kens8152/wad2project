@@ -49,6 +49,7 @@ export const loginWithSpotify = async (returnTo = '') => {
 }
 
 export const exchangeCodeForToken = async (code) => {
+  const accountId = localStorage.getItem('riffle-spotify-owner')
   const verifier = localStorage.getItem('pkce_verifier')
 
   if (!verifier) {
@@ -67,7 +68,10 @@ export const exchangeCodeForToken = async (code) => {
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   )
 
-  localStorage.setItem('access_token', data.access_token)
+  // Ignore this response if the account changed or the connection was cancelled.
+  if (localStorage.getItem('riffle-spotify-owner') !== accountId || localStorage.getItem('pkce_verifier') !== verifier) {
+    throw new Error('Your account or Spotify connection changed. Please connect again.')
+  }
   localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
 
   if (data.refresh_token) {
@@ -81,6 +85,7 @@ export const exchangeCodeForToken = async (code) => {
 }
 
 export const refreshAccessToken = async () => {
+  const accountId = localStorage.getItem('riffle-spotify-owner')
   const refreshToken = localStorage.getItem('refresh_token')
 
   if (!refreshToken) {
@@ -96,7 +101,11 @@ export const refreshAccessToken = async () => {
     }),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   )
-
+  // Do not restore tokens after logout, an account switch, or disconnection.
+  if (localStorage.getItem('riffle-spotify-owner') !== accountId || localStorage.getItem('refresh_token') !== refreshToken) {
+    throw new Error('Your Spotify connection changed. Please connect again.')
+  }
+  
   localStorage.setItem('access_token', data.access_token)
   localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
 

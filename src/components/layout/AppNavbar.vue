@@ -148,7 +148,7 @@ async function logoutUser() {
                 <template v-if="user.initials">{{ user.initials }}</template>
                 <i v-else class="bi bi-person-fill"></i>
               </span>
-              <span class="riffle-nav__name d-none d-md-inline">{{ user.name }}</span>
+              <span class="riffle-nav__name d-none d-md-inline d-xl-none d-xxl-inline">{{ user.name }}</span>
               <i class="bi bi-chevron-down riffle-nav__caret d-none d-md-inline" :class="{ 'is-open': accountOpen }"></i>
             </button>
 
@@ -456,6 +456,16 @@ async function logoutUser() {
   background: transparent;
   font-size: 1.6rem;
   color: var(--riffle-ink);
+}
+
+/* laptop sizes (Bootstrap xl): a bit tighter, so the Match artists label has room next to the links */
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  .riffle-nav__links {
+    gap: 1.75rem;
+  }
+  .riffle-nav__right {
+    gap: 0.6rem;
+  }
 }
 
 @media (max-width: 1199.98px) {
