@@ -61,9 +61,10 @@ function onHeart() {
         <span>{{ friendCount }} friend{{ friendCount === 1 ? '' : 's' }} going</span>
       </p>
 
+      <span class="chip chip--price">{{ priceLabel }}</span>
+
       <div class="list-card__chips">
         <span v-if="mainTag" class="chip chip--tag">#{{ mainTag }}</span>
-        <span class="chip chip--price">{{ priceLabel }}</span>
         <span class="chip chip--going">{{ event.going }} going</span>
       </div>
     </div>
@@ -74,6 +75,8 @@ function onHeart() {
 .list-card {
   position: relative;
   overflow: hidden; /* keeps the shine inside the card */
+  display: flex;
+  flex-direction: column;
   padding: 0.7rem;
   /* springy pop on hover, same feel as the cards on the map page */
   transition:
@@ -216,6 +219,9 @@ function onHeart() {
 }
 
 .list-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 0.85rem 0.35rem 0.4rem;
 }
 .list-card__title {
@@ -250,7 +256,9 @@ function onHeart() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  margin-top: 0.8rem;
+  margin-top: auto; /* the tags always sit at the bottom of the card */
+  padding-top: 0.8rem;
+  padding-right: 3rem; /* leaves room for the price circle */
 }
 .chip {
   padding: 0.25rem 0.8rem;
@@ -262,7 +270,17 @@ function onHeart() {
   background: #ece9ff;
   color: #5b45c9;
 }
+/* the price: the same colour-coded tag, as a small circle in the bottom right corner of the card */
 .chip--price {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.7rem;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  border-radius: 50%;
   background: color-mix(in srgb, var(--genre) 14%, var(--riffle-surface));
   color: var(--genre);
 }

@@ -90,6 +90,8 @@ function handleHeartClick() {
 .artist-card {
   position: relative;
   overflow: hidden; /* keeps the shine inside the card */
+  display: flex;
+  flex-direction: column;
   padding: 0.7rem;
   cursor: pointer;
   /* springy pop on hover, same feel as the event cards */
@@ -224,6 +226,9 @@ function handleHeartClick() {
 }
 
 .artist-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 0.85rem 0.35rem 0.4rem;
 }
 .artist-card__title {
@@ -247,7 +252,8 @@ function handleHeartClick() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  margin-top: 0.8rem;
+  margin-top: auto; /* the tags always sit at the bottom of the card */
+  padding-top: 0.8rem;
 }
 .chip {
   padding: 0.25rem 0.8rem;
