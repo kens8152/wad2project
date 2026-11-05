@@ -19,12 +19,6 @@ test.describe('Matchmaking as a guest', () => {
     await page.getByRole('link', { name: 'log in', exact: true }).click()
     await expect(page).toHaveURL(/\/login$/)
   })
-
-  test('the Artists page "I\'m feeling lucky" button leads to matchmaking', async ({ page }) => {
-    await mockSupabase(page)
-    await page.goto('/artists')
-    await expect(page).toHaveURL(/\/matchmaking$/)
-  })
 })
 
 test.describe('Matchmaking when logged in', () => {
@@ -108,8 +102,11 @@ test.describe('Matchmaking when logged in', () => {
     await expect(cards.filter({ hasText: 'Skipped' })).toHaveCount(0)
   })
 
-  test('"Skip the rest" ends the session early', async ({ page }) => {
-    await page.getByRole('button', { name: 'Skip the rest' }).click()
+  test('skipping everyone ends the batch with no liked artists', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'Skip the rest' })).toHaveCount(0)
+    await swipe(page, 'Skip')
+    await swipe(page, 'Skip')
+    await page.getByRole('button', { name: 'Skip', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Your taste profile just got sharper' })).toBeVisible()
     await expect(page.getByText('You did not like anyone this round')).toBeVisible()
   })

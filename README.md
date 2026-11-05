@@ -24,7 +24,7 @@ Information about Singapore's local artists, music and events is **scattered acr
 
 ### Our solution
 
-**Riffle** brings local music discovery together in one app. Listeners can explore artists through an interactive web of genres, swipe through personalised artist recommendations with 30-second song previews, browse upcoming gigs on a map, and talk about it all in a community forum. Every artist gets a profile, upcoming events and a place in front of new listeners.
+**Riffle** brings local music discovery together in one app. Listeners can explore artists through an interactive web of genres, swipe through personalised artist recommendations with 10-second song previews, browse upcoming gigs on a map, and talk about it all in a community forum. Every artist gets a profile, upcoming events and a place in front of new listeners.
 
 ### Our objectives
 
@@ -63,10 +63,12 @@ Riffle works on **smartphones, laptops and desktops**, with a responsive layout 
 
 ### 💘 Artist matchmaking
 - A daily batch of artist cards to **Like** or **Skip**, swipe style.
-- Each card plays **30-second song previews** (Apple Music previews in a custom player).
+- Each card plays **10-second song previews** (the chorus of Apple Music's previews, in a custom player).
 - **Save** artists to a bookmark list for later.
 - **Match history**: review every swipe, change Like ↔ Skip, or undo.
 - A fresh batch of unseen artists every day.
+
+> **Note: the "Get a new batch" button is a debug tool, not a feature.** Normally you get one batch per day, and the next one only arrives the following day. The button on the end-of-batch screen draws another batch straight away, so the matchmaking flow can be tested and demoed again without waiting for the next day. It would be removed in a real release.
 
 ### 💬 Forum
 - Post, comment, upvote and save posts, with tags and **trending** topics.

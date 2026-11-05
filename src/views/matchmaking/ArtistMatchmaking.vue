@@ -29,6 +29,7 @@ const hasSwipedCards = ref(false);
 const artistsFinished = ref(false); // True after users has swiped all cards
 const showFinishedMessage = ref(false);
 const noArtistsLeft = ref(false); // True when every artist has been swiped
+const loadingArtists = ref(true);
 
 // Swipe animation: which way the main card is flying and which reaction burst is showing
 const swipeDir = ref(''); // 'left' (skip), 'right' (like), 'up' (unsure)
@@ -132,13 +133,6 @@ function nextArtist() {
   hasSwipedCards.value = true;
   openSong.value = 0;
   current.value++;
-}
-
-// "Skip the rest": leave matchmaking now; the artists that were not swiped stay for later
-function finishEarly() {
-  if (artistsFinished.value || actionBusy.value) return;
-  openSong.value = -1;
-  finishSwiping();
 }
 
 // How the liked artists split over genres, for the colour bar on the last screen
@@ -336,13 +330,18 @@ onMounted(async () => {
     return;
   } catch (err) {
     console.error("Could not load today's artists", err);
+  } finally {
+    loadingArtists.value = false;
   }
 
   // If Supabase failed: a batch that isn't saved
   try {
+    loadingArtists.value = true;
     if (!artists.value.length) artists.value = await getArtists();
   } catch (err) {
     console.error('Could not load artists', err);
+  } finally {
+    loadingArtists.value = false;
   }
 })
 </script>
@@ -374,8 +373,14 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Loading -->
+      <div v-if="loadingArtists" class="matchmaking-loading flex-grow-1 d-flex flex-column align-items-center justify-content-center gap-3" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <span class="fw-semibold">Shuffling today's artists…</span>
+      </div>
+
       <div 
-        v-if="!showFinishedMessage" 
+        v-else-if="!showFinishedMessage" 
         class="card-row flex-grow-1 d-grid d-sm-flex justify-content-center align-items-center mt-1 mt-sm-2"
       >
         <!-- Skip Btn -->
@@ -616,13 +621,8 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Leave matchmaking early (bottom right corner) -->
-      <button v-if="!showFinishedMessage" type="button" class="finish-early btn rounded-pill shadow-sm" :disabled="artistsFinished || actionBusy" aria-label="Skip the rest" @click="finishEarly()">
-        <span class="finish-early-text">Skip the rest</span> <i class="bi bi-skip-forward-fill"></i>
-      </button>
-
       <!-- Shown after all cards has been swiped -->
-      <div v-else class="finish drop-in">
+      <div v-if="showFinishedMessage" class="finish drop-in">
         <div class="finish-card">
           <p class="finish-kicker"><i class="bi bi-stars"></i> Today's matchmaking</p>
           <h2 class="finish-title">{{ noArtistsLeft ? "You've seen every artist we have!" : 'Your taste profile just got sharper' }}</h2>
@@ -1123,23 +1123,15 @@ onMounted(async () => {
   100% { scale: 1; }
 }
 
-/* the skip-the-rest button, bottom right corner of the screen */
-.finish-early {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 20;
-  padding: 0.55rem 1.1rem;
-  border: 1px solid var(--riffle-border);
-  background: var(--riffle-surface);
-  color: var(--riffle-ink);
-  font-weight: 700;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
+/* Loading */
+.matchmaking-loading {
+  min-height: 50vh;
+  color: var(--riffle-muted);
 }
-.finish-early:hover:not(:disabled) {
-  background: #7c4dff;
-  color: #fff;
-  transform: translateY(-2px);
+.matchmaking-loading .spinner-border {
+  width: 3rem;
+  height: 3rem;
+  color: #7c4dff;
 }
 
 /* ---- the end-of-batch screen ---- */
@@ -1402,8 +1394,6 @@ onMounted(async () => {
 }
 @media (max-width: 575px) {
   .unsure-btn { font-size: 1.5vh; }
-  .finish-early { right: 12px; bottom: 12px; width: 44px; height: 44px; padding: 0; }
-  .finish-early-text { display: none; }
 }
 
 /* Dark see-through box behind the text so it is readable on any image */

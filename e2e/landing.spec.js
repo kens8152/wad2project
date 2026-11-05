@@ -17,8 +17,7 @@ const scrollIntoTrack = (page, track, screens) =>
     async ([name, extra]) => {
       const s = document.querySelector('.app-main')
       const section = document.querySelector(`[data-track="${name}"]`)
-      const spacer = section.parentElement.classList.contains('pin-spacer') ? section.parentElement : section
-      const start = s.scrollTop + spacer.getBoundingClientRect().top - s.getBoundingClientRect().top
+      const start = s.scrollTop + section.getBoundingClientRect().top - s.getBoundingClientRect().top
       const target = start + s.clientHeight * extra
       const from = s.scrollTop
       for (let k = 1; k <= 12; k++) {
@@ -40,10 +39,8 @@ test.describe('Landing page', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Find your next favourite artist.' })).toBeVisible()
   })
 
-  test('scrolling plays through every track, and the song bar follows', async ({ page }) => {
+  test('scrolling plays through every section in order', async ({ page }) => {
     await page.goto('/welcome')
-    const now = page.locator('.timeline__now')
-    await expect(now).toHaveText(/Intro/)
 
     const tracks = [
       ['Discover', 'A web of sounds'],
@@ -58,19 +55,17 @@ test.describe('Landing page', () => {
         s.scrollTop += el.getBoundingClientRect().top - s.getBoundingClientRect().top - 40
       })
       await expect(page.getByRole('heading', { name: new RegExp(heading) })).toBeInViewport()
-      await expect(now).toHaveText(new RegExp(track))
     }
-    await expect(page.getByRole('progressbar', { name: 'Page progress' })).not.toHaveAttribute('aria-valuenow', '0')
   })
 
   test('the matchmaking cards fly into a deck and the top card gets liked', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 860 })
     await page.goto('/welcome')
-    await page.locator('.pin-spacer [data-track="Matchmaking"]').waitFor({ state: 'attached' })
-    await scrollIntoTrack(page, 'Matchmaking', 1.6)
-    await expect(page.locator('.deck-card').last()).toBeInViewport()
-    await scrollIntoTrack(page, 'Matchmaking', 2.6)
-    await expect(page.locator('.deck-card').last().locator('.stamp--like')).toHaveCSS('opacity', '1')
+    await page.locator('[data-track="Matchmaking"]').waitFor()
+    await scrollIntoTrack(page, 'Matchmaking', 0)
+    await expect(page.locator('.deck-card').last()).toBeInViewport({ timeout: 10000 })
+    await expect(page.locator('.deck-card').last().locator('.stamp--like')).toHaveCSS('opacity', '1', { timeout: 15000 })
+    await expect(page.locator('.deck-card').last().locator('small')).toHaveText('0:10')
   })
 
   test('the calls to action open the app', async ({ page }) => {

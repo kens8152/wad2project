@@ -9,7 +9,7 @@ const last = cards.length - 1
 
 const steps = [
   { title: 'A fresh deck every day', text: 'Seven local artists you have not heard yet, picked for your taste.' },
-  { title: 'Hear them first', text: 'Every card plays a 30-second preview, so you judge the music, not the hype.' },
+  { title: 'Hear them first', text: 'Every card plays a 10-second preview, so you judge the music, not the hype.' },
   { title: 'Like, skip or save', text: 'Likes shape tomorrow’s deck. Saves wait for you in your profile.' },
 ]
 
@@ -104,7 +104,7 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
               <span class="deck-play"><i class="bi bi-play-fill"></i></span>
               <span class="deck-eq"><i></i><i></i><i></i><i></i><i></i></span>
               <span class="deck-bar"><span class="deck-progress"></span></span>
-              <small>0:30</small>
+              <small>0:10</small>
             </div>
           </div>
         </article>

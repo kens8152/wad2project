@@ -198,27 +198,27 @@ describe('Matchmaking: finishing', () => {
     expect(toast).toHaveBeenCalledWith('Taste profile updated: 2 liked artists added')
   })
 
-  it('"Skip the rest" ends the session early', async () => {
+  it('has no button to leave the batch early', async () => {
     await mountPage()
-    await press('Like')
-    await button('Skip the rest').trigger('click')
-    await waitForFinishScreen()
-
-    expect(wrapper.get('.finish-title').exists()).toBe(true)
-    expect(wrapper.get('.finish-sub').text()).toContain('One artist now shapes')
+    expect(wrapper.find('button[aria-label="Skip the rest"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Skip the rest')
   })
 
   it('says so when nobody was liked', async () => {
     await mountPage()
-    await button('Skip the rest').trigger('click')
+    await press('Skip')
+    await press('Skip')
+    await press('Skip')
     await waitForFinishScreen()
 
     expect(wrapper.get('.finish-sub').text()).toContain('You did not like anyone this round')
   })
 
-  it('"Get a new batch" starts again with fresh artists', async () => {
+  it('"Get a new batch" (debug) starts again with fresh artists', async () => {
     await mountPage()
-    await button('Skip the rest').trigger('click')
+    await press('Skip')
+    await press('Skip')
+    await press('Skip')
     await waitForFinishScreen()
     api.getArtists.mockResolvedValue([structuredClone(LOKA)])
 
