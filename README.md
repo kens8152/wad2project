@@ -60,7 +60,6 @@ Riffle works on **smartphones, laptops and desktops**, with a responsive layout 
 ### 🎤 Artists
 - Browse all local artists with search, genre and venue filters and sorting.
 - Artist profiles with their genres, upcoming events and **Follow** / **Save** buttons.
-- **"I'm feeling lucky"** jumps straight into matchmaking.
 
 ### 💘 Artist matchmaking
 - A daily batch of artist cards to **Like** or **Skip**, swipe style.

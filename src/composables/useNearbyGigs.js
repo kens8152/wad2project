@@ -1,10 +1,8 @@
 import { distanceKm } from '@/utils/events/geo'
 
-// "New gigs near me": gigs added since your last visit, at a venue within NEAR_KM of you.
-// Without your location (not allowed yet, or not supported) every new gig counts.
 export const NEAR_KM = 10
 
-// Your location, only if you have already allowed it, so opening the app never pops up a surprise permission prompt.
+// Location (only if already allowed)
 export async function locationIfAllowed() {
   try {
     if (!navigator.geolocation || !navigator.permissions) return null
@@ -20,7 +18,7 @@ export async function locationIfAllowed() {
   }
 }
 
-// Turns the new gigs into notification rows for this person
+// Notification rows
 export function nearbyGigNotifications(userId, events, location) {
   const rows = []
   for (const event of events) {

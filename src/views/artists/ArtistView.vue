@@ -44,9 +44,6 @@ function openArtist(artist) {
 
         <div class="artists-shell__actions d-flex flex-wrap align-items-center gap-2">
           <!-- Match with artists -->
-          <RouterLink :to="{ name: 'matchmaking' }" class="btn btn-riffle match-trigger text-nowrap">
-            <MatchCardsIcon class="me-2" /> I'm feeling lucky
-          </RouterLink>
           <SortDropdown v-model="sortBy" :options="ARTIST_SORTS" />
         </div>
       </header>
