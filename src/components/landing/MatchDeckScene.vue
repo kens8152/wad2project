@@ -335,5 +335,9 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
     overflow: hidden;
     margin-inline: -1rem;
   }
+  .deck-card {
+    width: min(300px, 62vw);
+    margin-left: 3rem;
+  }
 }
 </style>

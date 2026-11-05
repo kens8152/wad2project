@@ -153,6 +153,7 @@ const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
 
 .slot {
   display: flex;
+  flex: 0 1 auto;
   flex-direction: column;
   align-items: center;
   min-width: 3.6rem;
@@ -262,6 +263,7 @@ const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 100%;
   padding-bottom: 0.35rem;
   text-align: center;
 }
@@ -305,6 +307,7 @@ const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
   flex-direction: column;
   align-items: stretch;
   min-width: 5rem;
+  max-width: 100%;
   padding: 0 0.25rem 0.25rem;
   border-radius: 14px;
   background: var(--c);
@@ -339,6 +342,8 @@ const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
 .tag-btn__name {
   padding: 0.3rem 0.7rem;
   border-radius: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: var(--riffle-surface);
   color: color-mix(in srgb, var(--c) 85%, var(--riffle-ink));
   font-size: 1rem;
@@ -355,6 +360,25 @@ const PLACES = ['1st', '2nd', '3rd', '4th', '5th']
   color: color-mix(in srgb, var(--c) 85%, var(--riffle-ink));
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .drums {
+    padding-inline: 0.75rem;
+  }
+  .kit {
+    gap: 0.3rem;
+  }
+  .tag-btn {
+    min-width: 0;
+  }
+  .tag-btn__name {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  .tag-btn__rank {
+    font-size: 0.68rem;
+  }
 }
 
 @media (max-width: 575.98px) {

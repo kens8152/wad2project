@@ -14,7 +14,7 @@ const label = SHOWCASE_ARTISTS[0]
 
 useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
   mm.add(MEDIA.reduced, () => {
-    gsap.set('.hero-char, .hero-fade, .orbit-card, .tonearm, .vinyl', { clearProps: 'all' })
+    gsap.set('.hero-char, .hero-fade, .orbit-card__inner, .tonearm, .vinyl', { clearProps: 'all' })
   })
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -24,7 +24,7 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
       .from('.hero-fade', { y: 24, opacity: 0, duration: 0.7, stagger: 0.1 }, '-=0.5')
       .from('.vinyl', { scale: 0.6, rotate: -120, opacity: 0, duration: 1.2, ease: 'expo.out' }, 0.2)
       .from('.tonearm', { rotate: -38, duration: 1, ease: 'back.out(1.6)' }, 0.9)
-      .from('.orbit-card', { scale: 0, opacity: 0, duration: 0.8, stagger: 0.08, ease: 'back.out(1.8)' }, 0.6)
+      .from('.orbit-card__inner', { scale: 0, opacity: 0, duration: 0.8, stagger: 0.08, ease: 'back.out(1.8)' }, 0.6)
 
     gsap.to('.vinyl__disc', { rotate: 360, duration: 6, ease: 'none', repeat: -1 })
     gsap.to('.orbit-ring', { rotate: 360, duration: 60, ease: 'none', repeat: -1 })
@@ -238,6 +238,7 @@ onBeforeUnmount(() => {
   width: min(100%, 560px);
   justify-self: center;
   perspective: 1000px;
+  container-type: inline-size;
 }
 .hero-stage__tilt {
   position: absolute;
@@ -331,7 +332,7 @@ onBeforeUnmount(() => {
   inset: 0;
 }
 .orbit-card {
-  --r: 270px;
+  --r: 48cqi;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -340,23 +341,29 @@ onBeforeUnmount(() => {
   transform: rotate(calc(var(--i) * 60deg)) translate(0, calc(var(--r) * -1)) rotate(calc(var(--i) * -60deg));
 }
 .orbit-card__inner {
+  --card: 16.5cqi;
   position: absolute;
-  width: 92px;
-  margin: -60px 0 0 -46px;
+  width: var(--card);
+  margin: calc(var(--card) * -0.65) 0 0 calc(var(--card) * -0.5);
   padding: 5px 5px 7px;
   border-radius: 14px;
   background: var(--riffle-surface);
   box-shadow: 0 12px 26px rgba(30, 20, 70, 0.22), 0 0 0 2px color-mix(in srgb, var(--c) 70%, transparent);
   text-align: center;
-  font-size: 0.66rem;
+  font-size: clamp(0.5rem, 1.9cqi, 0.66rem);
   font-weight: 800;
   color: var(--riffle-ink);
   white-space: nowrap;
 }
+.orbit-card__inner span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .orbit-card__inner img {
   display: block;
   width: 100%;
-  height: 92px;
+  height: var(--card);
   margin-bottom: 4px;
   border-radius: 10px;
   object-fit: cover;
@@ -371,9 +378,6 @@ onBeforeUnmount(() => {
   mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
 }
 
-@media (max-width: 1199.98px) {
-  .orbit-card { --r: 220px; }
-}
 @media (max-width: 991.98px) {
   .hero-grid {
     grid-template-columns: 1fr;
@@ -387,25 +391,13 @@ onBeforeUnmount(() => {
   }
   .hero-stage {
     order: -1;
-    width: min(100%, 420px);
+    width: min(90%, 460px);
+    margin-block: 10%;
   }
-  .orbit-card { --r: 175px; }
 }
 @media (max-width: 575.98px) {
   .hero {
     padding-top: 1.5rem;
-  }
-  .vinyl {
-    inset: 26%;
-  }
-  .orbit-card { --r: 135px; }
-  .orbit-card__inner {
-    width: 68px;
-    margin: -44px 0 0 -34px;
-    font-size: 0.55rem;
-  }
-  .orbit-card__inner img {
-    height: 64px;
   }
 }
 </style>
