@@ -735,7 +735,7 @@ onBeforeUnmount(() => {
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
 }
 .genre-pill:hover {
-  background: #f4f6fc;
+  background: var(--riffle-surface-soft);
   transform: translateX(2px);
 }
 .genre-pill__dot {
