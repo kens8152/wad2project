@@ -15,21 +15,18 @@ import {
 } from '@/services/notificationsApi'
 import { locationIfAllowed, nearbyGigNotifications } from '@/composables/useNearbyGigs'
 
-// Each person's notifications come from the Supabase "notifications" table (see supabase/notifications.sql).
-// Forum replies and mentions are added by the database itself (triggers in supabase/schema.sql);
-// this store adds "new gigs near me" when you open the app, because only the browser knows where you are.
-
-// setting name shown on the page -> column in the notification_settings table
+// Settings
 export const SETTINGS = [
   { name: 'New gigs near me', column: 'gigs_near_me' },
   { name: 'Forum replies', column: 'forum_replies' },
   { name: 'Mentions', column: 'mentions' },
+  { name: 'Post votes', column: 'post_votes' },
 ]
 
-// database type -> the tab it shows under
-const TYPE_LABELS = { reply: 'Replies', mention: 'Mentions', event: 'Events' }
+// Tabs
+const TYPE_LABELS = { reply: 'Replies', mention: 'Mentions', upvote: 'Votes', downvote: 'Votes', event: 'Events' }
 
-// "just now", "5m ago", "3h ago", "2d ago", then the date
+// Time labels
 export function timeAgo(isoTime, now = Date.now()) {
   const minutes = Math.floor((now - new Date(isoTime).getTime()) / 60000)
   if (minutes < 1) return 'just now'
@@ -41,7 +38,7 @@ export function timeAgo(isoTime, now = Date.now()) {
   return new Date(isoTime).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
 }
 
-// a database row -> what the page shows
+// List item
 export function toListItem(row) {
   return {
     id: row.id,
@@ -50,6 +47,7 @@ export function toListItem(row) {
     time: timeAgo(row.created_at),
     createdAt: row.created_at,
     type: TYPE_LABELS[row.type],
+    kind: row.type,
     to: row.link || '/notifications',
     unread: !row.read_at,
   }
@@ -70,7 +68,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const loading = ref(false)
   const error = ref('')
 
-  // only the types the app knows about
   const known = computed(() => rows.value.filter(row => TYPE_LABELS[row.type]))
   const list = computed(() => known.value.map(toListItem))
   const unreadCount = computed(() => known.value.filter(row => !row.read_at).length)
@@ -94,7 +91,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
-  // New gigs since your last visit; the first visit only remembers the time, so old gigs do not flood in
+  // New gigs near me
   async function checkNewGigs(savedSettings) {
     const now = new Date().toISOString()
     const lastCheck = savedSettings?.last_events_check
@@ -123,7 +120,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
       }
       settings.value = next
 
-      // this only adds rows; if it fails, the list still loads
       await checkNewGigs(saved).catch(e => console.warn('Could not check for new gigs:', e))
     } catch (e) {
       console.error('Could not load notification settings:', e)
@@ -151,7 +147,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     loading.value = false
   }
 
-  // load when someone logs in, clear when they log out
+  // Login / logout
   watch(
     () => (userStore.isLoggedIn ? userStore.user.id : ''),
     (userId) => {
@@ -161,7 +157,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     { immediate: true },
   )
 
-  // ---- managing the list (the page changes straight away, and goes back if saving fails) ----
+  // Managing the list
 
   async function markRead(id) {
     const row = rows.value.find(item => item.id === id)

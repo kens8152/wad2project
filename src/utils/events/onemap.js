@@ -16,4 +16,6 @@ export const SG_BOUNDS = [
   [1.494, 104.502],
 ]
 export const MIN_ZOOM = 11
-export const MAX_ZOOM = 19
+// The closest zoom. On a sharp (retina) screen the map asks OneMap for tiles one level closer than the zoom, and OneMap
+// has none beyond level 19, so zooming to 19 left the map empty. 18 is the closest that always has tiles.
+export const MAX_ZOOM = 18

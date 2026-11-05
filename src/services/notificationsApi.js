@@ -1,10 +1,6 @@
 import { supabase } from '@/services/supabase'
 
-// Everything the Notifications page needs from Supabase.
-// The tables, access rules and triggers are in supabase/schema.sql.
-// Row Level Security makes every query here return or change only the signed-in person's rows.
-
-// ---- the list ----
+// List
 
 export async function getNotifications() {
   const { data, error } = await supabase
@@ -36,7 +32,7 @@ export async function deleteReadNotifications() {
   if (error) throw error
 }
 
-// ---- settings (no row yet means everything is on) ----
+// Settings
 
 export async function getNotificationSettings() {
   const { data, error } = await supabase.from('notification_settings').select('*').maybeSingle()
@@ -49,7 +45,7 @@ export async function saveNotificationSettings(userId, changes) {
   if (error) throw error
 }
 
-// ---- new gigs near me (worked out in the browser, because only the browser knows where you are) ----
+// New gigs near me
 
 export async function getEventsAddedSince(time) {
   const { data, error } = await supabase
@@ -60,14 +56,13 @@ export async function getEventsAddedSince(time) {
   return data
 }
 
-// the same gig is never added twice
 export async function addEventNotifications(rows) {
   if (!rows.length) return
   const { error } = await supabase.from('notifications').upsert(rows, { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true })
   if (error) throw error
 }
 
-// ---- live updates: calls onChange whenever one of your notifications is added ----
+// Live updates
 
 export function subscribeToNotifications(userId, onChange) {
   const channel = supabase

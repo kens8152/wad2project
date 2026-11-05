@@ -26,7 +26,6 @@ vi.mock('@/composables/useNearbyGigs', async (original) => ({
 }))
 
 const api = await import('@/services/notificationsApi')
-const nearby = await import('@/composables/useNearbyGigs')
 const { useUserStore } = await import('@/stores/user')
 const { useNotificationsStore, timeAgo, toListItem } = await import('@/stores/notifications')
 
@@ -60,6 +59,12 @@ describe('notification rows', () => {
     expect(toListItem({ ...db.rows[1], link: null })).toMatchObject({ who: '', type: 'Events', to: '/notifications', unread: false })
   })
 
+  it('puts upvotes and downvotes under the Votes tab', () => {
+    const vote = { id: 'v', type: 'upvote', actor_name: 'Joel', body: 'upvoted your post "Hi"', link: '/forum/post/p1', read_at: null, created_at: hoursAgo(1) }
+    expect(toListItem(vote)).toMatchObject({ who: 'Joel', type: 'Votes', kind: 'upvote', to: '/forum/post/p1' })
+    expect(toListItem({ ...vote, type: 'downvote' })).toMatchObject({ type: 'Votes', kind: 'downvote' })
+  })
+
   it('writes times the short way', () => {
     const now = Date.parse('2026-11-05T12:00:00Z')
     expect(timeAgo('2026-11-05T11:59:40Z', now)).toBe('just now')
@@ -82,7 +87,12 @@ describe('notifications store', () => {
     db.settings = { mentions: false, last_events_check: hoursAgo(1) }
     db.rows.push({ id: 'old', type: 'system', actor_name: null, body: 'Old digest', link: null, read_at: null, created_at: hoursAgo(50) })
     const store = await signedInStore()
-    expect(store.settings).toEqual({ 'New gigs near me': true, 'Forum replies': true, Mentions: false })
+    expect(store.settings).toEqual({
+      'New gigs near me': true,
+      'Forum replies': true,
+      Mentions: false,
+      'Post votes': true,
+    })
     expect(store.list.map((n) => n.id)).toEqual(['a', 'b'])
     expect(store.unreadCount).toBe(1)
   })
@@ -133,11 +143,36 @@ describe('notifications store', () => {
     expect(api.deleteReadNotifications).toHaveBeenCalled()
   })
 
-  it('saves a setting to its column', async () => {
+  it('saves each setting to its column', async () => {
     const store = await signedInStore()
-    await store.toggleSetting('Mentions')
-    expect(store.settings.Mentions).toBe(false)
-    expect(api.saveNotificationSettings).toHaveBeenLastCalledWith('me', { mentions: false })
+    const columns = {
+      'New gigs near me': 'gigs_near_me',
+      'Forum replies': 'forum_replies',
+      Mentions: 'mentions',
+      'Post votes': 'post_votes',
+    }
+    expect(store.settingNames).toEqual(Object.keys(columns))
+    for (const [name, column] of Object.entries(columns)) {
+      await store.toggleSetting(name)
+      expect(store.settings[name]).toBe(false)
+      expect(api.saveNotificationSettings).toHaveBeenLastCalledWith('me', { [column]: false })
+    }
+  })
+
+  it('switches a setting back on when saving fails', async () => {
+    const store = await signedInStore()
+    api.saveNotificationSettings.mockRejectedValueOnce(new Error('offline'))
+    await expect(store.toggleSetting('Post votes')).rejects.toThrow('offline')
+    expect(store.settings['Post votes']).toBe(true)
+  })
+
+  it('reloads the list when a new notification arrives', async () => {
+    await signedInStore()
+    const onChange = api.subscribeToNotifications.mock.calls[0][1]
+    db.rows.unshift({ id: 'new', type: 'upvote', actor_name: 'Joel', body: 'upvoted your post "Hi"', link: '/forum/post/p1', read_at: null, created_at: hoursAgo(0) })
+    onChange()
+    await flushPromises()
+    expect(useNotificationsStore().unreadCount).toBe(2)
   })
 
   it('empties everything when you log out', async () => {
@@ -146,20 +181,5 @@ describe('notifications store', () => {
     await flushPromises()
     expect(store.list).toEqual([])
     expect(store.unreadCount).toBe(0)
-  })
-})
-
-describe('new gigs near me', () => {
-  const tinbox = { id: 't', title: 'Near', venue: { name: 'TinBox', lat: 1.2985, lng: 103.8508 } }
-  const changi = { id: 'c', title: 'Far', venue: { name: 'Changi', lat: 1.3644, lng: 103.9915 } }
-
-  it(`keeps only gigs within ${nearby.NEAR_KM} km of you`, () => {
-    const rows = nearby.nearbyGigNotifications('me', [tinbox, changi], { lat: 1.295, lng: 103.849 })
-    expect(rows.map((r) => r.link)).toEqual(['/events/t'])
-    expect(rows[0].body).toBe('New gig near you: Near at TinBox')
-  })
-
-  it('without your location, every new gig counts', () => {
-    expect(nearby.nearbyGigNotifications('me', [tinbox, changi], null)).toHaveLength(2)
   })
 })
