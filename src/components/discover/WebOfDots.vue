@@ -556,7 +556,7 @@ function clickBubble(node) {
 
 function openArtistPage(node) {
   if (dragged) return
-  router.push('/artists/' + node.artistId)
+  router.push('/artists/' + (node.artistId || node.id))
 }
 
 function genreOf(node) {
@@ -663,7 +663,7 @@ const tastePillStyle = computed(() => {
                 :clip-path="'url(#clip-' + pickedNode.id + ')'"
               />
               <text class="hero__name" :y="heroPx + 26">{{ pickedNode.name }}</text>
-              <g v-if="pickedNode.real" class="hero__page" role="button" :aria-label="'Open the page of ' + pickedNode.name" :transform="'translate(' + heroPx * 0.72 + ' ' + -heroPx * 0.72 + ')'" @pointerdown.stop @click.stop="openArtistPage(pickedNode)">
+              <g class="hero__page" role="button" :aria-label="'Open the page of ' + pickedNode.name" :transform="'translate(' + heroPx * 0.72 + ' ' + -heroPx * 0.72 + ')'" @pointerdown.stop @click.stop="openArtistPage(pickedNode)">
                 <circle r="13" />
                 <text y="5">↗</text>
               </g>
@@ -772,10 +772,9 @@ const tastePillStyle = computed(() => {
           >See gigs</RouterLink>
           <span v-else class="card-note">No gigs announced yet</span>
         </div>
-        <RouterLink v-if="cardNode.real" :to="'/artists/' + cardNode.artistId" class="card-profile">
+        <RouterLink :to="'/artists/' + (cardNode.artistId || cardNode.id)" class="card-profile">
           Go to artist page <i class="bi bi-arrow-right"></i>
         </RouterLink>
-        <p v-else class="card-demo">A rising local act. They don't have an artist page yet.</p>
       </template>
     </div>
   </div>

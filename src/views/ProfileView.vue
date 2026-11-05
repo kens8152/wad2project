@@ -276,9 +276,7 @@ function startEditing() {
             </div>
 
             <div class="hero-actions">
-              <button class="profile-button" type="button" @click="startEditing"><i class="bi bi-pencil me-1"></i> Edit profile</button>
-              <RouterLink to="/notifications" class="cancel-button"><i class="bi bi-gear me-1"></i> Settings</RouterLink>
-            </div>
+              <button class="profile-button" type="button" @click="startEditing"><i class="bi bi-pencil me-1"></i> Edit profile</button>            </div>
           </div>
         </section>
 

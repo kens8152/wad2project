@@ -67,7 +67,11 @@ async function login() {
       <div class="login-accent" aria-hidden="true"></div>
 
       <header class="login-heading">
-        <span class="login-icon" aria-hidden="true"><i class="bi bi-soundwave"></i></span>
+        <!-- Use the music-note symbol for Riffle branding. -->
+          <div class="auth-brand">
+            <span class="login-icon" aria-hidden="true"><i class="bi bi-music-note-beamed"></i></span>
+            <span class="auth-brand-name">Riffle</span>
+          </div>
         <span class="login-eyebrow">BACK TO YOUR SOUND</span>
         <h1 id="login-heading">Welcome back.</h1>
         <p>Your favourite artists and next discoveries are waiting.</p>
@@ -501,5 +505,36 @@ async function login() {
   .login-page * {
     transition: none !important;
   }
+}
+
+/* Apply a pink-to-purple gradient to the Riffle music-note icon. */
+.login-icon i {
+  background: linear-gradient(135deg, #d746b9, #844aff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Centre the Riffle icon and name beside each other. */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Remove the icon's original margin so it aligns with the name. */
+.auth-brand .login-icon,
+.auth-brand .signup-icon {
+  margin: 0;
+}
+
+/* Style the Riffle brand name using the page's text colour. */
+.auth-brand-name {
+  color: inherit;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
 }
 </style>

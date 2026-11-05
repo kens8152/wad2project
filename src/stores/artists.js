@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getArtists } from '@/services/artistsApi'
+import { setArtistImages } from '@/utils/discover/dotPicture'
 
 export const useArtistsStore = defineStore('artists', () => {
   const artists = ref([])
@@ -14,6 +15,7 @@ export const useArtistsStore = defineStore('artists', () => {
     error.value = ''
     try {
       artists.value = await getArtists()
+      setArtistImages(artists.value) // keep Discover page in sync
     } catch (e) {
       error.value = 'Could not load artists: ' + e.message
     } finally {
