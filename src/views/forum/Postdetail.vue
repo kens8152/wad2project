@@ -610,13 +610,15 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 
 @media (min-width: 992px) {
   .linked-aside {
-    width: calc(340px + 1.5rem + 0.5rem);
+    width: calc(340px + 1.5rem + 1.5rem + 0.5rem);
   }
   .linked-sticky {
     position: sticky;
     top: 1rem;
     max-height: calc(100vh - var(--navbar-height, 8rem) - 2rem);
     overflow-y: auto;
+    padding: 0.75rem 0.75rem 1.5rem;
+    margin-top: -0.75rem;
   }
 }
 </style>
