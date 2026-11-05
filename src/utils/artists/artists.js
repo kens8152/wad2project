@@ -111,20 +111,24 @@ function findOrAddOption(options, name, color) {
 }
 
 // the genre checkboxes: name, colour and how many artists have that genre
+// events is kept for backwards compatibility but can be an empty array
 export function buildGenreOptions(events, artists) {
   const options = []
 
-  // first get every genre and its colour from the events
+  // seed colors from events when available
   for (let i = 0; i < events.length; i++) {
     const genre = events[i].genre
     findOrAddOption(options, genre.name, genre.color)
   }
 
-  // then count how many artists have each genre
+  // count artists per genre; also pick up colors from artist.genre when not seeded by events
   for (let i = 0; i < artists.length; i++) {
-    const genres = artists[i].genres
+    const artist = artists[i]
+    const genres = artist.genres
+    const color = artist.genre ? artist.genre.color : ''
     for (let j = 0; j < genres.length; j++) {
-      findOrAddOption(options, genres[j], '').count++
+      const opt = findOrAddOption(options, genres[j], color)
+      opt.count++
     }
   }
 
@@ -178,20 +182,4 @@ export function sortArtists(list, sortBy) {
     })
   }
   return list
-}
-
-// favourite artists go first (everyone keeps the order they already had)
-export function favouritesFirst(artists, favouriteIds) {
-  const favouriteArtists = []
-  const otherArtists = []
-
-  for (let i = 0; i < artists.length; i++) {
-    if (favouriteIds.includes(artists[i].id)) {
-      favouriteArtists.push(artists[i])
-    } else {
-      otherArtists.push(artists[i])
-    }
-  }
-
-  return favouriteArtists.concat(otherArtists)
 }

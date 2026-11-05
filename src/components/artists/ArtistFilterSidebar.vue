@@ -4,9 +4,7 @@ import { toggleInList } from '../../utils/artists/artists'
 const props = defineProps({
   searchText: { type: Object, required: true },   // ref<string>
   draftGenres: { type: Object, required: true },  // ref<string[]>
-  draftVenues: { type: Object, required: true },  // ref<string[]>
   genreOptions: { type: Object, required: true }, // computed
-  venueOptions: { type: Object, required: true }, // computed
   isDirty: { type: Object, required: true },      // computed
 })
 
@@ -45,21 +43,6 @@ function apply() {
       </label>
     </section>
 
-    <!-- Venue -->
-    <section class="filters__group">
-      <h2 class="filters__heading">Venue</h2>
-      <label v-for="v in venueOptions.value" :key="v.name" class="filters__option">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          :checked="draftVenues.value.includes(v.name)"
-          @change="toggleInList(draftVenues.value, v.name)"
-        />
-        <span class="filters__option-label">{{ v.name }}</span>
-        <span class="filters__count">{{ v.count }}</span>
-      </label>
-    </section>
-
     <!-- Buttons -->
     <div class="filters__footer">
       <button
@@ -77,7 +60,7 @@ function apply() {
 
 <style scoped>
 .filters {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0;
 }
 
 .filters__search {
@@ -176,15 +159,11 @@ function apply() {
 }
 
 .filters__footer {
-  position: sticky;
-  bottom: -0.75rem;
-  z-index: 5;
-  margin: 0.5rem -1rem -0.75rem;
-  padding: 0.5rem 1rem 0.45rem;
+  margin: 0.5rem -1rem 0;
+  padding: 0.5rem 1rem 0.75rem;
   background: var(--riffle-surface);
   border-top: 1px solid var(--riffle-border);
   border-radius: 0 0 var(--riffle-radius) var(--riffle-radius);
-  box-shadow: 0 -8px 16px rgba(20, 35, 90, 0.05);
 }
 .filters__apply {
   width: 100%;

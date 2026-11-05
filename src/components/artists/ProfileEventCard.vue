@@ -241,15 +241,15 @@ const goingLabel = computed(() => {
   font-weight: 700;
 }
 .chip--tag {
-  background: #ece9ff;
-  color: #5b45c9;
+  background: color-mix(in srgb, #7c3aed 15%, var(--riffle-surface));
+  color: #a78bfa;
 }
 .chip--price {
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 18%, var(--riffle-surface));
   color: var(--genre);
 }
 .chip--going {
-  background: #e6efff;
-  color: #2d5fd0;
+  background: color-mix(in srgb, #2563eb 15%, var(--riffle-surface));
+  color: #60a5fa;
 }
 </style>
