@@ -97,12 +97,11 @@ body {
   min-height: 0;
   height: auto;
   overflow-y: auto;
-  /* the Discover page background (off-white with a faint dot grid) behind every page.
+  /* the page background behind every page: the soft glow with a faint dot grid on top.
      "local" makes the dots scroll along with the page */
-  background-color: var(--riffle-bg);
-  background-image: radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px);
-  background-size: 30px 30px;
-  background-attachment: local;
+  background:
+    radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px) 0 0 / 30px 30px local,
+    var(--riffle-glow);
 }
 .page-enter-active,
 .page-leave-active {
