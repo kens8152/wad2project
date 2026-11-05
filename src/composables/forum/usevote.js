@@ -8,26 +8,29 @@ async function requireUserId() {
   return data.user?.id ?? null
 }
 
-export function useVote(source, { table = 'post_votes', idColumn = 'post_id' } = {}) {
+export function useVote(source, { table = 'post_votes', idColumn = 'post_id', countsTable = 'posts' } = {}) {
   const getItem = () => toValue(source)
 
   const initialVote = ref(null)
   const userVote = ref(null)
+  const baseUp = ref(0)
+  const baseDown = ref(0)
   const busy = ref(false)
 
-  const upvotes = computed(() => {
-    const item = getItem()
-    if (!item) return 0
-    return (item.upvotes ?? 0) + (userVote.value === 'up' ? 1 : 0) - (initialVote.value === 'up' ? 1 : 0)
-  })
-  const downvotes = computed(() => {
-    const item = getItem()
-    if (!item) return 0
-    return (item.downvotes ?? 0) + (userVote.value === 'down' ? 1 : 0) - (initialVote.value === 'down' ? 1 : 0)
-  })
+  const count = (base, direction) =>
+    Math.max(0, base + (userVote.value === direction ? 1 : 0) - (initialVote.value === direction ? 1 : 0))
+
+  const upvotes = computed(() => (getItem() ? count(baseUp.value, 'up') : 0))
+  const downvotes = computed(() => (getItem() ? count(baseDown.value, 'down') : 0))
+
+  function setBase(counts, savedVote) {
+    baseUp.value = counts.upvotes ?? 0
+    baseDown.value = counts.downvotes ?? 0
+    initialVote.value = savedVote
+  }
 
   async function seed(item) {
-    initialVote.value = toDirection(item.my_vote?.[0]?.vote)
+    setBase(item, toDirection(item.my_vote?.[0]?.vote))
     userVote.value = initialVote.value
     if (item.my_vote !== undefined) return
 
@@ -35,19 +38,18 @@ export function useVote(source, { table = 'post_votes', idColumn = 'post_id' } =
     if (!userId) return
 
     const { data, error } = await supabase
-      .from(table)
-      .select('vote')
-      .eq(idColumn, item.id)
-      .eq('user_id', userId)
+      .from(countsTable)
+      .select(`upvotes, downvotes, my_vote:${table}(vote)`)
+      .eq('id', item.id)
       .maybeSingle()
 
     if (error) {
       console.error('Could not load vote:', error.message)
       return
     }
-    if (getItem()?.id !== item.id) return 
+    if (!data || getItem()?.id !== item.id || busy.value) return
 
-    initialVote.value = toDirection(data?.vote)
+    setBase(data, toDirection(data.my_vote?.[0]?.vote))
     userVote.value = initialVote.value
   }
 
@@ -58,6 +60,14 @@ export function useVote(source, { table = 'post_votes', idColumn = 'post_id' } =
       if (item) seed(item)
     },
     { immediate: true },
+  )
+
+  watch(
+    () => [getItem()?.upvotes, getItem()?.downvotes],
+    () => {
+      const item = getItem()
+      if (item && !busy.value) setBase(item, userVote.value)
+    },
   )
 
   async function vote(direction) {
