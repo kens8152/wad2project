@@ -222,11 +222,6 @@ const emptyMessage = computed(() => {
 
         <div class="profile-divider"></div>
 
-        <p v-if="profile.bio" class="profile-about">{{ profile.bio }}</p>
-        <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
-
-
-        <div v-if="socialLinks.length > 0" class="profile-divider"></div>
         <div v-if="socialLinks.length > 0" class="socials">
           <a
             v-for="link in socialLinks"
@@ -240,6 +235,10 @@ const emptyMessage = computed(() => {
             <i class="bi" :class="link.icon"></i>
           </a>
         </div>
+        <div v-if="socialLinks.length > 0" class="profile-divider"></div>
+
+        <p v-if="profile.bio" class="profile-about">{{ profile.bio }}</p>
+        <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
       </aside>
 
       <main class="profile-main">
