@@ -6,7 +6,7 @@
 
 <br>
 
-[![Live demo](https://img.shields.io/badge/Live%20demo-riffle--app--ebon.vercel.app-7c4dff?style=for-the-badge)](https://riffle-app-ebon.vercel.app)
+[![Live demo](https://img.shields.io/badge/Live%20demo-wad2project--three.vercel.app-7c4dff?style=for-the-badge)](https://wad2project-three.vercel.app)
 [![Marketing video](https://img.shields.io/badge/Marketing%20video-YouTube-ff0033?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/dyAAQinzaXk)
 [![Presentation](https://img.shields.io/badge/Presentation-Google%20Slides-fbbc04?style=for-the-badge&logo=googleslides&logoColor=white)](https://docs.google.com/presentation/d/1pyFkyaEaEO6-injb82y0LX8NB72YEIo95fyOe0_I_Pw/edit?usp=sharing)
 
@@ -82,6 +82,7 @@ Open **<http://127.0.0.1:5173>**. Use `127.0.0.1` rather than `localhost`: Spoti
 | `Command "dev" not found` | You are in the wrong folder. Run it from the project root, the folder that contains `package.json`. |
 | Blank page or "Supabase" errors in the console | The `.env` file is missing or misnamed. It must be called exactly `.env`, in the project root, copied from `.env-example`. Restart `pnpm dev` after creating it. |
 | `Port 5173 is in use` | Another copy is running. Stop it with `Ctrl + C`, or on macOS run `lsof -ti :5173 \| xargs kill`. |
+| `Cannot find native binding` or `library load disallowed by system policy` when running `pnpm dev` | The `node_modules` folder was copied or unzipped from somewhere else, which breaks the compiled files inside it. Never copy `node_modules`. In the project folder run `rm -rf node_modules && pnpm install`, then `pnpm dev`. On a Mac, if the folder came from a browser download, also run `xattr -dr com.apple.quarantine .` first. |
 | Node version error | Install Node 22.18+ or 24.12+ (for example with [nvm](https://github.com/nvm-sh/nvm)). |
 | Map tiles are grey | The map needs internet access to load OneMap tiles. |
 | The page was dark and you want light | Light mode is the default. If you switched once, your browser remembers it: use the sun and moon button in the navbar. |
@@ -90,7 +91,7 @@ Open **<http://127.0.0.1:5173>**. Use `127.0.0.1` rather than `localhost`: Spoti
 
 ## Test accounts
 
-You can try everything on the **live app** without installing anything: **<https://riffle-app-ebon.vercel.app>** (works on phones too).
+You can try everything on the **live app** without installing anything: **<https://wad2project-three.vercel.app>** (works on phones too).
 
 ### Spotify test account
 
