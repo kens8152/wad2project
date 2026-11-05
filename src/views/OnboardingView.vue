@@ -341,7 +341,8 @@ async function savePreferences() {
       console.warn('Profile saved online, but local copy could not be updated:', cacheError)
     }
 
-    await router.push('/profile')
+    // a new account lands on Discover (the main page, where the guide starts); someone editing their taste profile goes back to it
+    await router.push(alreadyOnboarded ? '/profile' : '/discover')
   } catch (error) {
     errorMessage.value = 'Your preferences could not be saved: ' + error.message
   } finally {

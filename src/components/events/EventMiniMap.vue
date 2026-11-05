@@ -42,7 +42,7 @@ onMounted(() => {
     maxBoundsViscosity: 1,
   })
   map.attributionControl.setPrefix('') // keep only the OneMap credit
-  L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM }).addTo(map)
+  L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM + 1 }).addTo(map) // +1: a retina screen takes one off this
 
   map.setView([props.venue.lat, props.venue.lng], START_ZOOM)
   pin = L.marker([props.venue.lat, props.venue.lng], { icon: pinIcon(), keyboard: false }).addTo(map)
