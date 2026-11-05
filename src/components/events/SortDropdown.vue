@@ -185,6 +185,7 @@ onBeforeUnmount(() => {
 }
 .sort-dropdown__labels > strong {
   grid-area: 1 / 1;
+  white-space: nowrap; /* never wrap onto a second line when the button is squeezed */
 }
 .sort-dropdown__labels > .is-hidden {
   visibility: hidden;

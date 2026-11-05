@@ -95,7 +95,7 @@ function onHeart() {
 .list-card:hover,
 .list-card:focus-within {
   transform: translateY(-6px) scale(1.02);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, var(--riffle-surface)), var(--riffle-surface) 65%);
   box-shadow:
     0 0 0 2px var(--genre),
     0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);
@@ -261,11 +261,24 @@ function onHeart() {
   color: #5b45c9;
 }
 .chip--price {
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 14%, var(--riffle-surface));
   color: var(--genre);
 }
 .chip--going {
   background: #e6efff;
   color: #2d5fd0;
+}
+
+/* Dark mode: softer shine and dark chips */
+:root[data-theme='dark'] .list-card::after {
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+:root[data-theme='dark'] .chip--tag {
+  background: rgba(124, 77, 255, 0.2);
+  color: #cdbfff;
+}
+:root[data-theme='dark'] .chip--going {
+  background: rgba(45, 95, 208, 0.25);
+  color: #b7ccff;
 }
 </style>

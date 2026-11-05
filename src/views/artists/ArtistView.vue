@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
 import SortDropdown from '../../components/events/SortDropdown.vue'
@@ -31,6 +31,29 @@ onMounted(() => {
     eventsStore.fetchEvents()
   }
 })
+
+// Filter card height (wide screens): from its top down to the page's bottom padding (2.5rem).
+// It grows as the header scrolls away, and lines up with the last cards at the end of the page.
+const sidebar = ref(null)
+function fitSidebar() {
+  const card = sidebar.value?.querySelector('.filters')
+  if (!card) return
+  if (window.innerWidth < 992) {
+    card.style.height = ''
+    return
+  }
+  card.style.height = `${window.innerHeight - 40 - card.getBoundingClientRect().top}px`
+}
+onMounted(() => {
+  document.addEventListener('scroll', fitSidebar, true) // true: also hears the scrolling page area
+  window.addEventListener('resize', fitSidebar)
+  setTimeout(fitSidebar, 400) // after the page fade-in
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('scroll', fitSidebar, true)
+  window.removeEventListener('resize', fitSidebar)
+})
+watch(() => eventsStore.loading, () => nextTick(fitSidebar))
 
 function openArtist(artist) {
   router.push({ name: 'artist-detail', params: { id: artist.id } })
@@ -70,7 +93,7 @@ function openArtist(artist) {
 
       <div class="artists-shell__body">
         <!-- Filter sidebar -->
-        <div class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
+        <div ref="sidebar" class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
           <ArtistFilterSidebar :search-text="filters.searchText" :draft-genres="filters.draftGenres"
             :draft-venues="filters.draftVenues" :genre-options="filters.genreOptions"
             :venue-options="filters.venueOptions" :is-dirty="filters.isDirty" @apply="filters.applyFilters"
@@ -228,9 +251,10 @@ function openArtist(artist) {
   }
 
   /* Same as the events page: the filter card scrolls inside itself, with Apply and Reset pinned at its bottom.
-     7.5rem leaves room for the "Artists" title above it, so Apply is visible without scrolling the page */
+     Its height is the screen minus the 16px sticky gap and the page's bottom padding (2.5rem),
+     so at the end of the page its bottom lines up with the last row of cards */
   .artists-shell__sidebar > :deep(.filters) {
-    height: calc(100vh - var(--navbar-height) - 7.5rem);
+    height: calc(100vh - var(--navbar-height) - 16px - 2.5rem);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
