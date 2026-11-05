@@ -92,6 +92,13 @@ const activeTabColor = computed(() => {
   return found ? found.color : 'var(--riffle-coral)'
 })
 
+// a stable avatar gradient unique to each user, derived from their name
+const avatarGradient = computed(() => {
+  const h = hueFor(userStore.user.name || 'riffle')
+  const h2 = (h + 40) % 360
+  return 'linear-gradient(135deg, hsl(' + h + ' 78% 58%), hsl(' + h2 + ' 72% 48%))'
+})
+
 // ---- flowing tab slider ------------------------------------------------
 // A single pill sits behind the tabs and glides to the active one. We measure
 // the active button and move the pill with a transform, so the browser can
@@ -297,10 +304,24 @@ function startEditing() {
       <!-- ============ view your profile ============ -->
       <div class="profile-content">
         <section class="masthead">
+          <!-- music decoration floating across the masthead -->
+          <div class="masthead__notes" aria-hidden="true">
+            <span class="note note--clef">𝄞</span>
+            <i class="bi bi-music-note-beamed note note--a"></i>
+            <i class="bi bi-music-note note note--b"></i>
+            <i class="bi bi-music-note-list note note--c"></i>
+            <i class="bi bi-music-note-beamed note note--d"></i>
+            <i class="bi bi-music-note note note--e"></i>
+            <i class="bi bi-music-note-beamed note note--f"></i>
+            <i class="bi bi-music-note note note--g"></i>
+            <i class="bi bi-music-note-list note note--h"></i>
+            <span class="note note--clef2">𝄞</span>
+          </div>
+
           <span class="masthead__eyebrow"><i class="dot"></i> Your profile</span>
 
           <div class="masthead__top">
-            <span class="masthead__avatar">{{ userStore.user.initials }}</span>
+            <span class="masthead__avatar" :style="{ background: avatarGradient }">{{ userStore.user.initials }}</span>
             <div class="masthead__id">
               <h1 class="masthead__name">{{ profile.displayName }}</h1>
               <p class="masthead__meta">
@@ -379,10 +400,7 @@ function startEditing() {
             <!-- artists liked in matchmaking -->
             <div v-else-if="activeTab === 'liked'" class="tab-panel">
               <div class="panel-head">
-                <p class="panel-note liked-intro">
-                  <template v-if="likedArtists.length"><i class="bi bi-stars"></i> These artists are shaping your taste profile.</template>
-                  <template v-else>Artists you liked in matchmaking</template>
-                </p>
+                <p class="panel-note liked-intro">Artists you liked in matchmaking</p>
                 <RouterLink :to="{ name: 'match-history' }" class="panel-link">
                   <i class="bi bi-clock-history"></i> Matchmaking history <i class="bi bi-chevron-right"></i>
                 </RouterLink>
@@ -566,6 +584,99 @@ function startEditing() {
     var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
+/* floating music notes + treble clef across the masthead */
+.masthead__notes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.masthead__notes .note {
+  position: absolute;
+  color: var(--riffle-ink);
+  opacity: 0.07;
+  animation: note-drift 7s ease-in-out infinite;
+}
+.note--clef {
+  top: -0.6rem;
+  right: 1.4rem;
+  font-size: 7rem;
+  line-height: 1;
+  font-weight: 400;
+}
+.note--a {
+  top: 1.4rem;
+  right: 10.5rem;
+  font-size: 2.1rem;
+  animation-delay: -1s;
+}
+.note--b {
+  bottom: 2.6rem;
+  right: 7.5rem;
+  font-size: 1.5rem;
+  animation-delay: -3.5s;
+}
+.note--c {
+  bottom: 1.4rem;
+  right: 13rem;
+  font-size: 1.8rem;
+  animation-delay: -5s;
+}
+.note--d {
+  top: 2.2rem;
+  right: 18rem;
+  font-size: 1.6rem;
+  animation-delay: -2.4s;
+}
+.note--e {
+  bottom: 3.4rem;
+  right: 21rem;
+  font-size: 1.3rem;
+  animation-delay: -4.2s;
+}
+.note--f {
+  top: 1rem;
+  left: 42%;
+  font-size: 2rem;
+  animation-delay: -6s;
+}
+.note--g {
+  bottom: 1.2rem;
+  left: 38%;
+  font-size: 1.5rem;
+  animation-delay: -1.8s;
+}
+.note--h {
+  top: 3rem;
+  left: 30%;
+  font-size: 1.7rem;
+  animation-delay: -3s;
+}
+.note--clef2 {
+  bottom: -1rem;
+  left: 1.2rem;
+  font-size: 5.5rem;
+  line-height: 1;
+  font-weight: 400;
+}
+@keyframes note-drift {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-9px) rotate(5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .masthead__notes .note {
+    animation: none;
+  }
+}
+/* keep the real content above the decoration */
+.masthead__eyebrow,
+.masthead__top,
+.spec-strip {
+  position: relative;
+  z-index: 1;
+}
+
 .masthead__eyebrow {
   display: inline-flex;
   align-items: center;
@@ -597,12 +708,13 @@ function startEditing() {
   height: 92px;
   border-radius: 24px;
   transform: rotate(-3deg);
+  /* background is set inline per user; this is only a fallback */
   background: linear-gradient(135deg, #ff4d8d, #7c4dff);
   color: #fff;
   font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  box-shadow: 0 12px 28px rgba(124, 77, 255, 0.35);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 .masthead__id {
   flex: 1;
@@ -859,35 +971,17 @@ function startEditing() {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  padding: 1rem 1rem 1rem 1.2rem;
+  padding: 1rem;
   overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
   background: var(--riffle-surface);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
 }
-/* left accent bar that grows on hover */
-.artist-tile::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--accent);
-  transform: scaleY(0.35);
-  transform-origin: center;
-  opacity: 0.55;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s;
-}
 .artist-tile:hover {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--accent) 50%, var(--riffle-border));
   box-shadow: 0 16px 34px color-mix(in srgb, var(--accent) 20%, transparent);
-}
-.artist-tile:hover::before {
-  transform: scaleY(1);
-  opacity: 1;
 }
 /* accent ring around the avatar */
 .artist-tile .artist-link :deep(.artist-avatar) {
@@ -1052,25 +1146,10 @@ function startEditing() {
   overflow: hidden;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
 }
-.event-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--accent);
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 .event-row:hover {
   transform: translateX(4px);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--riffle-border));
   box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 16%, transparent);
-}
-.event-row:hover::before {
-  transform: scaleY(1);
 }
 .date-box {
   display: flex;

@@ -12,15 +12,17 @@ export const ARTIST_SORTS = [
   { value: 'soonest', label: 'Next event soonest', icon: 'bi-clock' },
 ]
 
+// The filter + sort state is kept at module scope (a singleton), so it survives
+// navigating to an artist profile and back — the Artists page remounts but the
+// chosen search, genres and sort stay as the user left them.
+const sortBy = ref('events')
+const searchText = ref('')
+const draftGenres = ref([])
+const appliedGenres = ref([])
+
 // All the filter and sort logic for the Artists page
 export function useArtistFilters() {
   const artistsStore = useArtistsStore()
-
-  const sortBy = ref('events')
-
-  const searchText = ref('')
-  const draftGenres = ref([])
-  const appliedGenres = ref([])
 
   // ----- the data -----
   const allArtists = computed(() => artistsStore.artists)

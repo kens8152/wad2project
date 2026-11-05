@@ -3,18 +3,25 @@ import { supabase } from '@/services/supabase'
 // Fetch all event data from Supabase, returning the same shape as the old JSON file
 // so the events store does not need to change.
 export async function getEventData() {
+  const EVENT_COLUMNS = 'id, title, image, genre_id, venue_id, headliner_id, day_offset, dow, day_number, month, date_label, start_time, time_label, price, going, tag'
+
   const [
     { data: genres, error: genresError },
     { data: artists, error: artistsError },
     { data: venues, error: venuesError },
     { data: eventArtists, error: eaError },
     { data: events, error: eventsError },
+    pastEventsResult,
+    pastEventArtistsResult,
   ] = await Promise.all([
     supabase.from('genres').select('id, name, color'),
     supabase.from('artists').select('id, name, tag, genre_id'),
     supabase.from('venues').select('*'),
     supabase.from('event_artists').select('event_id, artist_id'),
-    supabase.from('events').select('id, title, image, genre_id, venue_id, headliner_id, day_offset, dow, day_number, month, date_label, start_time, time_label, price, going, tag'),
+    supabase.from('events').select(EVENT_COLUMNS),
+    // ALL past events (real + dummy artists) live in their own tables
+    supabase.from('past_events').select(EVENT_COLUMNS),
+    supabase.from('past_event_artists').select('event_id, artist_id'),
   ])
 
   if (genresError) throw genresError
@@ -23,15 +30,20 @@ export async function getEventData() {
   if (eaError) throw eaError
   if (eventsError) throw eventsError
 
-  // Build artistIds array per event
+  // The past tables may not exist yet (error ignored) so the app still works
+  // before the migration has been run.
+  const pastEvents = pastEventsResult.error ? [] : (pastEventsResult.data || [])
+  const pastEventArtists = pastEventArtistsResult.error ? [] : (pastEventArtistsResult.data || [])
+
+  // Build artistIds array per event (upcoming links + past links together)
   const artistIdsByEvent = {}
-  for (const row of eventArtists) {
+  for (const row of eventArtists.concat(pastEventArtists)) {
     if (!artistIdsByEvent[row.event_id]) artistIdsByEvent[row.event_id] = []
     artistIdsByEvent[row.event_id].push(row.artist_id)
   }
 
-  // Map to the shape the events store expects
-  const mappedEvents = events.map(e => ({
+  // Map to the shape the events store expects (regular + past events in one list)
+  const mappedEvents = events.concat(pastEvents).map(e => ({
     id: e.id,
     title: e.title,
     image: e.image,
