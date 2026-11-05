@@ -127,19 +127,30 @@ Onboarding has an optional **Connect Spotify** step that suggests genres from yo
 
 <div align="center">
 
-| Landing | Discover: the web of artists |
+| | |
 |:---:|:---:|
-| <img src="docs/screens/landing.png" alt="Riffle landing page with a spinning record" width="440"> | <img src="docs/screens/discover-artist.png" alt="Discover page with one artist opened and the artists who share its fans" width="440"> |
-| **Events: every gig on a live map** | **Events: list view** |
-| <img src="docs/screens/events-map.png" alt="Events map with genre colour-coded pins and event cards" width="440"> | <img src="docs/screens/events-list.png" alt="Events list with colour-coded cards" width="440"> |
-| **Artists** | **Artist profile** |
-| <img src="docs/screens/artists.png" alt="Artists page with search and filters" width="440"> | <img src="docs/screens/artist-profile.png" alt="Artist profile with portfolio, upcoming and past events" width="440"> |
+| **Landing** | **Discover: the web of artists** |
+| <img src="docs/screens/landing.png" alt="Riffle landing page with a spinning record" width="440"> | <img src="docs/screens/discover.png" alt="Discover page: a web of 178 artists as coloured dots" width="440"> |
+| **Discover: open an artist** | **Events: every gig on a live map** |
+| <img src="docs/screens/discover-artist.png" alt="Discover page with one artist opened and the artists who share its fans" width="440"> | <img src="docs/screens/events-map.png" alt="Events map with genre colour-coded pins and event cards" width="440"> |
+| **Events: list view** | **Artists** |
+| <img src="docs/screens/events-list.png" alt="Events list with colour-coded cards" width="440"> | <img src="docs/screens/artists.png" alt="Artists page with search and filters" width="440"> |
+| **Artist profile** | **Artist matchmaking** |
+| <img src="docs/screens/artist-profile.png" alt="Artist profile with portfolio, upcoming and past events" width="440"> | <img src="docs/screens/matchmaking.png" alt="Matchmaking: a stack of artist cards to like or skip, with a song preview" width="440"> |
+| **Profile** | **Notifications** |
+| <img src="docs/screens/profile.png" alt="Profile page with follower stats, tabs and recent activity" width="440"> | <img src="docs/screens/notifications.png" alt="Notifications with filters and per-type settings" width="440"> |
+| **Forum: trending tags** | **Forum: community posts** |
+| <img src="docs/screens/forum-trending.png" alt="Forum trending page with a podium of drums for the top tags" width="440"> | <img src="docs/screens/forum-lfg.png" alt="Forum feed with tagged posts, votes and a create post button" width="440"> |
 
 **On a phone**
 
 | Landing | Discover | Events | Artist |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screens/m-landing.png" alt="Landing on a phone" width="200"> | <img src="docs/screens/m-discover.png" alt="Discover on a phone" width="200"> | <img src="docs/screens/m-events.png" alt="Events on a phone" width="200"> | <img src="docs/screens/m-artist.png" alt="Artist profile on a phone" width="200"> |
+
+| Matchmaking | Profile | Forum |
+|:---:|:---:|:---:|
+| <img src="docs/screens/m-matchmaking.png" alt="Matchmaking on a phone" width="200"> | <img src="docs/screens/m-profile.png" alt="Profile on a phone" width="200"> | <img src="docs/screens/m-forum.png" alt="Forum on a phone" width="200"> |
 
 </div>
 
