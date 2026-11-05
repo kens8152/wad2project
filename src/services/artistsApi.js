@@ -32,7 +32,7 @@ export async function getArtists() {
     genre: row.genre || { name: 'Unknown', color: '#6c757d' },
     genres: row.genre ? [row.genre.name] : [],
     venues: [],
-    events: new Array(counts[row.id] || 0), // length = event count for sortArtists('events')
+    events: new Array(counts[row.id] || 0),
     nextEvent: null,
   }))
 }

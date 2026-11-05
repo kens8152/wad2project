@@ -39,33 +39,33 @@ function handleHeartClick() {
       <div v-else class="artist-card__fallback" aria-hidden="true">
         <i class="bi bi-music-note-beamed"></i>
       </div>
-
-      <span class="artist-card__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
-
-      <!-- .stop stops the click from also opening the artist -->
-      <button
-        v-if="mode === 'save'"
-        type="button"
-        class="artist-card__heart is-bookmark"
-        :class="{ 'is-saved': isFavourite }"
-        :aria-pressed="isFavourite"
-        :aria-label="isFavourite ? 'Remove from saved' : 'Save'"
-        @click.stop="handleHeartClick"
-      >
-        <i class="bi" :class="isFavourite ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
-      </button>
-      <button
-        v-else
-        type="button"
-        class="artist-card__heart"
-        :class="{ 'is-saved': isFavourite }"
-        :aria-pressed="isFavourite"
-        :aria-label="isFavourite ? 'Unfollow' : 'Follow'"
-        @click.stop="handleHeartClick"
-      >
-        <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
-      </button>
     </div>
+
+    <!-- heart button -->
+    <button
+      v-if="mode === 'save'"
+      type="button"
+      class="artist-card__heart is-bookmark"
+      :class="{ 'is-saved': isFavourite }"
+      :aria-pressed="isFavourite"
+      :aria-label="isFavourite ? 'Remove from saved' : 'Save'"
+      @click.stop="handleHeartClick"
+    >
+      <i class="bi" :class="isFavourite ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+    </button>
+    <button
+      v-else
+      type="button"
+      class="artist-card__heart"
+      :class="{ 'is-saved': isFavourite }"
+      :aria-pressed="isFavourite"
+      :aria-label="isFavourite ? 'Unfollow' : 'Follow'"
+      @click.stop="handleHeartClick"
+    >
+      <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
+    </button>
+
+    <span class="artist-card__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
 
     <div class="artist-card__body">
       <h3 class="artist-card__title">{{ artist.name }}</h3>
@@ -152,9 +152,12 @@ function handleHeartClick() {
 
 .artist-card__media {
   position: relative;
-  height: 180px;
-  border-radius: 12px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
   overflow: hidden;
+  margin: 0.4rem auto 0;
+  border: 3px solid var(--genre);
 }
 .artist-card__img {
   width: 100%;
@@ -174,18 +177,16 @@ function handleHeartClick() {
 }
 
 .artist-card__genre {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: var(--riffle-surface);
+  background: var(--riffle-surface-soft);
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;
+  margin: 0.5rem auto 0;
 }
 .artist-card__genre .dot {
   width: 9px;
@@ -229,7 +230,9 @@ function handleHeartClick() {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 0.85rem 0.35rem 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.35rem 0.4rem;
+  text-align: center;
 }
 .artist-card__title {
   margin: 0;
