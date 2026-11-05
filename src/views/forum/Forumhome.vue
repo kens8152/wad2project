@@ -2,7 +2,6 @@
 import { ref, computed, inject, watch } from 'vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Forumsort from '../../components/forum/forumsort.vue'
-import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Postcard from '../../components/forum/postcard.vue'
 import WheelList from '../../components/forum/WheelList.vue'
 
@@ -49,13 +48,12 @@ watch(resetCount, () => {
 
 <template>
   <div class="vstack gap-3">
-    <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
-      <ForumMenuButton />
+    <Teleport defer to="#forum-filter-slot">
       <div class="forum-filter-bar">
         <Forumsearch v-model="searchTerm" />
         <Forumsort v-model="sort" />
       </div>
-    </div>
+    </Teleport>
 
     <WheelList :items="results" v-slot="{ item }">
       <Postcard :post="item" />

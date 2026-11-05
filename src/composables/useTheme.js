@@ -7,7 +7,7 @@ function readSaved() {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === 'light' || saved === 'dark') return saved
   } catch {}
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'light' // light mode is the default; dark mode is only used once the user switches to it
 }
 
 const theme = ref(readSaved())

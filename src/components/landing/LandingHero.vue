@@ -7,8 +7,18 @@ import { SHOWCASE_ARTISTS } from '@/data/landing'
 const root = ref(null)
 const stage = ref(null)
 
-const lineOne = 'Find your next'.split('')
-const lineTwo = 'favourite artist.'.split('')
+function splitWords(text) {
+  const last = text.length - 1
+  let index = 0
+  return text.split(' ').map((word) => {
+    const chars = word.split('').map((c) => ({ c, p: (index++ / last) * 100 }))
+    index++
+    return chars
+  })
+}
+
+const lineOne = splitWords('Find your next')
+const lineTwo = splitWords('favourite artist.')
 const orbit = SHOWCASE_ARTISTS.slice(0, 6)
 const label = SHOWCASE_ARTISTS[0]
 
@@ -88,10 +98,14 @@ onBeforeUnmount(() => {
         <p class="hero-kicker hero-fade"><span class="live-dot"></span> Singapore's local music scene</p>
         <h1 class="hero-title" aria-label="Find your next favourite artist.">
           <span class="hero-line" aria-hidden="true">
-            <span v-for="(c, i) in lineOne" :key="'a' + i" class="hero-char">{{ c === ' ' ? ' ' : c }}</span>
+            <template v-for="(word, w) in lineOne" :key="'a' + w">
+              <span class="hero-word"><span v-for="(ch, i) in word" :key="i" class="hero-char">{{ ch.c }}</span></span>{{ w < lineOne.length - 1 ? ' ' : '' }}
+            </template>
           </span>
           <span class="hero-line hero-line--accent" aria-hidden="true">
-            <span v-for="(c, i) in lineTwo" :key="'b' + i" class="hero-char" :style="{ '--p': (i / (lineTwo.length - 1)) * 100 }">{{ c === ' ' ? ' ' : c }}</span>
+            <template v-for="(word, w) in lineTwo" :key="'b' + w">
+              <span class="hero-word"><span v-for="(ch, i) in word" :key="i" class="hero-char" :style="{ '--p': ch.p }">{{ ch.c }}</span></span>{{ w < lineTwo.length - 1 ? ' ' : '' }}
+            </template>
           </span>
         </h1>
         <p class="hero-lede hero-fade">
@@ -180,7 +194,7 @@ onBeforeUnmount(() => {
 }
 .hero-title {
   margin: 0;
-  font-size: clamp(2.8rem, 6.4vw, 5.6rem);
+  font-size: clamp(min(2.8rem, 11.5vw), 6.4vw, 5.6rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -190,6 +204,10 @@ onBeforeUnmount(() => {
   display: block;
   overflow: hidden;
   padding-bottom: 0.08em;
+}
+.hero-word {
+  display: inline-block;
+  white-space: nowrap;
 }
 .hero-char {
   display: inline-block;

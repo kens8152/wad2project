@@ -302,17 +302,18 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 </script>
 
 <template>
-  <div class="py-3 mx-3">
-    <RouterLink
-      v-if="loading || errorMessage"
-      :to="{ name: 'forum' }"
-      @click.prevent="goBack"
-      class="back-btn btn btn-sm btn-link p-0 mb-2"
-      aria-label="Back to forum"
-      title="Back to forum"
-    >
-      <i class="bi bi-arrow-left back-arrow"></i>
-    </RouterLink>
+  <div class="pb-3 mx-3">
+    <Teleport defer to="#forum-filter-slot">
+      <RouterLink
+        :to="{ name: 'forum' }"
+        @click.prevent="goBack"
+        class="back-btn btn btn-sm btn-link p-0"
+        aria-label="Back to forum"
+        title="Back to forum"
+      >
+        <i class="bi bi-arrow-left back-arrow"></i>
+      </RouterLink>
+    </Teleport>
 
     <div v-if="loading" class="text-center text-body-secondary py-5">
       <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading post…
@@ -325,15 +326,6 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
         <article>
           <div class="d-flex justify-content-between align-items-start mb-1">
             <p class="small text-body-secondary mb-0 d-flex align-items-center">
-              <RouterLink
-                :to="{ name: 'forum' }"
-                @click.prevent="goBack"
-                class="back-btn btn btn-sm btn-link p-0"
-                aria-label="Back to forum"
-                title="Back to forum"
-              >
-                <i class="bi bi-arrow-left back-arrow"></i>
-              </RouterLink>
               <span class="icon-slot"><i class="bi bi-person-circle"></i></span>
               {{ post.username }}
             </p>
@@ -345,7 +337,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
             </div>
           </div>
 
-          <div class="indented with-back">
+          <div class="indented">
             <form v-if="editingPost" class="edit-form mb-3" @submit.prevent="savePostEdit">
               <input
                 v-model="postDraft.title"
@@ -545,8 +537,8 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.6rem;
+  height: 2.6rem;
   flex-shrink: 0;
   margin-right: 0.5rem;
   border: 1px solid var(--riffle-border);
@@ -560,7 +552,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 }
 .back-arrow {
   display: inline-block;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   line-height: 1;
   transition: transform 0.15s ease;
 }
@@ -579,8 +571,10 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 .indented {
   padding-left: 1.5rem;
 }
-.indented.with-back {
-  padding-left: 4rem;
+@media (max-width: 991.98px) {
+  .indented {
+    padding-left: 0;
+  }
 }
 
 .edit-form {

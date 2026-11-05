@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 130" width="1280" height="130" role="img" aria-label="Made in Singapore for IS216 Web Application Development II">
+<defs><linearGradient id="a" x1="0" x2="1"><stop offset="0" stop-color="#ff8fbd"/><stop offset=".5" stop-color="#a98bff"/><stop offset="1" stop-color="#8cc4ff"/></linearGradient><linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#8fe3cf"/><stop offset="1" stop-color="#8cc4ff"/></linearGradient></defs>
+<g opacity=".7"><path d="M0 70 Q160 40 320 70 T640 70 T960 70 T1280 70 T1600 70 T1920 70 V130 H0Z" fill="url(#a)"><animateTransform attributeName="transform" type="translate" from="0 0" to="-640 0" dur="12s" repeatCount="indefinite"/></path></g>
+<g opacity=".5"><path d="M0 92 Q160 114 320 92 T640 92 T960 92 T1280 92 T1600 92 T1920 92 V130 H0Z" fill="url(#b)"><animateTransform attributeName="transform" type="translate" from="-640 0" to="0 0" dur="16s" repeatCount="indefinite"/></path></g>
+<text x="640" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#6c63a8" font-family="'Plus Jakarta Sans','Segoe UI',system-ui,Arial,sans-serif">Made in Singapore · IS216 Web Application Development II</text>
+</svg>

@@ -52,6 +52,17 @@ defineProps({
   color: var(--riffle-muted);
 }
 
+/* a narrow phone: the box shares the row with the sort menu, so the text is a little smaller and "Search the forum" fits */
+@media (max-width: 575.98px) {
+  .forum-search__box {
+    gap: 0.4rem;
+    padding-left: 0.65rem;
+  }
+  .forum-search__box input {
+    font-size: 0.8rem;
+  }
+}
+
 .forum-search__box:focus-within {
   box-shadow: 0 0 0 2px var(--riffle-blue);
 }

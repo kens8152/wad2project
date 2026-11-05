@@ -30,13 +30,27 @@ onMounted(async () => {
 
 useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-    gsap.from('.odo-col', {
-      y: 0,
-      duration: 1.8,
-      ease: 'power3.out',
-      stagger: 0.07,
-      scrollTrigger: { trigger: root.value, scroller, start: 'top 80%' },
-    })
+    let tween = null
+    const roll = () => {
+      const cols = gsap.utils.toArray('.odo-col', root.value)
+      tween?.kill()
+      tween = gsap.fromTo(
+        cols,
+        { '--roll': 0 },
+        {
+          '--roll': (i, el) => 10 + Number(el.style.getPropertyValue('--d')),
+          duration: 1.8,
+          ease: 'power3.out',
+          stagger: 0.07,
+          onComplete: () => cols.forEach((el) => el.style.removeProperty('--roll')),
+        },
+      )
+    }
+    ScrollTrigger.create({ trigger: root.value, scroller, start: 'top 85%', end: 'bottom 15%', onEnter: roll, onEnterBack: roll })
+    return () => {
+      tween?.kill()
+      gsap.utils.toArray('.odo-col', root.value).forEach((el) => el.style.removeProperty('--roll'))
+    }
   })
 })
 </script>
@@ -46,7 +60,7 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
     <div class="container-xxl stats-grid">
       <div v-for="s in stats" :key="s.label" class="odo">
         <span class="odo__number" :aria-label="String(s.value)">
-          <span v-for="(d, i) in digits(s.value)" :key="s.label + i + d" class="odo__window" aria-hidden="true">
+          <span v-for="(d, i) in digits(s.value)" :key="s.label + i" class="odo__window" aria-hidden="true">
             <span class="odo-col" :style="{ '--d': d }">
               <span v-for="n in 20" :key="n">{{ (n - 1) % 10 }}</span>
             </span>
@@ -85,14 +99,14 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
 .odo-col {
   display: flex;
   flex-direction: column;
-  transform: translateY(calc(-1em * (10 + var(--d, 0))));
+  transform: translateY(calc(-1em * var(--roll, calc(10 + var(--d, 0)))));
+}
+.odo-col span {
+  height: 1em;
   background: linear-gradient(180deg, #ff4d8d, #7c4dff);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-.odo-col span {
-  height: 1em;
 }
 .odo__label {
   display: block;

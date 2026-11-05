@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 14" width="1280" height="14" role="img" aria-label="">
+<defs><linearGradient id="l" x1="0" x2="1"><stop offset="0" stop-color="#ff6fa8" stop-opacity="0"/><stop offset=".25" stop-color="#ff6fa8"/><stop offset=".5" stop-color="#a47bff"/><stop offset=".75" stop-color="#7fbcff"/><stop offset="1" stop-color="#7fbcff" stop-opacity="0"/></linearGradient>
+<linearGradient id="sh" gradientUnits="userSpaceOnUse" x1="0" x2="320"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/><animateTransform attributeName="gradientTransform" type="translate" from="-320 0" to="1280 0" dur="4.5s" repeatCount="indefinite"/></linearGradient></defs>
+<rect y="6" width="1280" height="2.5" rx="1.25" fill="url(#l)" opacity=".8"/><rect y="6" width="1280" height="2.5" rx="1.25" fill="url(#sh)"/></svg>
