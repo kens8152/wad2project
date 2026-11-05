@@ -180,12 +180,22 @@ onMounted(async () => {
 
   spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
 
-  if (route.query.spotify === 'connected') {
+  // Handle the result after returning from Spotify.
+  // The saved profile and unfinished draft have already been restored above.
+  if (route.query.spotify === 'connected' || route.query.spotify === 'cancelled') {
+    const spotifyResult = route.query.spotify
     const query = { ...route.query }
     delete query.spotify
 
+    // Remove the status parameter so refreshing does not repeat the action.
     await router.replace({ path: route.path, query })
-    await importSpotifyGenres()
+
+    if (spotifyResult === 'connected') {
+      await importSpotifyGenres()
+    } else {
+      genreImportMessage.value = 'Spotify connection cancelled. You can continue choosing your preferences manually.'
+      genreImportError.value = ''
+    }
   }
 })
 
@@ -715,7 +725,7 @@ async function importSpotifyGenres() {
 
 
 .name-section {
-  margin: 10px 0 20px;
+  margin: 28px 0 20px;
 }
 
 .name-section label {
