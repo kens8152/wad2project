@@ -110,7 +110,7 @@ const goingLabel = computed(() => {
 .profile-card.is-upcoming:hover,
 .profile-card.is-upcoming:focus-within {
   transform: translateY(-6px) scale(1.02);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, var(--riffle-surface)), var(--riffle-surface) 65%);
   box-shadow:
     0 0 0 2px var(--genre),
     0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);

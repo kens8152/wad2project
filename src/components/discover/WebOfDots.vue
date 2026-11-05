@@ -898,10 +898,6 @@ const tastePillStyle = computed(() => {
   stroke: var(--riffle-ink);
   stroke-width: 2.5px;
 }
-.dot.is-following {
-  stroke: #e0245e;
-  stroke-width: 2.5px;
-}
 .dot-hit {
   cursor: pointer;
   outline: none;
