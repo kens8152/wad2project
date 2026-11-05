@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { searchSongs, fetchTopArtists } from '@/services/spotifyApi'
@@ -21,6 +21,11 @@ const userStore = useUserStore()
 const saving = ref(false)
 const connectingSpotify = ref(false)
 const spotifyConnected = ref(Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token')))
+
+// Update the connection indicator when the Riffle account changes.
+watch(() => userStore.user.id, () => {
+  spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
+})
 
 let alreadyOnboarded = false
 
