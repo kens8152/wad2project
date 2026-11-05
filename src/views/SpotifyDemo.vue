@@ -20,6 +20,9 @@ const returnPath = ref('/onboarding')
 
 const accessToken = ref(null)
 
+// Hide the Spotify content while checking the connection or processing the callback.
+const processingSpotify = ref(true)
+
 const profile = ref(null)
 const playlists = ref([])
 const loading = ref(false)
@@ -100,7 +103,8 @@ onBeforeUnmount(() => document.body.classList.remove('spotify-dark'))
 onMounted(async () => {
   document.body.classList.add('spotify-dark')
 
-  const savedReturnTo = sessionStorage.getItem('riffle-spotify-return-to')
+  try {
+    const savedReturnTo = sessionStorage.getItem('riffle-spotify-return-to')
 
   if (savedReturnTo === '/profile') {
     returnPath.value = '/profile'
@@ -183,72 +187,89 @@ if (params.get('error')) {
   } else if (saved) {
     logout()
   }
+
+  } finally {
+    // Finish loading even if an error occurs or the function returns early.
+    processingSpotify.value = false
+  }
 })
 </script>
 
 <template>
   <div class="app">
-    <!-- Introduce the Spotify connection. -->
-    <header class="spotify-heading">
-      <span class="spotify-eyebrow">YOUR MUSIC, YOUR RIFFLE</span>
-      <h1>Bring your sound along.</h1>
-      <p>Connect Spotify to explore your playlists and discover more of what you love.</p>
-    </header>
-
-    <!-- Display any connection error. -->
-    <p v-if="error" class="error spotify-error" role="alert">{{ error }}</p>
-
-    <!-- Show the connection card when logged out of Spotify. -->
-    <section v-if="!accessToken" class="spotify-connect-card" aria-labelledby="spotify-connect-heading">
-      <span class="spotify-logo" aria-hidden="true"><i class="bi bi-spotify"></i></span>
-      <h2 id="spotify-connect-heading">Connect your Spotify</h2>
-      <p>View your Spotify profile and playlists, and explore music through Riffle.</p>
-      <button class="spotify-login-button" type="button" @click="loginWithSpotify()"><i class="bi bi-spotify" aria-hidden="true"></i> Connect Spotify <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-      <small>You’ll continue to Spotify to approve access.</small>
+    <!-- Show a loading message while Spotify processes the connection. -->
+    <section v-if="processingSpotify" class="spotify-loading" role="status" aria-live="polite">
+      <span class="spinner-border" aria-hidden="true"></span>
+      <h1>Connecting Spotify…</h1>
+      <p>Please wait while we finish your connection.</p>
     </section>
 
-    <!-- v-else must immediately follow the section with v-if. -->
+    <!-- Show the page content after processing finishes. -->
     <template v-else>
-      <button class="secondary" type="button" @click="logout">Log out</button>
+      <!-- Introduce the Spotify connection. -->
+      <header class="spotify-heading">
+        <span class="spotify-eyebrow">YOUR MUSIC, YOUR RIFFLE</span>
+        <h1>Bring your sound along.</h1>
+        <p>Connect Spotify to explore your playlists and discover more of what you love.</p>
+      </header>
 
-      <section v-if="profile" class="profile">
-        <img v-if="profile.images?.length" :src="profile.images[0].url" alt="Avatar" />
-        <div>
-          <h2>{{ profile.display_name }}</h2>
-          <p>{{ profile.email }}</p>
-          <p>{{ profile.country }} · {{ profile.product }}</p>
-        </div>
+      <!-- Display any connection error. -->
+      <p v-if="error" class="error spotify-error" role="alert">{{ error }}</p>
+
+      <!-- Show the connection card when no Spotify token is loaded. -->
+      <section v-if="!accessToken" class="spotify-connect-card" aria-labelledby="spotify-connect-heading">
+        <span class="spotify-logo" aria-hidden="true"><i class="bi bi-spotify"></i></span>
+        <h2 id="spotify-connect-heading">Connect your Spotify</h2>
+        <p>View your Spotify profile and playlists, and explore music through Riffle.</p>
+        <button class="spotify-login-button" type="button" @click="loginWithSpotify()"><i class="bi bi-spotify" aria-hidden="true"></i> Connect Spotify <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        <small>You’ll continue to Spotify to approve access.</small>
       </section>
 
-      <p v-if="topGenres.length">Your top genres: <strong>{{ topGenres.join(', ') }}</strong></p>
+      <!-- Show the account content when a Spotify token is loaded. -->
+      <template v-else>
+        <button class="secondary" type="button" @click="logout">Log out</button>
 
-      <h2>Your playlists</h2>
-      <p v-if="loading">Loading…</p>
-      <p v-else-if="!playlists.length">No playlists found.</p>
+        <section v-if="profile" class="profile">
+          <img v-if="profile.images?.length" :src="profile.images[0].url" alt="Avatar" />
+          <div>
+            <h2>{{ profile.display_name }}</h2>
+            <p>{{ profile.email }}</p>
+            <p>{{ profile.country }} · {{ profile.product }}</p>
+          </div>
+        </section>
 
-      <div class="grid">
-        <a v-for="p in playlists" :key="p.id" class="card" :href="p.external_urls?.spotify" target="_blank" rel="noopener">
-          <img v-if="p.images?.length" :src="p.images[0].url" :alt="p.name" />
-          <strong>{{ p.name }}</strong>
-          <small>{{ trackCount(p) }}</small>
-        </a>
-      </div>
+        <p v-if="topGenres.length">
+          Your top genres: <strong>{{ topGenres.join(', ') }}</strong>
+        </p>
 
-      <h2>Song Recommendation:</h2>
-      <input v-model="selectedGenre" type="text" placeholder="Enter a genre" style="margin-right: 10px;" />
-      <button type="button" @click="getSelectedRecommendation">Get Recommendation</button>
+        <h2>Your playlists</h2>
+        <p v-if="loading">Loading…</p>
+        <p v-else-if="!playlists.length">No playlists found.</p>
 
-      <div class="grid" style="margin-top: 20px;">
-        <a v-for="album in albums" :key="album.id" class="card" :href="album.external_urls?.spotify" target="_blank" rel="noopener">
-          <img v-if="album.images?.length" :src="album.images[0].url" :alt="album.name" />
-          <strong>{{ album.name }}</strong>
-          <small>{{ album.total_tracks }} tracks</small>
-        </a>
-      </div>
+        <div class="grid">
+          <a v-for="p in playlists" :key="p.id" class="card" :href="p.external_urls?.spotify" target="_blank" rel="noopener">
+            <img v-if="p.images?.length" :src="p.images[0].url" :alt="p.name" />
+            <strong>{{ p.name }}</strong>
+            <small>{{ trackCount(p) }}</small>
+          </a>
+        </div>
+
+        <h2>Song Recommendation:</h2>
+        <input v-model="selectedGenre" type="text" placeholder="Enter a genre" style="margin-right: 10px;" />
+        <button type="button" @click="getSelectedRecommendation">Get Recommendation</button>
+
+        <div class="grid" style="margin-top: 20px;">
+          <a v-for="album in albums" :key="album.id" class="card" :href="album.external_urls?.spotify" target="_blank" rel="noopener">
+            <img v-if="album.images?.length" :src="album.images[0].url" :alt="album.name" />
+            <strong>{{ album.name }}</strong>
+            <small>{{ album.total_tracks }} tracks</small>
+          </a>
+        </div>
+      </template>
+
+      <!-- Keep the return link available after loading finishes. -->
+      <RouterLink :to="returnPath" class="return-link"><i class="bi bi-arrow-left" aria-hidden="true"></i> Return to Riffle</RouterLink>
     </template>
-
-    <!-- Keep the return link available in both connection states. -->
-    <RouterLink :to="returnPath" class="return-link"><i class="bi bi-arrow-left" aria-hidden="true"></i> Return to Riffle</RouterLink>
   </div>
 </template>
 
@@ -494,5 +515,28 @@ button.secondary {
   .spotify-connect-card {
     padding: 28px 20px;
   }
+}
+
+/* Centre the loading message while Spotify finishes connecting. */
+.spotify-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 300px;
+  text-align: center;
+}
+
+/* Keep the loading heading compact. */
+.spotify-loading h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+/* Style the short explanation below the loading heading. */
+.spotify-loading p {
+  margin: 0;
+  color: #b5b1ca;
 }
 </style>
