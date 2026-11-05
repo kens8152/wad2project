@@ -114,7 +114,7 @@ async function mountPage({ loggedIn = true, query = {} } = {}) {
 }
 
 const tab = (label) => wrapper.findAll('[role="tab"]').find((t) => t.text().startsWith(label))
-const stat = (label) => wrapper.findAll('.stat-card').find((c) => c.text().includes(label)).get('strong').text()
+const stat = (label) => wrapper.findAll('.spec').find((c) => c.get('dt').text() === label).get('dd').text()
 const openTab = async (label) => {
   await tab(label).trigger('click')
   await flushPromises()
@@ -158,8 +158,8 @@ describe('Profile: who you are', () => {
   it('shows the name, initials, handle, area and join date', async () => {
     await mountPage()
     expect(wrapper.get('h1').text()).toBe('Kit Tan')
-    expect(wrapper.get('.hero-avatar').text()).toBe('KT')
-    const meta = wrapper.get('.hero-meta').text()
+    expect(wrapper.get('.masthead__avatar').text()).toBe('KT')
+    const meta = wrapper.get('.masthead__meta').text()
     expect(meta).toContain('@kittan')
     expect(meta).toContain('Bras Basah')
     expect(meta).toContain('Joined October 2026')
@@ -167,13 +167,13 @@ describe('Profile: who you are', () => {
 
   it('shows the first three genre tags and can show the rest', async () => {
     await mountPage()
-    const tags = () => wrapper.findAll('.hero-tags span.tag').map((t) => t.text())
+    const tags = () => wrapper.findAll('.masthead__tags span.chip').map((t) => t.text())
     expect(tags()).toEqual(['#indie-rock', '#pop-music', '#electronic'])
 
-    await wrapper.get('.tag--button').trigger('click')
+    await wrapper.get('.chip--button').trigger('click')
 
     expect(tags()).toEqual(['#indie-rock', '#pop-music', '#electronic', '#hip-hop'])
-    expect(wrapper.get('.tag--button').text()).toBe('Show less')
+    expect(wrapper.get('.chip--button').text()).toBe('Show less')
   })
 
   it('ignores genres that are not on the list', async () => {
@@ -234,7 +234,7 @@ describe('Profile: tabs', () => {
   it('opens on the Liked tab when matchmaking links here', async () => {
     await mountPage({ query: { tab: 'liked' } })
     expect(tab('Liked').attributes('aria-selected')).toBe('true')
-    expect(wrapper.text()).toContain('These artists are shaping your taste profile.')
+    expect(wrapper.text()).toContain('Artists you liked in matchmaking')
     expect(wrapper.text()).toContain('Loka Nada')
   })
 

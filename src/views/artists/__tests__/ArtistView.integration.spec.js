@@ -2,14 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
-import { EVENT_JSON } from '@/test/fixtures/artistEvents'
+import { cloneArtists } from '@/test/fixtures/artists'
 
 vi.mock('@/services/supabase.js', () => ({ supabase: {} }))
-vi.mock('@/services/eventsApi', () => ({ getEventData: vi.fn() }))
+vi.mock('@/services/artistsApi', () => ({ getArtists: vi.fn() }))
 vi.mock('@/composables/useToast', () => ({ toast: vi.fn() }))
 
-const { getEventData } = await import('@/services/eventsApi')
+const { getArtists } = await import('@/services/artistsApi')
 const { toast } = await import('@/composables/useToast')
+const { useArtistFilters } = await import('@/composables/artists/useArtistFilters')
 const { default: ArtistView } = await import('../ArtistView.vue')
 
 const Blank = { template: '<div />' }
@@ -22,12 +23,10 @@ async function mountPage() {
     routes: [
       { path: '/artists', name: 'artists', component: ArtistView },
       { path: '/artists/:id', name: 'artist-detail', component: Blank },
-      { path: '/matchmaking', name: 'matchmaking', component: Blank },
     ],
   })
   router.push('/artists')
   await router.isReady()
-  setActivePinia(createPinia())
   wrapper = mount(ArtistView, { global: { plugins: [router] }, attachTo: document.body })
   await flushPromises()
 }
@@ -38,15 +37,21 @@ const tick = (label) => wrapper.findAll('.filters label').find((l) => l.text().i
 const apply = () => wrapper.get('.filters__apply').trigger('click')
 
 beforeEach(() => {
-  vi.mocked(getEventData).mockResolvedValue(structuredClone(EVENT_JSON))
+  setActivePinia(createPinia())
+  const filters = useArtistFilters()
+  filters.resetFilters()
+  filters.sortBy.value = 'events'
+  vi.mocked(getArtists).mockReset()
+  vi.mocked(getArtists).mockImplementation(async () => cloneArtists())
+  vi.mocked(toast).mockClear()
 })
 
 afterEach(() => wrapper?.unmount())
 
 describe('Artists page: sidebar + sort + artist cards', () => {
-  it('loads the artists from the events data, A-Z', async () => {
+  it('loads the artists, most events first', async () => {
     await mountPage()
-    expect(cardNames()).toEqual(['FallingIslands', 'Krunkle', 'Lullaboy'])
+    expect(cardNames()).toEqual(['FallingIslands', 'Lullaboy', 'Krunkle'])
     expect(subtitle()).toBe('3 artists performing near you')
   })
 
@@ -54,7 +59,7 @@ describe('Artists page: sidebar + sort + artist cards', () => {
     await mountPage()
     await wrapper.get('.filters input[type="search"]').setValue('lulla')
     expect(cardNames()).toEqual(['Lullaboy'])
-    expect(subtitle()).toBe('1 artist matching “lulla”')
+    expect(subtitle()).toBe('1 artist matching "lulla"')
   })
 
   it('ticking a genre only changes the cards after Apply', async () => {
@@ -81,14 +86,14 @@ describe('Artists page: sidebar + sort + artist cards', () => {
   it('the sort menu re-orders the cards', async () => {
     await mountPage()
     await wrapper.get('button[aria-haspopup="listbox"]').trigger('click')
-    const option = wrapper.findAll('[role="option"] button').find((b) => b.text().includes('Most events'))
+    const option = wrapper.findAll('[role="option"] button').find((b) => b.text().includes('Name (A-Z)'))
     await option.trigger('click')
-    expect(cardNames()[0]).toBe('FallingIslands')
+    expect(cardNames()).toEqual(['FallingIslands', 'Krunkle', 'Lullaboy'])
   })
 
   it('clicking a card opens that artist', async () => {
     await mountPage()
-    await wrapper.findAll('.artist-card')[1].trigger('click')
+    await wrapper.findAll('.artist-card')[2].trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.fullPath).toBe('/artists/krunkle')
   })
@@ -100,15 +105,10 @@ describe('Artists page: sidebar + sort + artist cards', () => {
     expect(toast).toHaveBeenCalledWith('Please log in to follow artists.')
   })
 
-  it('links to matchmaking from "I\'m feeling lucky"', async () => {
+  it('shows the error and a retry button when the artists cannot load', async () => {
+    vi.mocked(getArtists).mockRejectedValueOnce(new Error('Network Error'))
     await mountPage()
-    expect(link.attributes('href')).toBe('/matchmaking')
-  })
-
-  it('shows the error and a retry button when the events cannot load', async () => {
-    vi.mocked(getEventData).mockRejectedValueOnce(new Error('Network Error'))
-    await mountPage()
-    expect(wrapper.text()).toContain('Could not load events: Network Error')
+    expect(wrapper.text()).toContain('Could not load artists: Network Error')
 
     await wrapper.findAll('button').find((b) => b.text() === 'Try again').trigger('click')
     await flushPromises()

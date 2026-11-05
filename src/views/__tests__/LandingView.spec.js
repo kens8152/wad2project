@@ -114,14 +114,6 @@ describe('Landing page', () => {
     expect(numbers).toEqual(['205', '31', '6'])
   })
 
-  it('has a song-style progress bar that starts at the intro', async () => {
-    await mountPage()
-    const bar = wrapper.get('[role="progressbar"]')
-    expect(bar.text()).toContain('Intro')
-    expect(bar.text()).toContain('0:00')
-    expect(bar.text()).toContain('3:42')
-  })
-
   it('sets up an animation for every scene', async () => {
     await mountPage()
     expect(useLandingMotion.mock.calls.length).toBeGreaterThanOrEqual(7)

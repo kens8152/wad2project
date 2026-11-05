@@ -127,9 +127,9 @@ describe('WebOfDots: the artist card', () => {
     expect(card().text()).toContain('See gigs')
   })
 
-  it('explains that a demo act has no page or gigs yet', () => {
+  it('links a demo act to its artist page and says it has no gigs yet', () => {
     mountWeb({ pickedId: demoNode.id })
-    expect(card().text()).toContain("A rising local act. They don't have an artist page yet.")
+    expect(card().findAll('a').map((a) => a.attributes('href'))).toContain(`/artists/${demoNode.id}`)
     expect(card().text()).toContain('No gigs announced yet')
   })
 })

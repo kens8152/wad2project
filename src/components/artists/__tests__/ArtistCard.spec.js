@@ -19,11 +19,10 @@ function makeArtist(overrides = {}) {
 const mountCard = (props = {}) => mount(ArtistCard, { props: { artist: makeArtist(), ...props } })
 
 describe('ArtistCard: what it shows', () => {
-  it('shows the name, genre and venues', () => {
+  it('shows the name and genre', () => {
     const wrapper = mountCard()
     expect(wrapper.get('h3').text()).toBe('Krunkle')
     expect(wrapper.text()).toContain('Indie Rock')
-    expect(wrapper.text()).toContain('BattleBox, TinBox')
   })
 
   it('shows the next event when there is one', () => {
@@ -36,8 +35,8 @@ describe('ArtistCard: what it shows', () => {
   })
 
   it('counts events with the right word', () => {
-    expect(mountCard().text()).toContain('2 events')
-    expect(mountCard({ artist: makeArtist({ events: [{}] }) }).text()).toContain('1 event')
+    expect(mountCard().text()).toContain('2 upcoming events')
+    expect(mountCard({ artist: makeArtist({ events: [{}] }) }).text()).toContain('1 upcoming event')
   })
 
   it('shows the tag chip only when the artist has a tag', () => {

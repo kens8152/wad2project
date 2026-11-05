@@ -7,7 +7,6 @@ import {
   buildVenueOptions,
   hasAny,
   sortArtists,
-  favouritesFirst,
 } from '../artists'
 
 const POP = { id: 'pop', name: 'Pop', color: '#f0f' }
@@ -169,17 +168,5 @@ describe('sortArtists', () => {
 
   it('leaves the order alone for an unknown sort', () => {
     expect(sortArtists(list(), 'unknown').map((a) => a.name)).toEqual(['Cara', 'amy', 'Ben'])
-  })
-})
-
-describe('favouritesFirst', () => {
-  const artists = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
-
-  it('moves favourites to the front and keeps everyone else in order', () => {
-    expect(favouritesFirst(artists, ['c', 'a']).map((a) => a.id)).toEqual(['a', 'c', 'b', 'd'])
-  })
-
-  it('does not change the order when there are no favourites', () => {
-    expect(favouritesFirst(artists, [])).toEqual(artists)
   })
 })

@@ -81,12 +81,13 @@ describe('Saved artists page: search + sort + artist cards', () => {
     expect(wrapper.text()).toContain('3 artists saved')
   })
 
-  it('fills in venues from the events data, and still shows artists with no events', async () => {
+  it('fills in upcoming events from the events data, and still shows artists with no events', async () => {
     await mountPage()
     const krunkle = wrapper.findAll('.artist-card').find((c) => c.text().includes('Krunkle'))
     const quiet = wrapper.findAll('.artist-card').find((c) => c.text().includes('Quiet One'))
-    expect(krunkle.text()).toContain('BattleBox')
-    expect(quiet.text()).toContain('0 events')
+    expect(krunkle.text()).toContain('1 upcoming event')
+    expect(krunkle.text()).toContain('Next:')
+    expect(quiet.text()).toContain('0 upcoming events')
   })
 
   it('searches by genre as well as name', async () => {

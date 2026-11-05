@@ -1,22 +1,24 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useEventsStore } from '@/stores/events'
+import { useArtistsStore } from '@/stores/artists'
 import { useArtistFilters } from '../useArtistFilters'
-import { STORE_EVENTS } from '@/test/fixtures/artistEvents'
+import { cloneArtists } from '@/test/fixtures/artists'
 
 let filters
 
 beforeEach(() => {
   setActivePinia(createPinia())
-  useEventsStore().events = STORE_EVENTS
+  useArtistsStore().artists = cloneArtists()
   filters = useArtistFilters()
+  filters.resetFilters()
+  filters.sortBy.value = 'events'
 })
 
 const names = () => filters.filteredArtists.value.map((a) => a.name)
 
 describe('useArtistFilters: the list', () => {
-  it('lists every artist once, A-Z by default', () => {
-    expect(names()).toEqual(['FallingIslands', 'Krunkle', 'Lullaboy'])
+  it('lists every artist once, most events first by default', () => {
+    expect(names()).toEqual(['FallingIslands', 'Lullaboy', 'Krunkle'])
   })
 
   it('says how many artists are performing', () => {
@@ -28,9 +30,9 @@ describe('useArtistFilters: the list', () => {
     expect(filters.isDirty.value).toBe(false)
   })
 
-  it('offers each genre and venue with a count', () => {
+  it('offers each genre with a count', () => {
     expect(filters.genreOptions.value.map((g) => g.name)).toEqual(['Electronic', 'Indie Rock', 'Pop Music'])
-    expect(filters.venueOptions.value.find((v) => v.name === 'TinBox').count).toBe(2)
+    expect(filters.genreOptions.value.find((g) => g.name === 'Electronic').count).toBe(1)
   })
 })
 
@@ -42,7 +44,7 @@ describe('useArtistFilters: search', () => {
 
   it('uses the singular in the subtitle and quotes the search', () => {
     filters.searchText.value = 'krunkle'
-    expect(filters.subtitle.value).toBe('1 artist matching “krunkle”')
+    expect(filters.subtitle.value).toBe('1 artist matching "krunkle"')
   })
 
   it('counts the search as an active filter', () => {
@@ -63,7 +65,7 @@ describe('useArtistFilters: search', () => {
   })
 })
 
-describe('useArtistFilters: genre and venue checkboxes', () => {
+describe('useArtistFilters: genre checkboxes', () => {
   it('does not change the list until Apply is pressed', () => {
     filters.draftGenres.value.push('Electronic')
     expect(filters.isDirty.value).toBe(true)
@@ -78,27 +80,26 @@ describe('useArtistFilters: genre and venue checkboxes', () => {
     expect(filters.activeCount.value).toBe(1)
   })
 
-  it('shows artists playing at any ticked venue', () => {
-    filters.draftVenues.value.push('BattleBox', 'Kilo Lounge')
+  it('shows artists from any ticked genre', () => {
+    filters.draftGenres.value.push('Electronic', 'Indie Rock')
     filters.applyFilters()
     expect(names()).toEqual(['FallingIslands', 'Krunkle'])
   })
 
-  it('combines genre, venue and search', () => {
-    filters.draftVenues.value.push('TinBox')
-    filters.draftGenres.value.push('Pop Music')
+  it('combines genre and search', () => {
+    filters.draftGenres.value.push('Pop Music', 'Indie Rock')
     filters.applyFilters()
     filters.searchText.value = 'lulla'
     expect(names()).toEqual(['Lullaboy'])
-    expect(filters.activeCount.value).toBe(3)
+    expect(filters.activeCount.value).toBe(2)
   })
 
   it('shows nothing when no artist matches', () => {
     filters.draftGenres.value.push('Indie Rock')
-    filters.draftVenues.value.push('TinBox')
     filters.applyFilters()
+    filters.searchText.value = 'lulla'
     expect(names()).toHaveLength(0)
-    expect(filters.subtitle.value).toBe('0 artists performing near you')
+    expect(filters.subtitle.value).toBe('0 artists matching "lulla"')
   })
 
   it('Reset clears the search and every checkbox', () => {
@@ -115,13 +116,21 @@ describe('useArtistFilters: genre and venue checkboxes', () => {
 })
 
 describe('useArtistFilters: sorting', () => {
-  it('sorts by most events', () => {
-    filters.sortBy.value = 'events'
-    expect(names()[0]).toBe('FallingIslands')
+  it('sorts by name', () => {
+    filters.sortBy.value = 'name'
+    expect(names()).toEqual(['FallingIslands', 'Krunkle', 'Lullaboy'])
   })
 
-  it('sorts by the soonest upcoming event', () => {
+  it('sorts by the soonest upcoming event, with no event last', () => {
     filters.sortBy.value = 'soonest'
     expect(names()).toEqual(['FallingIslands', 'Krunkle', 'Lullaboy'])
+  })
+
+  it('keeps the chosen sort and search when the page comes back', () => {
+    filters.sortBy.value = 'name'
+    filters.searchText.value = 'krun'
+    const again = useArtistFilters()
+    expect(again.sortBy.value).toBe('name')
+    expect(again.searchText.value).toBe('krun')
   })
 })
