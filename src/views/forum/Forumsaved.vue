@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed } from 'vue'
-import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Forumsort from '../../components/forum/forumsort.vue'
 import Postcard from '../../components/forum/postcard.vue'
@@ -42,13 +41,12 @@ const savedPosts = computed(() => {
 
 <template>
   <div class="vstack gap-3">
-    <div class="forum-toolbar d-flex align-items-center gap-2 px-3">
-      <ForumMenuButton />
+    <Teleport defer to="#forum-filter-slot">
       <div class="forum-filter-bar">
         <Forumsearch v-model="searchTerm" />
         <Forumsort v-model="sort" />
       </div>
-    </div>
+    </Teleport>
 
     <WheelList :items="savedPosts" v-slot="{ item }">
       <Postcard :post="item" />

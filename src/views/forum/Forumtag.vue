@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Forumnav from '../../components/forum/forumnav.vue'
-import ForumMenuButton from '../../components/forum/forummenubutton.vue'
 import Forumsearch from '../../components/forum/forumsearch.vue'
 import Postcard from '../../components/forum/postcard.vue'
 import { tagStyle } from '../../composables/forum/tagColor.js'
@@ -98,12 +97,11 @@ watch(
                             +
                         </button>
                 </div>
-                <div class="d-flex align-items-center gap-2 px-3 px-lg-0">
-                    <ForumMenuButton />
+                <Teleport defer to="#forum-filter-slot">
                     <div class="forum-filter-bar">
                         <Forumsearch v-model="searchTerm" />
                     </div>
-                </div>
+                </Teleport>
                 <main  class="p-3 flex-grow-1" style="min-width: 0">
                     <div v-if="toggleDisplay" class="d-flex flex-wrap column-gap-3 row-gap-4 align-items-start pb-2">
                         <button

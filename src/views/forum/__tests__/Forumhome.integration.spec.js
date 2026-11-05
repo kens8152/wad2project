@@ -50,7 +50,7 @@ function mountForum(posts = POSTS) {
     attachTo: document.body,
     global: {
       provide: { forumReset: reset },
-      stubs: { Postcard: PostcardStub },
+      stubs: { Postcard: PostcardStub, teleport: true },
     },
   })
   return { wrapper, reset }
