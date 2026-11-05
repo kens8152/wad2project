@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useLandingMotion, MEDIA } from '@/composables/landing/useLandingMotion'
+import { useLandingMotion, replayOnView, MEDIA } from '@/composables/landing/useLandingMotion'
 import { TICKETS, VENUES } from '@/data/landing'
 
 const root = ref(null)
@@ -17,17 +17,8 @@ const pins = VENUES.map((v) => ({
 useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
   mm.add(MEDIA.desktop, () => {
     const distance = () => rail.value.scrollWidth - rail.value.parentElement.clientWidth + 40
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: root.value,
-        scroller,
-        start: 'top top',
-        end: () => '+=' + (window.innerHeight * 1.2 + distance()),
-        scrub: 0.8,
-        pin: true,
-        invalidateOnRefresh: true,
-      },
-    })
+    const tl = gsap.timeline()
+    replayOnView(ScrollTrigger, tl, { trigger: root.value, scroller })
     tl.fromTo('.map-road', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.6, stagger: 0.05 })
       .from('.map-pin', { y: -160, autoAlpha: 0, duration: 0.4, stagger: 0.07, ease: 'bounce.out' }, '-=0.3')
       .fromTo('.map-ripple', { scale: 0.2, opacity: 0.8 }, { scale: 2.6, opacity: 0, duration: 0.5, stagger: 0.07, transformOrigin: '50% 50%' }, '<0.2')

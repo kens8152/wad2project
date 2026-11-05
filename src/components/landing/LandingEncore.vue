@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import EqualizerWave from './EqualizerWave.vue'
-import { useLandingMotion } from '@/composables/landing/useLandingMotion'
+import { useLandingMotion, replayOnView } from '@/composables/landing/useLandingMotion'
 import { SHOWCASE_ARTISTS } from '@/data/landing'
 
 const root = ref(null)
@@ -10,21 +10,23 @@ const label = SHOWCASE_ARTISTS[2]
 
 useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-    gsap.from('.encore-word', {
+    const tl = gsap.timeline()
+    replayOnView(ScrollTrigger, tl, { trigger: root.value, scroller, start: 'top 75%' })
+    tl.from('.encore-word', {
       yPercent: 120,
       rotate: 6,
       opacity: 0,
       stagger: 0.12,
       ease: 'power3.out',
-      scrollTrigger: { trigger: root.value, scroller, start: 'top 75%', end: 'top 30%', scrub: 0.6 },
+      duration: 0.9,
     })
-    gsap.from('.encore-vinyl', {
+    tl.from('.encore-vinyl', {
       scale: 0.4,
       rotate: -180,
       opacity: 0,
       ease: 'power2.out',
-      scrollTrigger: { trigger: root.value, scroller, start: 'top 85%', end: 'top 35%', scrub: 0.6 },
-    })
+      duration: 1.2,
+    }, 0)
     gsap.to('.encore-vinyl__disc', { rotate: 360, duration: 4, ease: 'none', repeat: -1 })
   })
 })

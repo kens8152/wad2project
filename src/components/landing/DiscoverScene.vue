@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useLandingMotion, MEDIA } from '@/composables/landing/useLandingMotion'
+import { useLandingMotion, replayOnView, MEDIA } from '@/composables/landing/useLandingMotion'
 import { GENRES } from '@/data/landing'
 
 const root = ref(null)
@@ -54,10 +54,8 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
   const build = (pinned) => {
     const tl = gsap.timeline({
       defaults: { ease: 'power2.inOut' },
-      scrollTrigger: pinned
-        ? { trigger: root.value, scroller, start: 'top top', end: '+=220%', scrub: 0.8, pin: true }
-        : { trigger: root.value, scroller, start: 'top 70%', end: 'bottom 60%', scrub: 0.8 },
     })
+    replayOnView(ScrollTrigger, tl, { trigger: root.value, scroller })
     tl.from('.web-dot', {
       attr: { cx: (i) => dots[i].sx, cy: (i) => dots[i].sy },
       opacity: 0.25,

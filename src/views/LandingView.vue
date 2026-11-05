@@ -1,5 +1,4 @@
 <script setup>
-import ScrollTimeline from '@/components/landing/ScrollTimeline.vue'
 import LandingHero from '@/components/landing/LandingHero.vue'
 import GenreMarquee from '@/components/landing/GenreMarquee.vue'
 import DiscoverScene from '@/components/landing/DiscoverScene.vue'
@@ -12,7 +11,6 @@ import LandingEncore from '@/components/landing/LandingEncore.vue'
 
 <template>
   <div class="landing riffle-page-bg">
-    <ScrollTimeline />
     <LandingHero />
     <GenreMarquee />
     <DiscoverScene />

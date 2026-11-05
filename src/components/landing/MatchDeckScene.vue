@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useLandingMotion, MEDIA } from '@/composables/landing/useLandingMotion'
+import { useLandingMotion, replayOnView, MEDIA } from '@/composables/landing/useLandingMotion'
 import { SHOWCASE_ARTISTS } from '@/data/landing'
 
 const root = ref(null)
@@ -24,11 +24,8 @@ useLandingMotion(root, (gsap, ScrollTrigger, { mm, scroller }) => {
     const firstIndex = cards.length - count
     if (firstIndex > 0) gsap.set(gsap.utils.toArray('.deck-card').slice(0, firstIndex), { autoAlpha: 0 })
 
-    const tl = gsap.timeline({
-      scrollTrigger: pinned
-        ? { trigger: root.value, scroller, start: 'top top', end: '+=320%', scrub: 0.9, pin: true }
-        : { trigger: root.value.querySelector('.deck-stage'), scroller, start: 'top 90%', end: 'bottom 10%', scrub: 0.8 },
-    })
+    const tl = gsap.timeline()
+    replayOnView(ScrollTrigger, tl, { trigger: pinned ? root.value : root.value.querySelector('.deck-stage'), scroller })
 
     list.forEach((card, n) => {
       const i = firstIndex + n

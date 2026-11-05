@@ -47,3 +47,19 @@ export function useLandingMotion(rootRef, build) {
     if (mm) mm.revert()
   })
 }
+
+export function replayOnView(ScrollTrigger, tl, { trigger, scroller, start = 'top 60%' }) {
+  let armed = true
+  tl.pause(0)
+  const play = () => {
+    if (!armed) return
+    armed = false
+    tl.restart()
+  }
+  const reset = () => {
+    armed = true
+    tl.pause(0)
+  }
+  ScrollTrigger.create({ trigger, scroller, start, end: 'bottom 40%', onEnter: play, onEnterBack: play })
+  ScrollTrigger.create({ trigger, scroller, start: 'top bottom', end: 'bottom top', onLeave: reset, onLeaveBack: reset })
+}
