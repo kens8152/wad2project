@@ -65,11 +65,9 @@ function handleHeartClick() {
       <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
     </button>
 
-    <span class="artist-card__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
-
     <div class="artist-card__body">
       <h3 class="artist-card__title">{{ artist.name }}</h3>
-      <p class="artist-card__venue">{{ artist.venues.join(', ') }}</p>
+      <span class="artist-card__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
 
       <!-- only show this line if the artist has an upcoming event -->
       <p v-if="artist.nextEvent" class="artist-card__time">
@@ -186,7 +184,7 @@ function handleHeartClick() {
   color: var(--riffle-ink);
   font-size: 0.8rem;
   font-weight: 700;
-  margin: 0.5rem auto 0;
+  margin: 0.3rem 0 0;
 }
 .artist-card__genre .dot {
   width: 9px;
@@ -273,7 +271,10 @@ function handleHeartClick() {
   color: var(--genre);
 }
 
-/* Dark mode: softer shine and a dark tag chip */
+/* Dark mode: white glow on the heart button to match the light-mode dark glow */
+:root[data-theme='dark'] .artist-card__heart {
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.18);
+}
 :root[data-theme='dark'] .artist-card::after {
   background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
