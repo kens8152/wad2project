@@ -198,8 +198,9 @@ onMounted(async () => {
     if (spotifyResult === 'connected') {
       await importSpotifyGenres()
     } else {
-      genreImportMessage.value = 'Spotify connection cancelled. You can continue choosing your preferences manually.'
-      genreImportError.value = ''
+// Display cancellation using the red error message.
+      genreImportMessage.value = ''
+      genreImportError.value = 'Spotify connection cancelled. You can continue choosing your preferences manually.'
     }
   }
 })
@@ -1405,33 +1406,55 @@ button:focus-visible {
 :root[data-theme='dark'] .spotify-box {
   background-color: rgba(30, 215, 96, 0.08);
 }
+
 :root[data-theme='dark'] .genre-option:hover {
   background-color: rgba(124, 77, 255, 0.12);
 }
+
 :root[data-theme='dark'] .genre-option.selected {
   background-color: rgba(124, 77, 255, 0.22);
   border-color: #b9a4ff;
   color: #e3d9ff;
 }
+
 :root[data-theme='dark'] .text-input {
   background-color: var(--riffle-surface-soft);
 }
+
 :root[data-theme='dark'] .taste-summary {
   background-color: var(--riffle-surface-soft);
 }
+
 :root[data-theme='dark'] .selected-badge,
 :root[data-theme='dark'] .song-cover {
   background: rgba(124, 77, 255, 0.22);
   color: #d9ccff;
 }
+
 :root[data-theme='dark'] .remove-song-button:hover:not(:disabled) {
   border-color: rgba(224, 36, 94, 0.5);
   background-color: rgba(224, 36, 94, 0.15);
   color: #ff8cbd;
 }
+
 :root[data-theme='dark'] .song-add-button.is-added {
   border-color: rgba(30, 215, 96, 0.35);
   background: rgba(30, 215, 96, 0.12);
   color: #6fe3a8;
+}
+
+/* Keep the Spotify box at a consistent height in both connection states. */
+.connection-box.spotify-box {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 160px;
+  padding: 24px;
+}
+
+/* Let the connection status and button wrap on smaller screens. */
+@media (max-width: 575.98px) {
+  .connection-box.spotify-box {
+    min-height: 160px;
+  }
 }
 </style>

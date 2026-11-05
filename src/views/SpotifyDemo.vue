@@ -274,6 +274,8 @@ if (params.get('error')) {
 </template>
 
 <style scoped>
+
+
 :global(body.spotify-dark) {
   background-color: #121212;
   color: #fff;
