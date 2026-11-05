@@ -539,11 +539,28 @@ async function onShare() {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
-  align-items: start;
+  align-items: stretch;
 }
 .event-layout__side {
   display: grid;
   gap: 1.25rem;
+  align-content: start;
+}
+/* on wide screens stretch the sidebar to the main column's height and let the
+   last card grow into the leftover space so its bottom lines up (no gap) */
+@media (min-width: 992px) {
+  .event-layout__side {
+    grid-template-rows: auto 1fr;
+    align-content: stretch;
+  }
+  .event-layout__side > .event-section:last-child {
+    display: flex;
+    flex-direction: column;
+  }
+  .event-layout__side > .event-section:last-child .more-all {
+    margin-top: auto;
+    padding-top: 0.7rem;
+  }
 }
 @media (min-width: 992px) {
   .event-layout {
@@ -608,6 +625,7 @@ async function onShare() {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
+  align-items: stretch;
 }
 @media (min-width: 768px) {
   .tiles {
@@ -617,6 +635,7 @@ async function onShare() {
 .tile {
   display: flex;
   gap: 0.85rem;
+  height: 100%;
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--riffle-border);
   border-radius: 12px;
