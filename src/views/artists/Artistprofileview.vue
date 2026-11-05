@@ -124,10 +124,18 @@ const socialLinks = computed(() => {
 })
 
 // ----- tabs -----
+// The portfolio is the artist's showcase: only their best (most popular) events, about half of all their events, so it is
+// always a selection (1 event shows 1, 3 events show 2, 6 events show 3), and never more than 4.
+// The Upcoming and Past tabs still list everything.
+const featured = computed(() => {
+  const size = Math.min(4, Math.max(1, Math.ceil(portfolio.value.length / 2)))
+  return portfolio.value.slice().sort((a, b) => b.going - a.going).slice(0, size)
+})
+
 const activeTab = ref('portfolio')
 
 const tabs = computed(() => [
-  { value: 'portfolio', label: 'Portfolio', count: portfolio.value.length },
+  { value: 'portfolio', label: 'Portfolio', count: featured.value.length },
   { value: 'upcoming', label: 'Upcoming events', count: upcomingEvents.value.length },
   { value: 'past', label: 'Past events', count: pastEvents.value.length },
 ])
@@ -136,7 +144,7 @@ const tabs = computed(() => [
 const shownEvents = computed(() => {
   if (activeTab.value === 'upcoming') return upcomingEvents.value
   if (activeTab.value === 'past') return pastEvents.value
-  return portfolio.value
+  return featured.value
 })
 
 const emptyMessage = computed(() => {
@@ -167,80 +175,74 @@ const emptyMessage = computed(() => {
       <RouterLink :to="{ name: 'artists' }" class="btn btn-riffle mt-2">Back to artists</RouterLink>
     </div>
 
-    <!-- The profile -->
-    <template v-else>
-      <!-- Hero banner -->
-      <header class="hero" :style="{ '--genre': genreColor }">
-        <img
-          v-if="artist.image && !heroImageFailed"
-          :src="artist.image"
-          :alt="artist.name"
-          class="hero__img"
-          @error="heroImageFailed = true"
-        />
-        <div class="hero__shade"></div>
-
-        <button type="button" class="hero__back" @click="goBack">
+    <!-- The profile: the artist on the left, their events on the right -->
+    <div v-else class="profile-layout" :style="{ '--genre': genreColor }">
+      <aside class="profile-side">
+        <button type="button" class="profile-back" @click="goBack">
           <i class="bi bi-arrow-left"></i>
           Back
         </button>
 
-        <div class="hero__bottom">
-          <div>
-            <span class="hero__genre"><i class="dot"></i>{{ artist.genre.name }}</span>
-            <h1 class="hero__name">{{ artist.name }}</h1>
-          </div>
-
-          <div class="hero__actions">
-            <button type="button" class="glass-pill" :aria-pressed="isFavourite" @click="onFavourite">
-              <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
-              {{ isFavourite ? 'Following' : 'Follow' }}
-            </button>
-            <button type="button" class="glass-pill" :aria-pressed="isSaved" :disabled="savingArtist" @click="onSave">
-              <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
-              {{ isSaved ? 'Saved' : 'Save' }}
-            </button>
-            <button type="button" class="glass-pill" @click="onShare">
-              <i class="bi bi-share"></i>
-              Share
-            </button>
-          </div>
+        <div class="profile-photo">
+          <img
+            v-if="artist.image && !heroImageFailed"
+            :src="artist.image"
+            :alt="artist.name"
+            class="profile-photo__img"
+            @error="heroImageFailed = true"
+          />
+          <span v-else class="profile-photo__initial" aria-hidden="true">{{ artist.name.charAt(0) }}</span>
         </div>
-      </header>
 
-      <div class="profile-body" :style="{ '--genre': genreColor }">
-        <!-- About -->
-        <section class="profile-section">
-          <h2 class="profile-section__title">About</h2>
-          <p v-if="profile.bio" class="profile-about">{{ profile.bio }}</p>
-          <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
+        <p class="profile-kicker"><i class="dot"></i>{{ artist.genre.name }}</p>
+        <h1 class="profile-name">{{ artist.name }}</h1>
 
-          <div class="profile-meta">
-            <span v-if="upcomingEvents.length > 1" class="meta-chip"><i class="bi bi-calendar-event"></i>{{ upcomingEvents.length }} events</span>
-            <span v-else-if="upcomingEvents.length === 1" class="meta-chip"><i class="bi bi-clock-history"></i>{{ upcomingEvents.length }} event</span>
-            <span v-if="profile.formed" class="meta-chip"><i class="bi bi-clock-history"></i>Since {{ profile.formed }}</span>
-            <span v-if="artist.tag" class="meta-chip">#{{ artist.tag }}</span>
-          </div>
-        </section>
+        <div class="profile-actions">
+          <button type="button" class="profile-pill" :aria-pressed="isFavourite" @click="onFavourite">
+            <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
+            {{ isFavourite ? 'Following' : 'Follow' }}
+          </button>
+          <button type="button" class="profile-pill" :aria-pressed="isSaved" :disabled="savingArtist" @click="onSave">
+            <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+            {{ isSaved ? 'Saved' : 'Save' }}
+          </button>
+          <button type="button" class="profile-pill" @click="onShare">
+            <i class="bi bi-share"></i>
+            Share
+          </button>
+        </div>
 
-        <!-- Social links -->
-        <section v-if="socialLinks.length > 0" class="profile-section">
-          <h2 class="profile-section__title">Follow</h2>
-          <div class="socials">
-            <a
-              v-for="link in socialLinks"
-              :key="link.network"
-              :href="link.url"
-              class="socials__btn"
-              target="_blank"
-              rel="noopener"
-              :aria-label="link.network"
-            >
-              <i class="bi" :class="link.icon"></i>
-            </a>
-          </div>
-        </section>
+        <div class="profile-meta">
+          <span v-if="upcomingEvents.length > 0" class="meta-chip"><i class="bi bi-calendar-event"></i>{{ upcomingEvents.length }} upcoming</span>
+          <span v-if="pastEvents.length > 0" class="meta-chip"><i class="bi bi-clock-history"></i>{{ pastEvents.length }} past</span>
+          <span v-if="profile.formed" class="meta-chip"><i class="bi bi-clock-history"></i>Since {{ profile.formed }}</span>
+          <span v-if="artist.tag" class="meta-chip">#{{ artist.tag }}</span>
+        </div>
 
+
+        <div class="profile-divider"></div>
+
+        <p v-if="profile.bio" class="profile-about">{{ profile.bio }}</p>
+        <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
+
+
+        <div v-if="socialLinks.length > 0" class="profile-divider"></div>
+        <div v-if="socialLinks.length > 0" class="socials">
+          <a
+            v-for="link in socialLinks"
+            :key="link.network"
+            :href="link.url"
+            class="socials__btn"
+            target="_blank"
+            rel="noopener"
+            :aria-label="link.network"
+          >
+            <i class="bi" :class="link.icon"></i>
+          </a>
+        </div>
+      </aside>
+
+      <main class="profile-main">
         <!-- Tabs: upcoming / past / portfolio -->
         <section class="profile-section">
           <div class="profile-tabs" role="tablist">
@@ -261,12 +263,12 @@ const emptyMessage = computed(() => {
 
           <p v-if="shownEvents.length === 0" class="profile-empty" :key="activeTab + '-empty'">{{ emptyMessage }}</p>
 
-            <div v-else class="profile-grid" :key="activeTab + '-grid'">
-                <ProfileEventCard v-for="event in shownEvents" :key="event.id" :event="event" />
-            </div>
+          <div v-else class="profile-grid" :key="activeTab + '-grid'">
+            <ProfileEventCard v-for="event in shownEvents" :key="event.id" :event="event" />
+          </div>
         </section>
-      </div>
-    </template>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -289,138 +291,155 @@ const emptyMessage = computed(() => {
   border: 1px dashed var(--riffle-border);
 }
 
-/* ---------- hero banner ---------- */
-.hero {
-  position: relative;
-  min-height: 240px;
-  padding: 1.1rem 1.5rem 1.4rem;
+/* ---------- the layout: the artist on the left, their events on the right ---------- */
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.6rem;
+}
+.profile-side {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding: 1.2rem 2rem 2rem;
+  border: 1px solid var(--riffle-border);
   border-radius: 18px;
-  overflow: hidden;
-  color: #fff;
-  background: linear-gradient(135deg, var(--genre), color-mix(in srgb, var(--genre) 40%, #1b1b3a));
+  background: var(--riffle-surface);
+  box-shadow: var(--riffle-shadow);
 }
-.hero__img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.35;
+.profile-divider {
+  align-self: stretch;
+  height: 1px;
+  margin: 1.2rem 0;
+  background: var(--riffle-border);
 }
-.hero__shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.55));
+.profile-main {
+  min-width: 0;
 }
-.hero__back,
-.hero__bottom {
-  position: relative; /* so they sit above the picture */
+@media (min-width: 992px) {
+  .profile-layout {
+    grid-template-columns: 420px minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+  }
 }
 
-.hero__back {
+.profile-back {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0;
+  margin-bottom: 0.9rem;
+  padding: 0.1rem 0;
   border: 0;
   background: none;
-  color: #fff;
+  color: var(--riffle-muted);
   font-weight: 700;
-  font-size: 1rem;
 }
-.hero__back:hover {
-  text-decoration: underline;
+.profile-back:hover {
+  color: var(--riffle-ink);
 }
 
-.hero__bottom {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+/* the picture is a circle (a letter on the genre colour when there is no picture) */
+.profile-photo {
+  width: 180px;
+  height: 180px;
+  margin-bottom: 1.2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--genre), color-mix(in srgb, var(--genre) 40%, #1b1b3a));
+  box-shadow: 0 0 0 4px var(--riffle-surface), 0 0 0 5px var(--riffle-border), var(--riffle-shadow);
 }
-.hero__genre {
+.profile-photo__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-photo__initial {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  font-size: 3.6rem;
+  font-weight: 800;
+}
+
+.profile-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  background: var(--riffle-surface);
-  color: var(--riffle-ink);
-  font-size: 0.8rem;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--riffle-muted);
+  font-size: 0.78rem;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
-.hero__genre .dot {
+.profile-kicker .dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--genre);
 }
-.hero__name {
-  margin: 0.6rem 0 0;
-  font-size: 3rem;
+.profile-name {
+  margin: 0.4rem 0 0;
+  font-size: 2.3rem;
   line-height: 1.05;
-  font-weight: 800;
-  color: #fff;
-}
-
-.hero__actions {
-  display: flex;
-  gap: 0.75rem;
-}
-/* glass buttons (same idea as the buttons in your design) */
-.glass-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.1rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: color-mix(in srgb, var(--riffle-surface) 18%, transparent);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
-  transition: background 0.15s, transform 0.15s;
-}
-.glass-pill:hover {
-  background: color-mix(in srgb, var(--riffle-surface) 30%, transparent);
-  transform: translateY(-1px);
-}
-.glass-pill[aria-pressed='true'] .bi-heart-fill {
-  color: #ff6b6b;
-}
-
-/* ---------- body ---------- */
-.profile-body {
-  padding-top: 1.6rem;
-}
-.profile-section + .profile-section {
-  margin-top: 2rem;
-}
-.profile-section__title {
-  margin: 0 0 0.6rem;
-  font-size: 1.25rem;
   font-weight: 800;
   color: var(--riffle-ink);
 }
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--riffle-border);
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.profile-pill:hover:not(:disabled) {
+  border-color: var(--genre);
+  transform: translateY(-1px);
+}
+.profile-pill[aria-pressed='true'] {
+  border-color: var(--genre);
+  background: color-mix(in srgb, var(--genre) 12%, var(--riffle-surface));
+}
+.profile-pill[aria-pressed='true'] .bi-heart-fill {
+  color: #e0245e;
+}
+
 .profile-about {
-  max-width: 760px;
+  align-self: stretch;
+  text-align: left;
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #545454;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--riffle-muted);
 }
 
 .profile-meta {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.9rem;
+  margin-top: 1rem;
 }
 .meta-chip {
   display: inline-flex;
@@ -440,11 +459,12 @@ const emptyMessage = computed(() => {
 /* social buttons: dark circles like the design */
 .socials {
   display: flex;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.6rem;
 }
 .socials__btn {
-  width: 43px;
-  height: 43px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -524,11 +544,15 @@ const emptyMessage = computed(() => {
 }
 
 @media (max-width: 575.98px) {
-  .hero {
-    padding: 1rem;
+  .profile-side {
+    padding: 1.1rem 1.1rem 1.4rem;
   }
-  .hero__name {
-    font-size: 2.2rem;
+  .profile-photo {
+    width: 150px;
+    height: 150px;
+  }
+  .profile-name {
+    font-size: 1.9rem;
   }
 }
 

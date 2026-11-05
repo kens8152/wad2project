@@ -46,7 +46,8 @@ const friendsLabel = computed(() => {
         <h3 class="map-card__title">{{ event.headliner.name }}</h3>
         <p class="map-card__venue">{{ event.venue.label }} · {{ formatDistance(event.distanceKm) }}</p>
         <p class="map-card__meta">
-          {{ event.going }} going<template v-if="event.friends.length"> · {{ friendsLabel }}</template>
+          <span class="map-card__genre">{{ event.genre.label }}</span>
+          · {{ event.going }} going<template v-if="event.friends.length"> · {{ friendsLabel }}</template>
         </p>
       </div>
     </RouterLink>
@@ -57,22 +58,25 @@ const friendsLabel = computed(() => {
 .map-card {
   width: 100%;
   overflow: hidden;
-  border-radius: 12px;
-  background: var(--riffle-surface);
-  border-left: 4px solid var(--genre);
-  box-shadow: 0 4px 14px rgba(20, 35, 90, 0.14);
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--genre) 22%, var(--riffle-border));
+  /* a soft wash of the genre colour from the top right corner, over the normal card colour */
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--genre) 13%, transparent), transparent 60%),
+    var(--riffle-surface);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--genre) 14%, rgba(20, 35, 90, 0.12));
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .map-card:hover {
+  border-color: color-mix(in srgb, var(--genre) 45%, var(--riffle-border));
   transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(20, 35, 90, 0.24);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--genre) 28%, rgba(20, 35, 90, 0.16));
 }
 /* the card of the pin that was clicked: it pops up in its genre colour and gets a "Selected" tag */
 .map-card.is-active {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 12%, #fff), #fff 70%);
-  border-left-width: 6px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 12%, var(--riffle-surface)), var(--riffle-surface) 70%);
   transform: translateY(-6px) scale(1.04);
   box-shadow:
     0 0 0 2px var(--genre),
@@ -112,8 +116,8 @@ const friendsLabel = computed(() => {
 .map-card__link {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.6rem 0.8rem 0.6rem 0.6rem;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem 0.7rem 0.75rem;
   color: inherit;
   text-decoration: none;
 }
@@ -122,8 +126,9 @@ const friendsLabel = computed(() => {
   flex: none;
   width: 78px;
   height: 78px;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 0 0 2px var(--riffle-surface), 0 0 0 4px color-mix(in srgb, var(--genre) 55%, transparent); /* a ring in the genre colour */
 }
 .map-card__thumb :deep(.event-cover) {
   width: 100%;
@@ -132,13 +137,14 @@ const friendsLabel = computed(() => {
 }
 .map-card__dot {
   position: absolute;
-  left: 5px;
-  bottom: 5px;
-  width: 11px;
-  height: 11px;
+  left: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--genre);
   border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 .map-card__info {
   min-width: 0;
@@ -155,7 +161,7 @@ const friendsLabel = computed(() => {
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: var(--riffle-muted);
+  color: color-mix(in srgb, var(--genre) 75%, var(--riffle-ink)); /* the genre colour, nudged towards the text colour so it reads in light and dark */
   white-space: nowrap;
 }
 .map-card__price {
@@ -164,7 +170,7 @@ const friendsLabel = computed(() => {
   font-size: 0.78rem;
   font-weight: 800;
   color: var(--genre);
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 14%, var(--riffle-surface));
 }
 .map-card__title {
   margin: 0;
@@ -185,5 +191,14 @@ const friendsLabel = computed(() => {
 }
 .map-card__meta {
   color: var(--riffle-faint);
+}
+.map-card__genre {
+  font-weight: 800;
+  color: color-mix(in srgb, var(--genre) 75%, var(--riffle-ink));
+}
+
+/* Dark mode: softer shine on the selected card */
+:root[data-theme='dark'] .map-card.is-active::after {
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
 </style>

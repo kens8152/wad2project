@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { refreshAccessToken } from './spotifyAuth';
+import { supabase } from '@/services/supabase';
 
 const spotifyApi = axios.create({
 baseURL: 'https://api.spotify.com/v1',
@@ -43,14 +44,8 @@ export async function fetchTopArtists(token, limit = 15) {
 
 // Search Spotify for songs
 export async function searchSongs(query) {
-  const response = await spotifyApi.get('/search', {
-    params: {
-      q: query,
-      type: 'track',
-      limit: 5
-    }
-  })
-
-  return response.data.tracks.items
+  const { data, error } = await supabase.functions.invoke('spotify-search', { body: { q: query } })
+  if (error) throw error
+  return data
 }
 export default spotifyApi;

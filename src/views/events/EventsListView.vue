@@ -14,17 +14,12 @@ const filters = useEventFilters()
     </template>
 
     <template #default="{ events }">
-      <div class="events-list__grid">
-        <EventListCard v-for="e in events" :key="e.id" :event="e" />
+      <!-- Bootstrap columns: 1 on phones, 2 from sm, 3 from xl -->
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3">
+        <div v-for="e in events" :key="e.id" class="col">
+          <EventListCard :event="e" class="h-100" />
+        </div>
       </div>
     </template>
   </EventsShell>
 </template>
-
-<style scoped>
-.events-list__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.1rem;
-}
-</style>

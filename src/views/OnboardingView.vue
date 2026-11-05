@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { searchSongs, fetchTopArtists } from '@/services/spotifyApi'
@@ -21,6 +21,11 @@ const userStore = useUserStore()
 const saving = ref(false)
 const connectingSpotify = ref(false)
 const spotifyConnected = ref(Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token')))
+
+// Update the connection indicator when the Riffle account changes.
+watch(() => userStore.user.id, () => {
+  spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
+})
 
 let alreadyOnboarded = false
 
@@ -180,12 +185,23 @@ onMounted(async () => {
 
   spotifyConnected.value = Boolean(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
 
-  if (route.query.spotify === 'connected') {
+  // Handle the result after returning from Spotify.
+  // The saved profile and unfinished draft have already been restored above.
+  if (route.query.spotify === 'connected' || route.query.spotify === 'cancelled') {
+    const spotifyResult = route.query.spotify
     const query = { ...route.query }
     delete query.spotify
 
+    // Remove the status parameter so refreshing does not repeat the action.
     await router.replace({ path: route.path, query })
-    await importSpotifyGenres()
+
+    if (spotifyResult === 'connected') {
+      await importSpotifyGenres()
+    } else {
+// Display cancellation using the red error message.
+      genreImportMessage.value = ''
+      genreImportError.value = 'Spotify connection cancelled. You can continue choosing your preferences manually.'
+    }
   }
 })
 
@@ -239,11 +255,6 @@ async function searchForSongs() {
     return
   }
 
-  if (!localStorage.getItem('access_token')) {
-    songError.value = 'Please connect Spotify first.'
-    return
-  }
-
   songLoading.value = true
 
   try {
@@ -253,7 +264,7 @@ async function searchForSongs() {
       songError.value = 'No songs found. Try another search.'
     }
   } catch {
-    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
+    songError.value = 'Songs could not be loaded. Please try again.'
   } finally {
     songLoading.value = false
   }
@@ -715,7 +726,7 @@ async function importSpotifyGenres() {
 
 
 .name-section {
-  margin: 10px 0 20px;
+  margin: 28px 0 20px;
 }
 
 .name-section label {
@@ -1395,33 +1406,55 @@ button:focus-visible {
 :root[data-theme='dark'] .spotify-box {
   background-color: rgba(30, 215, 96, 0.08);
 }
+
 :root[data-theme='dark'] .genre-option:hover {
   background-color: rgba(124, 77, 255, 0.12);
 }
+
 :root[data-theme='dark'] .genre-option.selected {
   background-color: rgba(124, 77, 255, 0.22);
   border-color: #b9a4ff;
   color: #e3d9ff;
 }
+
 :root[data-theme='dark'] .text-input {
   background-color: var(--riffle-surface-soft);
 }
+
 :root[data-theme='dark'] .taste-summary {
   background-color: var(--riffle-surface-soft);
 }
+
 :root[data-theme='dark'] .selected-badge,
 :root[data-theme='dark'] .song-cover {
   background: rgba(124, 77, 255, 0.22);
   color: #d9ccff;
 }
+
 :root[data-theme='dark'] .remove-song-button:hover:not(:disabled) {
   border-color: rgba(224, 36, 94, 0.5);
   background-color: rgba(224, 36, 94, 0.15);
   color: #ff8cbd;
 }
+
 :root[data-theme='dark'] .song-add-button.is-added {
   border-color: rgba(30, 215, 96, 0.35);
   background: rgba(30, 215, 96, 0.12);
   color: #6fe3a8;
+}
+
+/* Keep the Spotify box at a consistent height in both connection states. */
+.connection-box.spotify-box {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 160px;
+  padding: 24px;
+}
+
+/* Let the connection status and button wrap on smaller screens. */
+@media (max-width: 575.98px) {
+  .connection-box.spotify-box {
+    min-height: 160px;
+  }
 }
 </style>

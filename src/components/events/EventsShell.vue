@@ -296,5 +296,9 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
     min-width: 72px;
     padding-inline: 0.8rem;
   }
+  /* phones: the sort gets its own row, so it is not squeezed by Guide and Map/List */
+  .events-shell__toolbar .events-shell__sort {
+    flex: 1 1 100%;
+  }
 }
 </style>

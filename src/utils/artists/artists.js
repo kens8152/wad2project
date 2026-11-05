@@ -49,10 +49,10 @@ export function buildArtists(events) {
     for (let j = 0; j < event.artists.length; j++) {
       const eventArtist = event.artists[j]
 
-      // check if we already added this artist (compare by name)
+      // check if we already added this artist (the same id, or the same name ignoring case)
       let artist = null
       for (let k = 0; k < artistList.length; k++) {
-        if (artistList[k].name.toLowerCase() === eventArtist.name.toLowerCase()) {
+        if (artistList[k].id === eventArtist.id || artistList[k].name.toLowerCase() === eventArtist.name.toLowerCase()) {
           artist = artistList[k]
         }
       }

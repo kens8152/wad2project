@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/services/supabase.js'
+import { logout as clearSpotifySession } from '@/services/spotifyAuth'
 
 export const useUserStore = defineStore('user', () => {
   const isLoggedIn = ref(false)
@@ -64,7 +65,23 @@ export const useUserStore = defineStore('user', () => {
 
   function applySession(session) {
     const account = session ? session.user : null
-    const accountChanged = user.value.id !== (account ? account.id : '')
+    const accountId = account ? account.id : ''
+    const accountChanged = user.value.id !== accountId
+
+    // Remember which Riffle account owns the Spotify connection.
+    const spotifyOwner = localStorage.getItem('riffle-spotify-owner')
+
+    // Clear Spotify credentials on logout or when a different account signs in.
+    // Comparing against stored ownership preserves the connection after a refresh.
+    if (!accountId || spotifyOwner !== accountId) {
+      clearSpotifySession()
+    }
+
+    if (accountId) {
+      localStorage.setItem('riffle-spotify-owner', accountId)
+    } else {
+      localStorage.removeItem('riffle-spotify-owner')
+    }
 
     isLoggedIn.value = Boolean(account)
 

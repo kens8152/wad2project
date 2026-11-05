@@ -313,6 +313,7 @@ async function logoutUser() {
 
 /* Matchmaking button */
 .match-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   height: 40px;
@@ -329,21 +330,28 @@ async function logoutUser() {
   color: #fff;
 }
 
-/* Label slides out on hover */
+/* Label pops up as a small pill under the button on hover */
 .match-btn__label {
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  white-space: nowrap;
-  font-size: 0.9rem;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: #7c4dff;
+  color: #fff;
+  font-size: 0.8rem;
   font-weight: 700;
-  transition: max-width 0.35s ease, margin-left 0.35s ease, opacity 0.25s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(29, 43, 100, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .match-btn:hover .match-btn__label,
 .match-btn:focus-visible .match-btn__label {
-  max-width: 180px;
-  margin-left: 10px;
   opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* account menu */
@@ -457,6 +465,7 @@ async function logoutUser() {
   font-size: 1.6rem;
   color: var(--riffle-ink);
 }
+
 
 @media (max-width: 1199.98px) {
   .riffle-nav__right {
