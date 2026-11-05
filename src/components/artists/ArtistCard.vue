@@ -78,7 +78,7 @@ function handleHeartClick() {
 
       <div class="artist-card__chips">
         <span v-if="artist.tag" class="chip chip--tag">#{{ artist.tag }}</span>
-        <span class="chip chip--price">{{ artist.events.length }} {{ artist.events.length === 1 ? 'event' : 'events' }}</span>
+        <span class="chip chip--price">{{ artist.events.length }} {{ artist.events.length === 1 ? 'upcoming event' : 'upcoming events' }}</span>
       </div>
 
       <p v-if="footnote" class="artist-card__time artist-card__footnote">{{ footnote }}</p>

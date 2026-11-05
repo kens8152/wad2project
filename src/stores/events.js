@@ -48,12 +48,15 @@ export const useEventsStore = defineStore('events', () => {
       for (const e of data.events) {
         const genre = data.genres.find((g) => g.id === e.genreId)
         const venue = data.venues.find((v) => v.id === e.venueId)
-        const eventArtists = e.artistIds.map((id) => data.artists.find((a) => a.id === id))
+        const eventArtists = e.artistIds
+          .map((id) => data.artists.find((a) => a.id === id))
+          .filter(Boolean)
 
         const date = new Date()
         date.setDate(date.getDate() + e.dayOffset)
 
         const headliner = eventArtists[0]
+        const venueName = venue ? venue.name : ''
         list.push({
           id: e.id,
           image: e.image,
@@ -61,19 +64,19 @@ export const useEventsStore = defineStore('events', () => {
           venue: venue,
           artists: eventArtists,
           headliner: headliner,
-          title: headliner.name + ' at ' + venue.area,
-          tag: headliner.tag,
-          dow: DAYS[date.getDay()].toUpperCase(),
-          dayNumber: date.getDate(),
-          month: MONTHS[date.getMonth()].toUpperCase(),
+          title: e.title || (headliner ? headliner.name + ' at ' + venueName : venueName),
+          tag: e.tag || (headliner ? headliner.tag : ''),
+          dow: e.dow || DAYS[date.getDay()].toUpperCase(),
+          dayNumber: e.dayNumber || date.getDate(),
+          month: e.month || MONTHS[date.getMonth()].toUpperCase(),
           dayOffset: e.dayOffset,
-          time: e.time,
-          timeLabel: formatTime(e.time),
-          dateLabel: DAYS[date.getDay()] + ' ' + date.getDate() + ' ' + MONTHS[date.getMonth()],
+          time: e.time || '',
+          timeLabel: e.timeLabel || (e.time ? formatTime(e.time) : ''),
+          dateLabel: e.dateLabel || (DAYS[date.getDay()] + ' ' + date.getDate() + ' ' + MONTHS[date.getMonth()]),
           price: e.price,
           going: e.going,
-          about: e.about,
-          distance: distanceKm(myLocation.lat, myLocation.lng, venue.lat, venue.lng),
+          about: '',
+          distance: null,
         })
       }
 

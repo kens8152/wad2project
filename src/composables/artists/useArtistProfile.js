@@ -1,71 +1,86 @@
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useEventsStore } from '@/stores/events'
-import { buildArtists } from '../../utils/artists/artists'
-import pastEventsData from '/src/data/pastEvents.json'
-import artistProfiles from '/src/data/artistProfiles.json'
+import { supabase } from '@/services/supabase'
 
 // Gets everything the artist profile page needs for ONE artist.
 // artistId is a ref (for example computed(() => route.params.id))
 export function useArtistProfile(artistId) {
   const eventsStore = useEventsStore()
 
-  // all events = the current events + the sample past events
-  const allEvents = computed(() => eventsStore.events.concat(pastEventsData))
+  // artist + profile data fetched from Supabase
+  const artist = ref(null)
+  const profileLoading = ref(true)
+  const profileError = ref('')
 
-  // find this artist (buildArtists groups the events by artist)
-  const artist = computed(() => {
-    const artists = buildArtists(allEvents.value)
-    for (let i = 0; i < artists.length; i++) {
-      if (artists[i].id === artistId.value) {
-        return artists[i]
+  async function fetchArtist(id) {
+    if (!id) return
+    profileLoading.value = true
+    profileError.value = ''
+    try {
+      const { data, error } = await supabase
+        .from('artists')
+        .select('id, name, tag, bio, hometown, formed, socials, image_url, tracks, genre:genres(name, color)')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+
+      artist.value = {
+        id: data.id,
+        name: data.name,
+        tag: data.tag || '',
+        image: data.image_url || '',
+        bio: data.bio || '',
+        hometown: data.hometown || '',
+        formed: data.formed || '',
+        socials: data.socials || {},
+        tracks: data.tracks || [],
+        genre: data.genre || { name: 'Unknown', color: '#6c757d' },
       }
+    } catch (e) {
+      profileError.value = e.message
+      artist.value = null
+    } finally {
+      profileLoading.value = false
     }
-    return null
-  })
+  }
 
-  // bio and social links (from artistProfiles.json)
+  watch(artistId, fetchArtist, { immediate: true })
+
+  // profile fields flattened for the template (bio, socials, formed)
   const profile = computed(() => {
-    const saved = artistProfiles[artistId.value]
-    if (saved) {
-      return saved
+    if (!artist.value) return { bio: '', socials: {}, formed: '' }
+    return {
+      bio: artist.value.bio,
+      socials: artist.value.socials,
+      formed: artist.value.formed,
     }
-    return { bio: '', socials: {} }
   })
 
-  // events that have not happened yet, soonest first
-  const upcomingEvents = computed(() => {
-    const list = []
-    if (artist.value === null) return list
-
-    for (let i = 0; i < artist.value.events.length; i++) {
-      const event = artist.value.events[i]
-      if (event.dayOffset >= 0) {
-        list.push(event)
-      }
-    }
-    return list.sort(function (a, b) {
-      return a.dayOffset - b.dayOffset
-    })
+  // events this artist appears in (from the events store)
+  const artistEvents = computed(() => {
+    if (!artist.value) return []
+    return eventsStore.events.filter(e =>
+      e.artists && e.artists.some(a => a && a.id === artist.value.id)
+    )
   })
 
-  // events that already happened, most recent first
-  const pastEvents = computed(() => {
-    const list = []
-    if (artist.value === null) return list
+  // upcoming events: dayOffset >= 0, soonest first
+  const upcomingEvents = computed(() =>
+    artistEvents.value
+      .filter(e => e.dayOffset >= 0)
+      .sort((a, b) => a.dayOffset - b.dayOffset)
+  )
 
-    for (let i = 0; i < artist.value.events.length; i++) {
-      const event = artist.value.events[i]
-      if (event.dayOffset < 0) {
-        list.push(event)
-      }
-    }
-    return list.sort(function (a, b) {
-      return b.dayOffset - a.dayOffset
-    })
-  })
+  // past events: dayOffset < 0, most recent first
+  const pastEvents = computed(() =>
+    artistEvents.value
+      .filter(e => e.dayOffset < 0)
+      .sort((a, b) => b.dayOffset - a.dayOffset)
+  )
 
-  // portfolio = upcoming + past events together
+  // portfolio = upcoming + past together
   const portfolio = computed(() => upcomingEvents.value.concat(pastEvents.value))
 
-  return { artist, profile, upcomingEvents, pastEvents, portfolio }
+  return { artist, profile, profileLoading, profileError, fetchArtist, upcomingEvents, pastEvents, portfolio }
 }

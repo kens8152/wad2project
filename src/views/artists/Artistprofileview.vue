@@ -16,7 +16,7 @@ const eventsStore = useEventsStore()
 // the artist id comes from the url: /artists/:id
 const artistId = computed(() => route.params.id)
 
-const { artist, profile, upcomingEvents, pastEvents, portfolio } = useArtistProfile(artistId)
+const { artist, profile, profileLoading, profileError, fetchArtist, upcomingEvents, pastEvents, portfolio } = useArtistProfile(artistId)
 const { favourites, toggleFavourite } = useFavouriteArtists()
 
 onMounted(() => {
@@ -25,8 +25,8 @@ onMounted(() => {
   }
 })
 
-// still waiting for the events to load
-const isLoading = computed(() => eventsStore.loading || eventsStore.events.length === 0)
+// still waiting for the artist to load
+const isLoading = computed(() => profileLoading.value)
 
 const isFavourite = computed(() => {
   if (artist.value === null) return false
@@ -149,10 +149,10 @@ const emptyMessage = computed(() => {
 <template>
   <div class="artist-profile container-xxl">
     <!-- Error -->
-    <div v-if="eventsStore.error" class="profile-state">
+    <div v-if="profileError" class="profile-state">
       <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-      <p class="mb-3">{{ eventsStore.error }}</p>
-      <button class="btn btn-riffle" @click="eventsStore.fetchEvents()">Try again</button>
+      <p class="mb-3">{{ profileError }}</p>
+      <button class="btn btn-riffle" @click="fetchArtist(artistId)">Try again</button>
     </div>
 
     <!-- Loading -->

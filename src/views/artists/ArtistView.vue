@@ -1,17 +1,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useEventsStore } from '@/stores/events'
+import { useArtistsStore } from '@/stores/artists'
 import SortDropdown from '../../components/events/SortDropdown.vue'
 import ArtistCard from '../../components/artists/ArtistCard.vue'
 import ArtistFilterSidebar from '../../components/artists/ArtistFilterSidebar.vue'
 import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
 import { ARTIST_SORTS, useArtistFilters } from '../../composables/artists/useArtistFilters'
 import { useFavouriteArtists } from '../../composables/artists/useFavouriteArtists'
-import { favouritesFirst } from '../../utils/artists/artists'
 
 const router = useRouter()
-const eventsStore = useEventsStore()
+const artistsStore = useArtistsStore()
 
 // all the filter and sort logic lives in useArtistFilters
 const filters = useArtistFilters()
@@ -22,14 +21,10 @@ const { favourites, toggleFavourite } = useFavouriteArtists()
 
 const filtersOpen = ref(false) // for the mobile Filters button
 
-// the artists we show: favourites first
-const visibleArtists = computed(() => favouritesFirst(filteredArtists.value, favourites.value))
+const visibleArtists = computed(() => filteredArtists.value)
 
 onMounted(() => {
-  // the artists come from the same data as the events
-  if (eventsStore.events.length === 0) {
-    eventsStore.fetchEvents()
-  }
+  artistsStore.fetchArtists()
 })
 
 function openArtist(artist) {
@@ -72,30 +67,30 @@ function openArtist(artist) {
         <!-- Filter sidebar -->
         <div class="artists-shell__sidebar" :class="{ 'is-open': filtersOpen }">
           <ArtistFilterSidebar :search-text="filters.searchText" :draft-genres="filters.draftGenres"
-            :draft-venues="filters.draftVenues" :genre-options="filters.genreOptions"
-            :venue-options="filters.venueOptions" :is-dirty="filters.isDirty" @apply="filters.applyFilters"
+            :genre-options="filters.genreOptions"
+            :is-dirty="filters.isDirty" @apply="filters.applyFilters"
             @reset="filters.resetFilters" @clear-search="filters.clearSearch" @applied="filtersOpen = false" />
         </div>
 
         <!-- Results -->
         <section class="artists-shell__main">
           <!-- Loading -->
-          <div v-if="eventsStore.loading" class="artists-shell__state">
+          <div v-if="artistsStore.loading" class="artists-shell__state">
             <div class="spinner-border text-primary" role="status"></div>
           </div>
 
           <!-- Error -->
-          <div v-else-if="eventsStore.error" class="artists-shell__state">
+          <div v-else-if="artistsStore.error" class="artists-shell__state">
             <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-            <p class="mb-3">{{ eventsStore.error }}</p>
-            <button class="btn btn-riffle" @click="eventsStore.fetchEvents()">Try again</button>
+            <p class="mb-3">{{ artistsStore.error }}</p>
+            <button class="btn btn-riffle" @click="artistsStore.fetchArtists()">Try again</button>
           </div>
 
           <!-- No results -->
           <div v-else-if="visibleArtists.length === 0" class="artists-shell__state">
             <i class="bi bi-person-x fs-1 text-secondary"></i>
             <h2 class="h5 mt-2">No artists match these filters</h2>
-            <p class="text-secondary">Try fewer genres or venues.</p>
+            <p class="text-secondary">Try fewer genres or a different search.</p>
             <button class="btn btn-riffle" @click="resetFilters()">Reset filters</button>
           </div>
 
@@ -227,20 +222,11 @@ function openArtist(artist) {
     align-self: start;
   }
 
-  /* Same as the events page: the filter card scrolls inside itself, with Apply and Reset pinned at its bottom.
-     7.5rem leaves room for the "Artists" title above it, so Apply is visible without scrolling the page */
+  /* The filter card sizes to its content; overflow only kicks in if it somehow grows taller than the viewport */
   .artists-shell__sidebar > :deep(.filters) {
-    height: calc(100vh - var(--navbar-height) - 7.5rem);
-    display: flex;
-    flex-direction: column;
+    max-height: calc(100vh - var(--navbar-height) - 7.5rem);
     overflow-y: auto;
     overflow-x: hidden;
-  }
-  .artists-shell__sidebar > :deep(.filters) > * {
-    flex: none;
-  }
-  .artists-shell__sidebar > :deep(.filters .filters__footer) {
-    margin-top: auto;
   }
 }
 

@@ -110,7 +110,7 @@ const goingLabel = computed(() => {
 .profile-card.is-upcoming:hover,
 .profile-card.is-upcoming:focus-within {
   transform: translateY(-6px) scale(1.02);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, #fff), #fff 65%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 10%, var(--riffle-surface)), var(--riffle-surface) 65%);
   box-shadow:
     0 0 0 2px var(--genre),
     0 16px 30px color-mix(in srgb, var(--genre) 35%, transparent);
@@ -241,15 +241,15 @@ const goingLabel = computed(() => {
   font-weight: 700;
 }
 .chip--tag {
-  background: #ece9ff;
-  color: #5b45c9;
+  background: color-mix(in srgb, #7c3aed 15%, var(--riffle-surface));
+  color: #a78bfa;
 }
 .chip--price {
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 18%, var(--riffle-surface));
   color: var(--genre);
 }
 .chip--going {
-  background: #e6efff;
-  color: #2d5fd0;
+  background: color-mix(in srgb, #2563eb 15%, var(--riffle-surface));
+  color: #60a5fa;
 }
 </style>
