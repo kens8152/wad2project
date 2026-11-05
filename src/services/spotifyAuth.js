@@ -56,6 +56,7 @@ export const exchangeCodeForToken = async (code) => {
     throw new Error('Missing PKCE verifier. Please connect Spotify again.')
   }
 
+  // Exchange Spotify's authorisation code for access and refresh tokens.
   const { data } = await axios.post(
     TOKEN_URL,
     new URLSearchParams({
@@ -68,16 +69,20 @@ export const exchangeCodeForToken = async (code) => {
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   )
 
-  // Ignore this response if the account changed or the connection was cancelled.
+  // Ignore the response if the account or connection changed during the request.
   if (localStorage.getItem('riffle-spotify-owner') !== accountId || localStorage.getItem('pkce_verifier') !== verifier) {
     throw new Error('Your account or Spotify connection changed. Please connect again.')
   }
+
+  // Save the access token so onboarding can use it to import genres and search songs.
+  localStorage.setItem('access_token', data.access_token)
   localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
 
   if (data.refresh_token) {
     localStorage.setItem('refresh_token', data.refresh_token)
   }
 
+  // Remove the temporary verification details after a successful exchange.
   localStorage.removeItem('pkce_verifier')
   localStorage.removeItem('pkce_state')
 
@@ -105,7 +110,7 @@ export const refreshAccessToken = async () => {
   if (localStorage.getItem('riffle-spotify-owner') !== accountId || localStorage.getItem('refresh_token') !== refreshToken) {
     throw new Error('Your Spotify connection changed. Please connect again.')
   }
-  
+
   localStorage.setItem('access_token', data.access_token)
   localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
 
