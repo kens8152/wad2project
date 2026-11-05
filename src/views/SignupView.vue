@@ -51,7 +51,7 @@ async function createAccount() {
       password: password.value,
       options: {
         // Destination after email confirmation during local development.
-        emailRedirectTo: 'http://127.0.0.1:5173/onboarding'
+        emailRedirectTo: `${window.location.origin}/onboarding`
       }
     })
 
