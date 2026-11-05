@@ -26,6 +26,29 @@ vi.mock('@/services/supabase', () => ({
   },
 }))
 vi.mock('@/composables/useToast', () => ({ toast: vi.fn() }))
+// recent activity comes from the notifications table
+vi.mock('@/services/notificationsApi', () => {
+  const at = (hoursAgo) => new Date(Date.now() - hoursAgo * 3600000).toISOString()
+  const rows = [
+    { id: 'n1', type: 'reply', actor_name: 'Rosa Park', body: 'replied to your post "Synth set"', link: '/forum/post/p1', read_at: null, created_at: at(2) },
+    { id: 'n2', type: 'mention', actor_name: 'Mei Xuan', body: 'mentioned you in a post: "New track"', link: '/forum/post/p2', read_at: null, created_at: at(5) },
+    { id: 'n3', type: 'event', actor_name: null, body: 'New gig near you: Moon Carrot', link: '/events/mc', read_at: at(1), created_at: at(26) },
+    { id: 'n4', type: 'event', actor_name: null, body: 'New gig near you: Krunkle', link: '/events/kr', read_at: at(1), created_at: at(50) },
+    { id: 'n5', type: 'reply', actor_name: 'Joel', body: 'replied to your comment on "Synth set"', link: '/forum/post/p1', read_at: at(1), created_at: at(120) },
+  ]
+  return {
+    getNotifications: async () => rows,
+    getNotificationSettings: async () => null,
+    saveNotificationSettings: async () => {},
+    getEventsAddedSince: async () => [],
+    addEventNotifications: async () => {},
+    markNotificationRead: async () => {},
+    markAllNotificationsRead: async () => {},
+    deleteNotification: async () => {},
+    deleteReadNotifications: async () => {},
+    subscribeToNotifications: () => () => {},
+  }
+})
 vi.mock('@/services/matchmakingApi', () => ({
   getFollowedArtists: vi.fn(),
   addFollowedArtist: vi.fn(),
