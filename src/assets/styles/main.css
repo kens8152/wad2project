@@ -14,7 +14,7 @@
   --riffle-blue: #7c4dff;
   --riffle-coral: #f0483e;
   --riffle-coral-soft: #ff6b5e;
-  --riffle-bg: #f7f5fc; /* soft lavender, used behind every page under the glow */
+  --riffle-bg: #fbfaf8; /* the warm off-white of the Discover page, used behind every page */
   --riffle-dots: #e6e3ee; /* the colour of the faint dot grid on top of it */
   --riffle-surface: #ffffff;
   --riffle-surface-soft: #f1eefb;
@@ -25,10 +25,8 @@
 
   --riffle-glow-line: #ece8f8;
   --riffle-glow-shadow: 0 4px 16px rgba(60, 40, 140, 0.08);
-  --riffle-glow:
-    radial-gradient(ellipse at 0% 0%, rgba(255, 170, 210, 0.45), transparent 45%) fixed,
-    radial-gradient(ellipse at 100% 100%, rgba(170, 200, 255, 0.5), transparent 50%) fixed,
-    #f7f5fc;
+  /* the warm off-white of the Discover page, plain, behind every page (no coloured glow) */
+  --riffle-glow: #fbfaf8;
 
   /* Genre palette (also used on the map pins and cards) */
   --genre-indie-rock: #f0452f;

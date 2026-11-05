@@ -87,18 +87,29 @@ function zoomStep(amount) {
 }
 
 // "Show all events": zoom and move so that every pin is inside the box.
-// The map starts one zoom level closer than that (closer = true): a clearer first view around the middle of the events.
+// The map starts one zoom level closer than that (closer = true), centred on you.
 function fitAll(animate = true, closer = false) {
   if (!pins.value.length) return
   const bounds = L.latLngBounds(pins.value.map((p) => [p.lat, p.lng]))
   bounds.extend([props.userLocation.lat, props.userLocation.lng]) // you are in the view as well
   const padding = [80, 80]
   if (closer) {
-    const zoom = Math.min(MAX_ZOOM, map.getBoundsZoom(bounds, false, L.point(padding)) + 1)
-    map.setView(bounds.getCenter(), zoom, { animate: animate })
+    // you are in the middle: the view is centred on your location, wide enough for the events around you
+    const me = L.latLng(props.userLocation.lat, props.userLocation.lng)
+    const north = Math.max(bounds.getNorth() - me.lat, me.lat - bounds.getSouth())
+    const east = Math.max(bounds.getEast() - me.lng, me.lng - bounds.getWest())
+    const around = L.latLngBounds([me.lat - north, me.lng - east], [me.lat + north, me.lng + east])
+    const zoom = Math.min(MAX_ZOOM, map.getBoundsZoom(around, false, L.point(padding)) + 1)
+    map.setView(me, zoom, { animate: animate })
   } else {
     map.fitBounds(bounds, { padding: padding, maxZoom: 16, animate: animate })
   }
+}
+
+// The resize button: back to the opening view, the same as when the map first loads
+function resetView() {
+  autoFit = true
+  fitAll(true, true)
 }
 
 // Plain scrolling scrolls the page as usual. The map only zooms with
@@ -142,7 +153,7 @@ onMounted(() => {
   map.attributionControl.setPrefix('') // keep only the OneMap credit
   // detectRetina: on a sharp (retina) screen, ask OneMap for the next zoom level's tiles and draw them at half
   // size, so the street names are small and crisp instead of stretched
-  L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM }).addTo(map)
+  L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM + 1 }).addTo(map) // +1: a retina screen takes one off this
 
   map.setView([1.295, 103.8575], 14) // a first view; it is fitted to the pins once the box has a size
   map.on('move zoom', () => refresh())
@@ -385,7 +396,7 @@ watch(
       <button type="button" aria-label="Zoom out" :disabled="zoomLevel <= MIN_ZOOM + 0.001" @click="zoomStep(-1)">
         <i class="bi bi-dash-lg"></i>
       </button>
-      <button type="button" aria-label="Show all events" title="Show all events" @click="fitAll()">
+      <button type="button" aria-label="Reset the map view" title="Reset the map view" @click="resetView">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
       <!-- only when a pin is selected: fly in to that event -->
