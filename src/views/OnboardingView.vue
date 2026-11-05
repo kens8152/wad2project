@@ -254,11 +254,6 @@ async function searchForSongs() {
     return
   }
 
-  if (!localStorage.getItem('access_token')) {
-    songError.value = 'Please connect Spotify first.'
-    return
-  }
-
   songLoading.value = true
 
   try {
@@ -268,7 +263,7 @@ async function searchForSongs() {
       songError.value = 'No songs found. Try another search.'
     }
   } catch {
-    songError.value = 'Songs could not be loaded. Please try connecting Spotify again.'
+    songError.value = 'Songs could not be loaded. Please try again.'
   } finally {
     songLoading.value = false
   }

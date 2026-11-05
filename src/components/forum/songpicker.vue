@@ -5,7 +5,6 @@ import { searchSongs } from '@/services/spotifyApi'
 
 const song = defineModel({ type: Object, default: null })
 
-const connected = !!window.localStorage.getItem('access_token')
 const query = ref('')
 const results = ref([])
 const searching = ref(false)
@@ -46,10 +45,7 @@ async function search(term) {
   } catch (e) {
     if (mine !== version) return
     results.value = []
-    error.value =
-      e.response?.status === 401
-        ? 'Your Spotify session has expired. Reconnect Spotify in Edit profile.'
-        : 'Could not search Spotify. Please try again.'
+    error.value = 'Could not search songs. Please try again.'
   } finally {
     if (mine === version) searching.value = false
   }
@@ -78,11 +74,6 @@ onBeforeUnmount(() => clearTimeout(timer))
       <i class="bi bi-spotify chosen__brand" aria-hidden="true"></i>
       <button type="button" class="btn-close ms-1" aria-label="Remove song" @click="song = null"></button>
     </div>
-
-    <p v-else-if="!connected" class="small text-body-secondary mb-0">
-      <i class="bi bi-spotify text-success"></i>
-      Connect Spotify in <RouterLink :to="{ name: 'profile' }">Edit profile</RouterLink> to add a song.
-    </p>
 
     <template v-else>
       <div class="input-group">
