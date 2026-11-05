@@ -3,7 +3,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 const Placeholder = () => import('@/views/PlaceholderView.vue')
 
 const routes = [
-  { path: '/', redirect: { name: 'discover' } },
+  { path: '/', redirect: { name: 'landing' } },
+
+  {
+    path: '/welcome',
+    name: 'landing',
+    component: () => import('@/views/LandingView.vue'),
+    meta: { title: 'Welcome', section: 'landing' },
+  },
 
   // ---- Events (Aryan) ----------------------------------------------------
   {
