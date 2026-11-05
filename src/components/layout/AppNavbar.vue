@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useNotificationsStore } from '@/stores/notifications'
-import { useMessagesStore } from '@/stores/messages'
 import { supabase } from '@/services/supabase'
 import MatchCardsIcon from '@/components/matchmaking/MatchCardsIcon.vue'
 import { useTheme } from '@/composables/useTheme'
@@ -12,7 +11,6 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const notifications = useNotificationsStore()
-const messages = useMessagesStore()
 const { theme, toggleTheme } = useTheme()
 
 const user = computed(() => userStore.user)
@@ -33,7 +31,7 @@ const menuOpen = ref(false)
 const accountOpen = ref(false)
 const email = ref('')
 
-// Messages and Notifications have their own icons in the navbar, so they are not repeated here
+// Notifications has its own icon in the navbar, so it is not repeated here
 const accountLinks = [
   { label: 'Your profile', to: '/profile' },
   { label: 'Your web of artists', to: '/discover' },
@@ -125,10 +123,6 @@ async function logoutUser() {
         </button>
 
         <template v-if="userStore.isLoggedIn">
-          <RouterLink to="/messages" class="riffle-nav__icon-btn" :aria-label="messages.unreadCount ? 'Messages (' + messages.unreadCount + ' unread)' : 'Messages'">
-            <i class="bi bi-chat-dots"></i>
-            <span v-if="messages.unreadCount" class="riffle-nav__dot"></span>
-          </RouterLink>
           <RouterLink to="/notifications" class="riffle-nav__icon-btn" :aria-label="notifications.unreadCount ? 'Notifications (' + notifications.unreadCount + ' unread)' : 'Notifications'">
             <i class="bi bi-bell"></i>
             <span v-if="notifications.unreadCount" class="riffle-nav__dot"></span>
@@ -299,7 +293,7 @@ async function logoutUser() {
   position: relative;
   text-decoration: none;
 }
-/* the small red dot for unread messages and notifications */
+/* the small red dot for unread notifications */
 .riffle-nav__dot {
   position: absolute;
   top: 7px;

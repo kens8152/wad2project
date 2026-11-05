@@ -5,6 +5,7 @@ import { flushPromises } from '@vue/test-utils'
 const db = vi.hoisted(() => ({
   userId: 'user-1',
   savedVote: null,
+  counts: null,
   writeError: null,
   writes: [],
 }))
@@ -14,7 +15,10 @@ vi.mock('@/services/supabase.js', () => {
     const chain = {
       select: () => chain,
       eq: () => chain,
-      maybeSingle: async () => ({ data: db.savedVote === null ? null : { vote: db.savedVote }, error: null }),
+      maybeSingle: async () => ({
+        data: db.counts && { ...db.counts, my_vote: db.savedVote === null ? [] : [{ vote: db.savedVote }] },
+        error: null,
+      }),
       delete: () => {
         db.writes.push({ table, type: 'delete' })
         return { eq: () => ({ eq: async () => ({ error: db.writeError }) }) }
@@ -39,16 +43,18 @@ const { useVote } = await import('../usevote')
 beforeEach(() => {
   db.userId = 'user-1'
   db.savedVote = null
+  db.counts = null
   db.writeError = null
   db.writes = []
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 
 async function setup(post = { id: 'p1', upvotes: 4, downvotes: 1 }) {
+  db.counts ??= { upvotes: post.upvotes, downvotes: post.downvotes }
   const item = ref(post)
   const vote = useVote(item)
   await flushPromises()
-  return vote
+  return { ...vote, item }
 }
 
 describe('useVote', () => {
@@ -97,6 +103,39 @@ describe('useVote', () => {
     const { upvotes, userVote } = await setup({ id: 'p1', upvotes: 5, downvotes: 0 })
 
     expect(userVote.value).toBe('up')
+    expect(upvotes.value).toBe(5)
+  })
+
+  it('uses fresh counts when the list was loaded before the user voted', async () => {
+    db.savedVote = -1
+    db.counts = { upvotes: 0, downvotes: 1 }
+    const { vote, downvotes, userVote } = await setup({ id: 'p1', upvotes: 0, downvotes: 0 })
+
+    expect(userVote.value).toBe('down')
+    expect(downvotes.value).toBe(1)
+
+    await vote('down')
+
+    expect(downvotes.value).toBe(0)
+  })
+
+  it('never shows a count below zero', async () => {
+    db.savedVote = -1
+    db.counts = { upvotes: 0, downvotes: 0 }
+    const { vote, downvotes } = await setup({ id: 'p1', upvotes: 0, downvotes: 0 })
+
+    await vote('down')
+
+    expect(downvotes.value).toBe(0)
+  })
+
+  it('does not double count after the post gets fresh counts', async () => {
+    const { vote, upvotes, item } = await setup({ id: 'p1', upvotes: 4, downvotes: 1 })
+
+    await vote('up')
+    item.value = { ...item.value, upvotes: 5 }
+    await nextTick()
+
     expect(upvotes.value).toBe(5)
   })
 

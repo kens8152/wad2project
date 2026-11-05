@@ -85,7 +85,11 @@ async function createAccount() {
       <div class="signup-accent" aria-hidden="true"></div>
 
       <header class="signup-heading">
-        <span class="signup-icon" aria-hidden="true"><i class="bi bi-music-note-beamed"></i></span>
+        <!-- Display the Riffle icon and name together. -->
+        <div class="auth-brand">
+          <span class="signup-icon" aria-hidden="true"><i class="bi bi-music-note-beamed"></i></span>
+          <span class="auth-brand-name">Riffle</span>
+        </div>
         <span class="signup-eyebrow">YOUR NEXT DISCOVERY STARTS HERE</span>
         <h1 id="signup-heading">Find your sound.</h1>
         <p>Join Riffle to save your favourites and discover more local music.</p>
@@ -494,6 +498,37 @@ async function createAccount() {
   .signup-heading h1 {
     font-size: 28px;
   }
+}
+
+/* Apply a pink-to-purple gradient to the Riffle music-note icon. */
+.signup-icon i {
+  background: linear-gradient(135deg, #d746b9, #844aff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Centre the Riffle icon and name beside each other. */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Remove the icon's original margin so it aligns with the name. */
+.auth-brand .login-icon,
+.auth-brand .signup-icon {
+  margin: 0;
+}
+
+/* Style the Riffle brand name using the page's text colour. */
+.auth-brand-name {
+  color: inherit;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
 }
 
 </style>
