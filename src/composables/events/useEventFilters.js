@@ -11,7 +11,7 @@ import { addDays, startOfDay, dow } from '../../utils/events/date'
 
 export const MAX_DISTANCE_KM = 20 // slider max; at max the label reads "20+ km" and means "no limit"
 export const WEEK_DAYS = 7
-export const DEFAULT_DISTANCE_KM = 13
+export const DEFAULT_DISTANCE_KM = MAX_DISTANCE_KM // both sliders start fully open: any distance, and the whole week
 export const DEFAULT_DAY = WEEK_DAYS - 1
 
 export const SORTS = [

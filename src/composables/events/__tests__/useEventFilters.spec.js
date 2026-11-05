@@ -30,10 +30,9 @@ describe('useEventFilters: default results', () => {
     }
   })
 
-  it(`only shows events within ${DEFAULT_DISTANCE_KM} km by default`, () => {
-    for (const e of filters.results.value) {
-      expect(e.distanceKm).toBeLessThanOrEqual(DEFAULT_DISTANCE_KM)
-    }
+  it('starts with the distance slider fully open (20+ km, no limit)', () => {
+    expect(DEFAULT_DISTANCE_KM).toBe(MAX_DISTANCE_KM)
+    expect(filters.applied.distance).toBe(MAX_DISTANCE_KM)
   })
 
   it('starts with no active filters', () => {

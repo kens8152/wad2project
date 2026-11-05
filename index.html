@@ -9,7 +9,7 @@
     <script>
       try {
         var t = localStorage.getItem('riffle-theme')
-        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        if (t !== 'light' && t !== 'dark') t = 'light' // light mode is the default
         document.documentElement.dataset.theme = t
         document.documentElement.dataset.bsTheme = t
       } catch (e) {}

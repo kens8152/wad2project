@@ -104,6 +104,8 @@ async function logoutUser() {
         >
           {{ link.label }}
         </RouterLink>
+        <!-- on a very small phone the Log in button leaves the bar (there is no room for it) and lives in this menu -->
+        <RouterLink v-if="!userStore.isLoggedIn" to="/login" class="riffle-nav__link riffle-nav__menu-login">Log in</RouterLink>
       </nav>
 
       <div class="riffle-nav__right">
@@ -556,8 +558,37 @@ async function logoutUser() {
 @media (max-width: 575.98px) {
   .nav-login,
   .nav-signup {
-    padding: 8px 14px;
+    min-height: 38px;
+    padding: 8px 12px;
     font-size: 12px;
+  }
+  /* a logged-out visitor on a phone: everything has to fit in one row, with the menu button in view */
+  .nav-signup {
+    margin-left: 0;
+  }
+  .nav-signup .bi {
+    display: none;
+  }
+}
+@media (min-width: 400px) {
+  .riffle-nav__menu-login {
+    display: none;
+  }
+}
+@media (max-width: 399.98px) {
+  .nav-login {
+    display: none;
+  }
+  .riffle-nav__brand {
+    font-size: 1.3rem;
+  }
+  .riffle-nav__icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .match-btn {
+    height: 36px;
+    padding: 0 9px;
   }
 }
 </style>
