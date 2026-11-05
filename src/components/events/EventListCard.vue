@@ -17,7 +17,9 @@ const friendCount = computed(() => props.event.friends.length)
 const mainTag = computed(() => props.event.tags[0])
 
 function onHeart() {
+  const wasSaved = saved.value
   const nowSaved = toggle(props.event.id)
+  if (nowSaved === wasSaved) return
   toast(nowSaved ? 'Saved to your events' : 'Removed from saved events')
 }
 </script>

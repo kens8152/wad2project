@@ -164,7 +164,10 @@ function back() {
 }
 
 function onSave() {
-  toast(toggle(event.value.id) ? 'Event saved' : 'Removed from saved events')
+  const wasSaved = saved.value
+  const nowSaved = toggle(event.value.id)
+  if (nowSaved === wasSaved) return
+  toast(nowSaved ? 'Event saved' : 'Removed from saved events')
 }
 
 async function onShare() {
