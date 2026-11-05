@@ -1,71 +1,239 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useUserStore } from '@/stores/user'
+import {
+  addEventNotifications,
+  deleteNotification,
+  deleteReadNotifications,
+  getEventsAddedSince,
+  getNotifications,
+  getNotificationSettings,
+  markAllNotificationsRead,
+  markNotificationRead,
+  saveNotificationSettings,
+  subscribeToNotifications,
+} from '@/services/notificationsApi'
+import { locationIfAllowed, nearbyGigNotifications } from '@/composables/useNearbyGigs'
 
-// Notifications are sample data for now (there is no backend for them yet).
-// Which ones have been read, and the notification settings, are saved in the browser.
-const READ_KEY = 'riffle.notifications.read'
-const SETTINGS_KEY = 'riffle.notifications.settings'
+// Each person's notifications come from the Supabase "notifications" table (see supabase/notifications.sql).
+// Forum replies and mentions are added by the database itself (triggers in supabase/schema.sql);
+// this store adds "new gigs near me" when you open the app, because only the browser knows where you are.
 
-// type is one of: Mentions, Follows, Events, Replies, System
-const items = [
-  { id: 1, who: 'Rosa Park', text: 'liked your comment on “Playing the full synth set at BattleBox”', time: '2h ago', type: 'Replies', to: '/forum' },
-  { id: 2, who: 'Joel Tan', text: 'started following you', time: '4h ago', type: 'Follows', to: '/profile' },
-  { id: 3, who: 'Mei Xuan', text: 'mentioned you in a post: “@you check out this new track!”', time: '1d ago', type: 'Mentions', to: '/forum' },
-  { id: 4, who: '', text: 'New event added near you: “Sherman Zhuo: Midnight Letters” at Esplanade Annexe Studio', time: '1d ago', type: 'Events', to: '/events/sherman-zhuo-esplanade' },
-  { id: 5, who: 'FallingIslands', text: 'replied to your comment: “Thanks for the support!”', time: '2d ago', type: 'Replies', to: '/forum' },
-  { id: 6, who: 'Ravi S.', text: 'liked your post on “Best local R&B artists?”', time: '3d ago', type: 'Replies', to: '/forum' },
-  { id: 7, who: '', text: 'Your weekly digest is ready! See this week’s top artists and events.', time: '5d ago', type: 'System', to: '/discover' },
+// setting name shown on the page -> column in the notification_settings table
+export const SETTINGS = [
+  { name: 'New gigs near me', column: 'gigs_near_me' },
+  { name: 'Forum replies', column: 'forum_replies' },
+  { name: 'Mentions', column: 'mentions' },
 ]
 
-// first time: the first three are unread
-const startingRead = [4, 5, 6, 7]
+// database type -> the tab it shows under
+const TYPE_LABELS = { reply: 'Replies', mention: 'Mentions', event: 'Events' }
 
-const settingNames = ['New gigs near me', 'Artists I follow', 'Forum replies', 'Mentions', 'Follows', 'Weekly digest']
+// "just now", "5m ago", "3h ago", "2d ago", then the date
+export function timeAgo(isoTime, now = Date.now()) {
+  const minutes = Math.floor((now - new Date(isoTime).getTime()) / 60000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return minutes + 'm ago'
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return hours + 'h ago'
+  const days = Math.floor(hours / 24)
+  if (days < 7) return days + 'd ago'
+  return new Date(isoTime).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
+}
 
-function readFromStorage(key, fallback) {
-  try {
-    const saved = JSON.parse(localStorage.getItem(key))
-    return saved === null ? fallback : saved
-  } catch {
-    return fallback
+// a database row -> what the page shows
+export function toListItem(row) {
+  return {
+    id: row.id,
+    who: row.actor_name || '',
+    text: row.body,
+    time: timeAgo(row.created_at),
+    createdAt: row.created_at,
+    type: TYPE_LABELS[row.type],
+    to: row.link || '/notifications',
+    unread: !row.read_at,
   }
 }
 
-function saveToStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // private mode or full storage: keep working without saving
-  }
+function allOn() {
+  const settings = {}
+  for (const setting of SETTINGS) settings[setting.name] = true
+  return settings
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
-  const readIds = ref(readFromStorage(READ_KEY, startingRead))
+  const userStore = useUserStore()
 
-  const defaultSettings = {}
-  for (const name of settingNames) {
-    defaultSettings[name] = true
+  const rows = ref([])
+  const settings = ref(allOn())
+  const settingNames = SETTINGS.map(setting => setting.name)
+  const loading = ref(false)
+  const error = ref('')
+
+  // only the types the app knows about
+  const known = computed(() => rows.value.filter(row => TYPE_LABELS[row.type]))
+  const list = computed(() => known.value.map(toListItem))
+  const unreadCount = computed(() => known.value.filter(row => !row.read_at).length)
+
+  let currentUserId = ''
+  let stopLive = null
+  let loadVersion = 0
+
+  async function refresh() {
+    if (!currentUserId) return
+    const version = loadVersion
+    try {
+      const data = await getNotifications()
+      if (version === loadVersion) {
+        rows.value = data
+        error.value = ''
+      }
+    } catch (e) {
+      if (version === loadVersion) error.value = 'Could not load your notifications.'
+      console.error('Could not load notifications:', e)
+    }
   }
-  const settings = ref({ ...defaultSettings, ...readFromStorage(SETTINGS_KEY, {}) })
 
-  const list = computed(() => items.map(item => ({ ...item, unread: !readIds.value.includes(item.id) })))
-  const unreadCount = computed(() => list.value.filter(item => item.unread).length)
-
-  function markRead(id) {
-    if (readIds.value.includes(id)) return
-    readIds.value = [...readIds.value, id]
-    saveToStorage(READ_KEY, readIds.value)
+  // New gigs since your last visit; the first visit only remembers the time, so old gigs do not flood in
+  async function checkNewGigs(savedSettings) {
+    const now = new Date().toISOString()
+    const lastCheck = savedSettings?.last_events_check
+    if (lastCheck && settings.value['New gigs near me']) {
+      const events = await getEventsAddedSince(lastCheck)
+      if (events.length) {
+        const location = await locationIfAllowed()
+        await addEventNotifications(nearbyGigNotifications(currentUserId, events, location))
+      }
+    }
+    await saveNotificationSettings(currentUserId, { last_events_check: now })
   }
 
-  function markAllRead() {
-    readIds.value = items.map(item => item.id)
-    saveToStorage(READ_KEY, readIds.value)
+  async function start(userId) {
+    stop()
+    currentUserId = userId
+    const version = ++loadVersion
+    loading.value = true
+
+    try {
+      const saved = await getNotificationSettings()
+      if (version !== loadVersion) return
+      const next = allOn()
+      if (saved) {
+        for (const setting of SETTINGS) next[setting.name] = saved[setting.column] !== false
+      }
+      settings.value = next
+
+      // this only adds rows; if it fails, the list still loads
+      await checkNewGigs(saved).catch(e => console.warn('Could not check for new gigs:', e))
+    } catch (e) {
+      console.error('Could not load notification settings:', e)
+    } finally {
+      if (version === loadVersion) {
+        await refresh()
+        loading.value = false
+      }
+    }
+
+    if (version !== loadVersion) return
+    stopLive = subscribeToNotifications(userId, () => refresh())
+    window.addEventListener('focus', refresh)
   }
 
-  function toggleSetting(name) {
-    settings.value = { ...settings.value, [name]: !settings.value[name] }
-    saveToStorage(SETTINGS_KEY, settings.value)
+  function stop() {
+    loadVersion++
+    if (stopLive) stopLive()
+    stopLive = null
+    window.removeEventListener('focus', refresh)
+    currentUserId = ''
+    rows.value = []
+    settings.value = allOn()
+    error.value = ''
+    loading.value = false
   }
 
-  return { list, unreadCount, settings, settingNames, markRead, markAllRead, toggleSetting }
+  // load when someone logs in, clear when they log out
+  watch(
+    () => (userStore.isLoggedIn ? userStore.user.id : ''),
+    (userId) => {
+      if (userId) start(userId)
+      else stop()
+    },
+    { immediate: true },
+  )
+
+  // ---- managing the list (the page changes straight away, and goes back if saving fails) ----
+
+  async function markRead(id) {
+    const row = rows.value.find(item => item.id === id)
+    if (!row || row.read_at) return
+    row.read_at = new Date().toISOString()
+    try {
+      await markNotificationRead(id)
+    } catch (e) {
+      row.read_at = null
+      console.error('Could not mark as read:', e)
+    }
+  }
+
+  async function markAllRead() {
+    const before = rows.value
+    const now = new Date().toISOString()
+    rows.value = rows.value.map(row => (row.read_at ? row : { ...row, read_at: now }))
+    try {
+      await markAllNotificationsRead()
+    } catch (e) {
+      rows.value = before
+      throw e
+    }
+  }
+
+  async function remove(id) {
+    const before = rows.value
+    rows.value = rows.value.filter(row => row.id !== id)
+    try {
+      await deleteNotification(id)
+    } catch (e) {
+      rows.value = before
+      throw e
+    }
+  }
+
+  async function clearRead() {
+    const before = rows.value
+    rows.value = rows.value.filter(row => !row.read_at)
+    try {
+      await deleteReadNotifications()
+    } catch (e) {
+      rows.value = before
+      throw e
+    }
+  }
+
+  async function toggleSetting(name) {
+    const setting = SETTINGS.find(item => item.name === name)
+    if (!setting || !currentUserId) return
+    const value = !settings.value[name]
+    settings.value = { ...settings.value, [name]: value }
+    try {
+      await saveNotificationSettings(currentUserId, { [setting.column]: value })
+    } catch (e) {
+      settings.value = { ...settings.value, [name]: !value }
+      throw e
+    }
+  }
+
+  return {
+    list,
+    unreadCount,
+    settings,
+    settingNames,
+    loading,
+    error,
+    refresh,
+    markRead,
+    markAllRead,
+    remove,
+    clearRead,
+    toggleSetting,
+  }
 })

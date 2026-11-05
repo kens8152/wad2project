@@ -51,6 +51,10 @@ function routeFor(item) {
 </template>
 
 <style scoped>
+.panel-link {
+  width: 100%;
+  max-width: 340px;
+}
 a.panel-link {
   border-radius: 0.6rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease;

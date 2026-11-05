@@ -12,7 +12,7 @@ export async function getEventData() {
   ] = await Promise.all([
     supabase.from('genres').select('id, name, color'),
     supabase.from('artists').select('id, name, tag, genre_id'),
-    supabase.from('venues').select('id, name, address'),
+    supabase.from('venues').select('*'), // includes lat and lng once supabase/notifications.sql has been run
     supabase.from('event_artists').select('event_id, artist_id'),
     supabase.from('events').select('id, title, image, genre_id, venue_id, headliner_id, day_offset, dow, day_number, month, date_label, start_time, time_label, price, going, tag'),
   ])

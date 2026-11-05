@@ -321,7 +321,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
     <div v-else-if="errorMessage" class="alert alert-warning">{{ errorMessage }}</div>
 
     <div v-else class="row g-4">
-      <div :class="hasLinks && !editingPost ? 'col-lg-8' : 'col-12'" style="min-width: 0">
+      <div :class="hasLinks && !editingPost ? 'col-lg' : 'col-12'" style="min-width: 0">
         <article>
           <div class="d-flex justify-content-between align-items-start mb-1">
             <p class="small text-body-secondary mb-0 d-flex align-items-center">
@@ -521,7 +521,7 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
         </section>
       </div>
 
-      <aside v-if="hasLinks && !editingPost" class="col-lg-4" style="min-width: 0">
+      <aside v-if="hasLinks && !editingPost" class="col-lg-auto linked-aside" style="min-width: 0">
         <div class="linked-sticky">
           <PostLinkedPanel v-if="catalog.loaded" :artists="linkedArtists" :events="linkedEvents" />
           <p v-else-if="catalog.error" class="text-body-secondary small mb-0">{{ catalog.error }}</p>
@@ -609,6 +609,9 @@ watch(() => route.params.id, (id) => id && load(id), { immediate: true })
 }
 
 @media (min-width: 992px) {
+  .linked-aside {
+    width: calc(340px + 1.5rem + 0.5rem);
+  }
   .linked-sticky {
     position: sticky;
     top: 1rem;
