@@ -60,7 +60,7 @@ function apply() {
 
 <style scoped>
 .filters {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0;
 }
 
 .filters__search {
@@ -159,8 +159,8 @@ function apply() {
 }
 
 .filters__footer {
-  margin: 0.5rem -1rem -0.75rem;
-  padding: 0.5rem 1rem 0.45rem;
+  margin: 0.5rem -1rem 0;
+  padding: 0.5rem 1rem 0.75rem;
   background: var(--riffle-surface);
   border-top: 1px solid var(--riffle-border);
   border-radius: 0 0 var(--riffle-radius) var(--riffle-radius);

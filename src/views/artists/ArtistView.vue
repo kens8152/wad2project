@@ -48,7 +48,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('scroll', fitSidebar, true)
   window.removeEventListener('resize', fitSidebar)
 })
-watch(() => eventsStore.loading, () => nextTick(fitSidebar))
+watch(() => artistsStore.loading, () => nextTick(fitSidebar))
 
 function openArtist(artist) {
   router.push({ name: 'artist-detail', params: { id: artist.id } })
@@ -249,7 +249,6 @@ function openArtist(artist) {
      Its height is the screen minus the 16px sticky gap and the page's bottom padding (2.5rem),
      so at the end of the page its bottom lines up with the last row of cards */
   .artists-shell__sidebar > :deep(.filters) {
-    height: calc(100vh - var(--navbar-height) - 7.5rem);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
