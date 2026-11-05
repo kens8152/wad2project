@@ -1,3 +1,5 @@
+import { ARTISTS, EVENTS, EVENT_ARTISTS, GENRES, VENUES } from './catalogue'
+
 export const POSTS = [
   {
     id: 101,
@@ -46,6 +48,12 @@ export const POSTS = [
 const TABLES = {
   posts: POSTS,
   tags: [{ id: 1, name: 'jazz' }, { id: 2, name: 'indie' }, { id: 3, name: 'synthwave' }],
+  genres: GENRES,
+  venues: VENUES,
+  artists: ARTISTS,
+  events: EVENTS,
+  event_artists: EVENT_ARTISTS,
+  past_events: [],
 }
 
 function rowsFor(url) {

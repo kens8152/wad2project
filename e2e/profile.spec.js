@@ -30,8 +30,8 @@ test.describe('Profile when logged in', () => {
 
   test('shows the profile header and stats', async ({ page }) => {
     await expect(page.getByText('@testfan')).toBeVisible()
-    await expect(page.locator('.stat-card').filter({ hasText: 'Following' }).locator('strong')).toHaveText('1')
-    await expect(page.locator('.stat-card').filter({ hasText: 'Favourite songs' }).locator('strong')).toHaveText('2')
+    await expect(page.locator('.spec').filter({ hasText: 'Following' }).locator('dd')).toHaveText('1')
+    await expect(page.locator('.spec').filter({ hasText: 'Favourite songs' }).locator('dd')).toHaveText('2')
   })
 
   test('the Artists tab lists followed artists and opens their page', async ({ page }) => {

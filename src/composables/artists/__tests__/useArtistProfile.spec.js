@@ -27,7 +27,7 @@ vi.mock('@/services/supabase', () => ({
   supabase: {
     from: () => ({
       select: () => ({
-        eq: (column, id) => ({ single: () => single(id) }),
+        eq: (column, id) => ({ maybeSingle: () => single(id) }),
       }),
     }),
   },
@@ -41,7 +41,7 @@ beforeEach(() => {
   useEventsStore().events = STORE_EVENTS
   single.mockReset()
   single.mockImplementation(async (id) =>
-    ROWS[id] ? { data: ROWS[id], error: null } : { data: null, error: new Error('Artist not found') },
+    ROWS[id] ? { data: ROWS[id], error: null } : { data: null, error: null },
   )
 })
 
@@ -68,12 +68,19 @@ describe('useArtistProfile', () => {
     expect(artist.value.tracks).toEqual([])
   })
 
-  it('returns null and an error for an artist that does not exist', async () => {
+  it('returns no artist and no error for an artist that does not exist', async () => {
     const { artist, profileError, upcomingEvents, pastEvents } = await load('nobody')
     expect(artist.value).toBeNull()
-    expect(profileError.value).toBe('Artist not found')
+    expect(profileError.value).toBe('')
     expect(upcomingEvents.value).toEqual([])
     expect(pastEvents.value).toEqual([])
+  })
+
+  it('passes on the message when Supabase fails', async () => {
+    single.mockResolvedValueOnce({ data: null, error: new Error('offline') })
+    const { artist, profileError } = await load('krunkle')
+    expect(artist.value).toBeNull()
+    expect(profileError.value).toBe('offline')
   })
 
   it('lists upcoming events soonest first', async () => {

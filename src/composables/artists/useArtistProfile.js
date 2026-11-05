@@ -21,9 +21,13 @@ export function useArtistProfile(artistId) {
         .from('artists')
         .select('id, name, tag, bio, hometown, formed, socials, image_url, tracks, genre:genres(name, color)')
         .eq('id', id)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
+      if (!data) {
+        artist.value = null
+        return
+      }
 
       artist.value = {
         id: data.id,

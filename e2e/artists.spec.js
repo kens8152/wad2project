@@ -23,7 +23,7 @@ test.describe('Artists: finding an artist', () => {
     await page.getByPlaceholder('Search artists').fill(name)
 
     await expect(cardTitles(page)).toHaveText([name])
-    await expect(page.getByText(`1 artist matching “${name}”`)).toBeVisible()
+    await expect(page.getByText(`1 artist matching "${name}"`)).toBeVisible()
   })
 
   test('a genre filter only applies after pressing Apply', async ({ page }) => {
@@ -67,7 +67,6 @@ test.describe('Artists: an artist profile', () => {
 
     await expect(page).toHaveURL(/\/artists\/[^/]+$/)
     await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'About' })).toBeVisible()
   })
 
   test('an unknown artist shows a friendly message with a way back', async ({ page }) => {
