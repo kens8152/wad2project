@@ -13,17 +13,17 @@ insert into public.genres (id, name, color) values
   ('traditional', 'Traditional Ethnic Music', '#f59e0b');
 
 -- venues (10 rows)
-insert into public.venues (id, name, address) values
-  ('tinbox', 'TinBox', '231 Bain Street, Singapore 180231'),
-  ('battlebox', 'BattleBox', '2 Cox Terrace, Battlebox, Singapore 179622'),
-  ('kilo', 'Kilo Lounge', '5 Stadium Walk, Singapore 397693'),
-  ('esplanade-annexe', 'Esplanade Annexe Studio', '8 Raffles Avenue, Singapore 039802'),
-  ('projector', 'The Projector', '6001 Beach Road, Singapore 199589'),
-  ('haji-lane', 'Haji Lane Social Club', '28 Haji Lane, Singapore 189232'),
-  ('clarke-quay', 'Clarke Quay Central Stage', '6 Eu Tong Sen Street, Singapore 059817'),
-  ('tekka', 'Tekka Courtyard', '665 Buffalo Road, Singapore 210665'),
-  ('mount-emily', 'Mount Emily Bandstand', 'Upper Wilkie Road, Singapore 228092'),
-  ('bay-east', 'Bay East Garden Lawn', '18 Marina Gardens Drive, Singapore 018953');
+insert into public.venues (id, name, address, lat, lng) values
+  ('tinbox', 'TinBox', '231 Bain Street, Singapore 180231', 1.2985, 103.8508),
+  ('battlebox', 'BattleBox', '2 Cox Terrace, Battlebox, Singapore 179622', 1.2928, 103.8465),
+  ('kilo', 'Kilo Lounge', '5 Stadium Walk, Singapore 397693', 1.303, 103.869),
+  ('esplanade-annexe', 'Esplanade Annexe Studio', '8 Raffles Avenue, Singapore 039802', 1.2897, 103.8553),
+  ('projector', 'The Projector', '6001 Beach Road, Singapore 199589', 1.3029, 103.8638),
+  ('haji-lane', 'Haji Lane Social Club', '28 Haji Lane, Singapore 189232', 1.3006, 103.8587),
+  ('clarke-quay', 'Clarke Quay Central Stage', '6 Eu Tong Sen Street, Singapore 059817', 1.2886, 103.8466),
+  ('tekka', 'Tekka Courtyard', '665 Buffalo Road, Singapore 210665', 1.3066, 103.8508),
+  ('mount-emily', 'Mount Emily Bandstand', 'Upper Wilkie Road, Singapore 228092', 1.3016, 103.8493),
+  ('bay-east', 'Bay East Garden Lawn', '18 Marina Gardens Drive, Singapore 018953', 1.2816, 103.861);
 
 -- artists (15 rows)
 insert into public.artists (id, name, genre_id, tag, bio, hometown, formed, socials, image_url, tracks) values

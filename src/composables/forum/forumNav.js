@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 
-const collapsed = ref(window.innerWidth < 992)
+const collapsed = ref(true)
 
 const searchButtons = ref(0)
 

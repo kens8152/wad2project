@@ -85,7 +85,11 @@ async function createAccount() {
       <div class="signup-accent" aria-hidden="true"></div>
 
       <header class="signup-heading">
-        <span class="signup-icon" aria-hidden="true"><i class="bi bi-music-note-beamed"></i></span>
+        <!-- Display the Riffle icon and name together. -->
+        <div class="auth-brand">
+          <span class="signup-icon" aria-hidden="true"><i class="bi bi-music-note-beamed"></i></span>
+          <span class="auth-brand-name">Riffle</span>
+        </div>
         <span class="signup-eyebrow">YOUR NEXT DISCOVERY STARTS HERE</span>
         <h1 id="signup-heading">Find your sound.</h1>
         <p>Join Riffle to save your favourites and discover more local music.</p>
@@ -171,7 +175,8 @@ async function createAccount() {
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
-  color: #14234b;
+  /* Use the current theme's text colour. */
+  color: var(--riffle-ink);
 }
 
 /* Apply border-box to all elements inside the signup page, including their before and after pseudo-elements, so padding and borders are included in their widths. */
@@ -252,9 +257,11 @@ async function createAccount() {
   margin-bottom: 20px;
 }
 
+/* Keep form labels readable in both light and dark mode. */
 .signup-field label {
   display: block;
   margin-bottom: 8px;
+  color: var(--riffle-ink);
   font-size: 13px;
   font-weight: 700;
 }
@@ -495,5 +502,38 @@ async function createAccount() {
     font-size: 28px;
   }
 }
+
+/* Apply a pink-to-purple gradient to the Riffle music-note icon. */
+.signup-icon i {
+  background: linear-gradient(135deg, #d746b9, #844aff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Centre the Riffle icon and name beside each other. */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Remove the icon's original margin so it aligns with the name. */
+.auth-brand .login-icon,
+.auth-brand .signup-icon {
+  margin: 0;
+}
+
+/* Style the Riffle brand name using the page's text colour. */
+/* Match the Riffle name to the current theme's text colour. */
+.auth-brand-name {
+  color: var(--riffle-ink);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
 
 </style>

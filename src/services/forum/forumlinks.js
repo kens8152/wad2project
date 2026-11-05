@@ -27,6 +27,7 @@ function toArtist(row, events) {
     tag: row.tag,
     venues: [...new Set(events.map((e) => e.venue?.name).filter(Boolean))],
     eventCount: events.length,
+    upcomingCount: events.filter((e) => (e.day_offset ?? -1) >= 0).length,
     nextEvent: upcoming ? { dateLabel: upcoming.date_label, timeLabel: upcoming.time_label } : null,
     search: [row.name, row.genre?.name, row.tag, row.hometown].filter(Boolean).join(' ').toLowerCase(),
   }

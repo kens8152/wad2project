@@ -511,17 +511,21 @@ onMounted(async () => {
                     </p>
 
                     <div
-                      class="pull-area songs-hint collapsed small d-flex align-items-center gap-1"
+                      class="pull-area songs-hint collapsed small fw-semibold d-flex align-items-center gap-2 rounded-pill border px-3 py-2"
+                      role="button"
                       data-bs-toggle="collapse"
                       :data-bs-target="'#songs-' + slot.artist.id"
                       aria-expanded="false"
                       @pointerdown="e => e.currentTarget.setPointerCapture(e.pointerId)"
                     >
-                      <i class="bi bi-music-note-beamed"></i> &nbsp;
-                      {{ artistTracks(slot.artist).length > 1
-                        ? `Checkout ${artistTracks(slot.artist).length - 1} more samples`
-                        : 'More about this artist' }}
-                      <i class="bi bi-chevron-up ms-auto"></i>
+                      <template v-if="artistTracks(slot.artist).length > 1">
+                        <span class="songs-hint-count badge rounded-pill bg-light text-dark">+{{ artistTracks(slot.artist).length - 1 }}</span>
+                        Hear {{ artistTracks(slot.artist).length - 1 }} more {{ artistTracks(slot.artist).length - 1 === 1 ? 'song' : 'songs' }}
+                      </template>
+                      <template v-else>
+                        <i class="bi bi-info-circle"></i> More about this artist
+                      </template>
+                      <i class="bi bi-chevron-up songs-hint-arrow ms-auto"></i>
                     </div>
 
                     <!-- More songs -->
@@ -1433,13 +1437,43 @@ onMounted(async () => {
 }
 
 /* Collapse arrow */
+.collapse-arrow {
+  font-size: 1.6rem;
+}
 .collapse-arrow.collapsed {
   display: none;
 }
 
 /* Songs hint */
+.songs-hint {
+  background-color: color-mix(in srgb, var(--riffle-surface) 15%, transparent);
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  transition: background-color 0.2s;
+}
+.songs-hint:hover {
+  background-color: color-mix(in srgb, var(--riffle-surface) 28%, transparent);
+}
 .songs-hint:not(.collapsed) {
   display: none !important;
+}
+.songs-hint-arrow {
+  animation: hint-nudge 2.4s ease-in-out infinite;
+}
+@keyframes hint-nudge {
+  0%, 70%, 100% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-4px);
+  }
+  90% {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .songs-hint-arrow {
+    animation: none;
+  }
 }
 
 /* Skip and follow buttons */

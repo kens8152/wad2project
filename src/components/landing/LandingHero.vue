@@ -1,7 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import EqualizerWave from './EqualizerWave.vue'
-import { useLandingMotion, MEDIA } from '@/composables/landing/useLandingMotion'
+import { useLandingMotion, loadGsap, MEDIA } from '@/composables/landing/useLandingMotion'
 import { SHOWCASE_ARTISTS } from '@/data/landing'
 
 const root = ref(null)
@@ -70,7 +70,7 @@ function release(e) {
 
 onMounted(async () => {
   if (!window.matchMedia?.(MEDIA.desktop)?.matches) return
-  const { gsap } = await import('@/composables/landing/useLandingMotion').then((m) => m.loadGsap())
+  const { gsap } = await loadGsap()
   if (!stage.value) return
   tiltX = gsap.quickTo(stage.value, 'rotationY', { duration: 0.8, ease: 'power3.out' })
   tiltY = gsap.quickTo(stage.value, 'rotationX', { duration: 0.8, ease: 'power3.out' })

@@ -16,7 +16,7 @@ export const ARTIST_SORTS = [
 export function useArtistFilters() {
   const artistsStore = useArtistsStore()
 
-  const sortBy = ref('name')
+  const sortBy = ref('events')
 
   const searchText = ref('')
   const draftGenres = ref([])

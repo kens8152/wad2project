@@ -11,7 +11,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const notifications = useNotificationsStore()
 
-const tabs = ['All', 'Unread', 'Mentions', 'Follows', 'Events', 'Replies', 'System']
+const tabs = ['All', 'Unread', 'Mentions', 'Replies', 'Votes', 'Events']
 const activeTab = ref('All')
 
 // the rows that match the chosen tab
@@ -35,7 +35,6 @@ function hueFor(name) {
 // notifications that are not from a person get an icon instead
 function iconFor(type) {
   if (type === 'Events') return 'bi-calendar-event-fill'
-  if (type === 'System') return 'bi-stars'
   return 'bi-bell-fill'
 }
 
@@ -44,9 +43,48 @@ function openNotification(item) {
   router.push(item.to)
 }
 
-function markAll() {
-  notifications.markAllRead()
-  toast('All caught up')
+async function markAll() {
+  try {
+    await notifications.markAllRead()
+    toast('All caught up')
+  } catch {
+    toast('Could not mark them as read, try again')
+  }
+}
+
+async function removeOne(item) {
+  try {
+    await notifications.remove(item.id)
+  } catch {
+    toast('Could not remove it, try again')
+  }
+}
+
+const hasRead = computed(() => notifications.list.some(item => !item.unread))
+
+async function clearRead() {
+  try {
+    await notifications.clearRead()
+    toast('Cleared read notifications')
+  } catch {
+    toast('Could not clear them, try again')
+  }
+}
+
+async function toggle(name) {
+  try {
+    await notifications.toggleSetting(name)
+  } catch {
+    toast('Could not save that setting, try again')
+  }
+}
+
+// Setting hints
+const settingHints = {
+  'New gigs near me': 'Gigs added within 10 km of you (uses your location if you allow it)',
+  'Forum replies': 'Replies to your posts and comments',
+  Mentions: 'When someone tags you with @ and your name, no spaces',
+  'Post votes': 'When someone upvotes or downvotes your post',
 }
 </script>
 
@@ -57,9 +95,14 @@ function markAll() {
         <h1>Notifications</h1>
         <p>{{ notifications.unreadCount ? notifications.unreadCount + ' unread' : 'You are all caught up' }}</p>
       </div>
-      <button class="mark-all" type="button" :disabled="!notifications.unreadCount" @click="markAll">
-        <i class="bi bi-check2-all"></i> Mark all as read
-      </button>
+      <div class="head-actions">
+        <button class="mark-all" type="button" :disabled="!hasRead" @click="clearRead">
+          <i class="bi bi-trash3"></i> Clear read
+        </button>
+        <button class="mark-all" type="button" :disabled="!notifications.unreadCount" @click="markAll">
+          <i class="bi bi-check2-all"></i> Mark all as read
+        </button>
+      </div>
     </header>
 
     <div class="tab-row" role="tablist" aria-label="Filter notifications">
@@ -81,21 +124,38 @@ function markAll() {
     <div class="row g-4 mt-1">
       <section class="col-12 col-lg-8">
         <ul class="notification-list list-unstyled">
-          <li v-for="item in rows" :key="item.id">
+          <li v-if="notifications.loading && !notifications.list.length" class="empty-state">
+            <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading notifications…</span></div>
+          </li>
+          <li v-else-if="notifications.error && !notifications.list.length" class="empty-state">
+            <i class="bi bi-exclamation-triangle"></i>
+            <p>{{ notifications.error }}</p>
+            <button type="button" class="mark-all mt-2" @click="notifications.refresh()">Try again</button>
+          </li>
+          <template v-else>
+          <li v-for="item in rows" :key="item.id" class="notification-item">
             <button class="notification-row" :class="{ 'is-unread': item.unread }" type="button" @click="openNotification(item)">
               <ArtistAvatar v-if="item.who" :name="item.who" :hue="hueFor(item.who)" :size="42" />
               <span v-else class="notification-icon"><i class="bi" :class="iconFor(item.type)"></i></span>
 
               <span class="notification-text">
                 <span class="notification-line"><b v-if="item.who">{{ item.who }}</b> {{ item.text }}</span>
-                <span class="notification-meta">{{ item.time }} · {{ item.type }}</span>
+                <span class="notification-meta">
+                  <i v-if="item.kind === 'upvote'" class="bi bi-arrow-up-circle-fill vote-icon is-up" aria-hidden="true"></i>
+                  <i v-else-if="item.kind === 'downvote'" class="bi bi-arrow-down-circle-fill vote-icon is-down" aria-hidden="true"></i>
+                  {{ item.time }} · {{ item.type }}
+                </span>
               </span>
 
               <span v-if="item.unread" class="unread-dot" aria-label="Unread"></span>
               <i v-else class="bi bi-chevron-right row-arrow"></i>
             </button>
+            <button class="remove-btn" type="button" aria-label="Remove notification" @click="removeOne(item)">
+              <i class="bi bi-x-lg"></i>
+            </button>
           </li>
-          <li v-if="!rows.length" class="empty-state">
+          </template>
+          <li v-if="!rows.length && !notifications.loading && !notifications.error" class="empty-state">
             <i class="bi bi-bell-slash"></i>
             <p>Nothing here yet.</p>
           </li>
@@ -108,7 +168,10 @@ function markAll() {
           <p>Choose how you want to be notified</p>
           <ul class="list-unstyled">
             <li v-for="name in notifications.settingNames" :key="name" class="setting-row">
-              <span>{{ name }}</span>
+              <span class="setting-text">
+                {{ name }}
+                <small>{{ settingHints[name] }}</small>
+              </span>
               <div class="form-check form-switch m-0">
                 <input
                   class="form-check-input setting-switch"
@@ -116,7 +179,7 @@ function markAll() {
                   role="switch"
                   :checked="notifications.settings[name]"
                   :aria-label="name"
-                  @change="notifications.toggleSetting(name)"
+                  @change="toggle(name)"
                 />
               </div>
             </li>
@@ -148,6 +211,12 @@ function markAll() {
 .notifications-head p {
   margin: 0.15rem 0 0;
   color: var(--riffle-muted);
+}
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .mark-all {
@@ -224,6 +293,10 @@ function markAll() {
   border-top: 1px solid var(--riffle-border);
 }
 
+.notification-item {
+  position: relative;
+}
+
 .notification-row {
   display: flex;
   align-items: center;
@@ -288,6 +361,16 @@ function markAll() {
   font-size: 0.8rem;
 }
 
+.vote-icon {
+  margin-right: 0.15rem;
+}
+.vote-icon.is-up {
+  color: #16a34a;
+}
+.vote-icon.is-down {
+  color: #dc2626;
+}
+
 .unread-dot {
   flex: none;
   width: 10px;
@@ -298,6 +381,36 @@ function markAll() {
 }
 .row-arrow {
   color: var(--riffle-faint);
+}
+
+/* remove button */
+.notification-row {
+  padding-right: 3rem;
+}
+.remove-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--riffle-faint);
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+.remove-btn:hover,
+.remove-btn:focus-visible {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.unread-dot,
+.row-arrow {
+  margin-right: 0.4rem;
 }
 
 .empty-state {
@@ -346,6 +459,17 @@ function markAll() {
   font-size: 0.95rem;
 }
 
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  padding-right: 0.75rem;
+}
+.setting-text small {
+  color: var(--riffle-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
 /* a clear on / off switch (same look as the Events filters) */
 .setting-switch {
   width: 2.7em;
@@ -377,6 +501,11 @@ function markAll() {
 :root[data-theme='dark'] .notification-icon {
   background: rgba(124, 77, 255, 0.2);
   color: #cdbfff;
+}
+:root[data-theme='dark'] .remove-btn:hover,
+:root[data-theme='dark'] .remove-btn:focus-visible {
+  background: rgba(220, 38, 38, 0.18);
+  color: #fca5a5;
 }
 :root[data-theme='dark'] .setting-switch:not(:checked) {
   border-color: var(--riffle-muted);

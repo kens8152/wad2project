@@ -10,13 +10,53 @@ const userStore = useUserStore()
 const subscription = userStore.startAuth()
 
 const router = useRouter()
-router.afterEach(() => {
+const scrollPositions = new Map()
+const historyPosition = () => window.history.state?.position ?? 0
+let lastPosition = historyPosition()
+let stopRestore = null
+
+router.beforeEach((to, from) => {
   const main = document.querySelector('.app-main')
-  if (main) main.scrollTop = 0
+  if (main && from.matched.length) scrollPositions.set(lastPosition, main.scrollTop)
 })
+
+router.afterEach(() => {
+  stopRestore?.()
+  const position = historyPosition()
+  const wentBack = position < lastPosition
+  lastPosition = position
+  const main = document.querySelector('.app-main')
+  const saved = wentBack ? scrollPositions.get(position) : undefined
+  if (!main) return
+  if (saved) restoreScroll(saved)
+  else main.scrollTop = 0
+})
+
+function restoreScroll(top) {
+  const started = performance.now()
+  let timer = 0
+  const cancelEvents = ['wheel', 'touchstart', 'keydown', 'mousedown']
+  const stop = () => {
+    clearTimeout(timer)
+    cancelEvents.forEach((name) => window.removeEventListener(name, stop))
+    stopRestore = null
+  }
+  const step = () => {
+    const main = document.querySelector('.app-main')
+    const elapsed = performance.now() - started
+    if (!main || elapsed > 1500) return stop()
+    main.scrollTop = top
+    if (elapsed > 400 && Math.abs(main.scrollTop - top) <= 1) return stop()
+    timer = setTimeout(step, 16)
+  }
+  cancelEvents.forEach((name) => window.addEventListener(name, stop, { passive: true }))
+  stopRestore = stop
+  timer = setTimeout(step, 0)
+}
 
 onBeforeUnmount(() => {
   subscription.unsubscribe()
+  stopRestore?.()
 })
 </script>
 
@@ -57,12 +97,11 @@ body {
   min-height: 0;
   height: auto;
   overflow-y: auto;
-  /* the Discover page background (off-white with a faint dot grid) behind every page.
+  /* the page background behind every page: the soft glow with a faint dot grid on top.
      "local" makes the dots scroll along with the page */
-  background-color: var(--riffle-bg);
-  background-image: radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px);
-  background-size: 30px 30px;
-  background-attachment: local;
+  background:
+    radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px) 0 0 / 30px 30px local,
+    var(--riffle-glow);
 }
 .page-enter-active,
 .page-leave-active {

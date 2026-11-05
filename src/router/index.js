@@ -113,12 +113,6 @@ const routes = [
     component: () => import('@/views/NotificationsView.vue'),
     meta: { title: 'Notifications', section: 'profile' },
   },
-  {
-    path: '/messages',
-    name: 'messages',
-    component: () => import('@/views/MessagesView.vue'),
-    meta: { title: 'Messages', section: 'profile' },
-  },
 
   {
     path: '/signup',

@@ -18,6 +18,7 @@ const MAX_INDENT_DEPTH = 5
 const { userVote, upvotes, downvotes, vote } = useVote(() => props.reply, {
   table: 'reply_votes',
   idColumn: 'reply_id',
+  countsTable: 'replies',
 })
 
 

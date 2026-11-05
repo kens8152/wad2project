@@ -15,7 +15,9 @@ create table public.genres (
 create table public.venues (
   id      text primary key,
   name    text not null,
-  address text
+  address text,
+  lat     double precision,
+  lng     double precision
 );
 
 create table public.artists (
@@ -47,7 +49,8 @@ create table public.events (
   time_label   text,
   price        numeric,
   going        integer not null default 0,
-  tag          text
+  tag          text,
+  created_at   timestamptz not null default now()
 );
 
 create table public.event_artists (
@@ -196,7 +199,200 @@ create table public.followed_artists (
 );
 
 -- =========================================================================
--- 5. Access rules (Row Level Security)
+-- 5. Notifications
+-- =========================================================================
+-- type (and the setting that turns it off):
+--   reply    -> forum_replies   someone replies to your post or to your comment   (trigger below)
+--   mention  -> mentions        someone writes @yourname in a post or reply       (trigger below)
+--   upvote   -> post_votes      someone upvotes your post                         (trigger below)
+--   downvote -> post_votes      someone downvotes your post                       (trigger below)
+--   event    -> gigs_near_me    a new gig within 10 km of you                     (added by the app, which knows your location)
+
+-- One row per person. No row means every setting is on.
+create table public.notification_settings (
+  user_id           uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  gigs_near_me      boolean not null default true,
+  forum_replies     boolean not null default true,
+  mentions          boolean not null default true,
+  post_votes        boolean not null default true,
+  last_events_check timestamptz -- the last time the app looked for new gigs for this person
+);
+
+create table public.notifications (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  type       text not null check (type in ('reply', 'mention', 'upvote', 'downvote', 'event')),
+  actor_name text,          -- who did it (null for gigs)
+  body       text not null, -- the sentence shown after the name
+  link       text,          -- where clicking it goes, e.g. /forum/post/<id>
+  dedupe_key text not null, -- stops the same thing being notified twice, e.g. reply:<id> or event:<id>
+  read_at    timestamptz,
+  created_at timestamptz not null default now(),
+  unique (user_id, dedupe_key)
+);
+
+create index notifications_user_created on public.notifications (user_id, created_at desc);
+
+-- true when the person still has an account and has this setting on (no settings row = on)
+create or replace function public.notification_enabled(person uuid, setting text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from auth.users u where u.id = person)
+     and coalesce((select (to_jsonb(s) ->> setting)::boolean
+                     from public.notification_settings s
+                    where s.user_id = person), true);
+$$;
+
+-- Forum replies: tells the post's author (or, for a reply to a comment, the comment's author)
+create or replace function public.notify_on_reply()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  recipient  uuid;
+  post_title text;
+  sentence   text;
+begin
+  select title into post_title from public.posts where id = new.post_id;
+
+  if new.parent_id is not null then
+    select user_id into recipient from public.replies where id = new.parent_id;
+    sentence := 'replied to your comment on "' || coalesce(post_title, 'a post') || '"';
+  else
+    select user_id into recipient from public.posts where id = new.post_id;
+    sentence := 'replied to your post "' || coalesce(post_title, 'a post') || '"';
+  end if;
+
+  if recipient is not null
+     and recipient is distinct from new.user_id
+     and public.notification_enabled(recipient, 'forum_replies') then
+    insert into public.notifications (user_id, type, actor_name, body, link, dedupe_key, created_at)
+    values (recipient, 'reply', new.username, sentence, '/forum/post/' || new.post_id, 'reply:' || new.id, new.created_at)
+    on conflict (user_id, dedupe_key) do nothing;
+  end if;
+
+  return null;
+end;
+$$;
+
+create trigger replies_notify
+after insert on public.replies
+for each row execute function public.notify_on_reply();
+
+-- Mentions: @name in a post or reply, where name is the display name without spaces (any case)
+create or replace function public.notify_mentions()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  row_data   jsonb := to_jsonb(new);
+  words      text;
+  post_id    uuid;
+  post_title text;
+  sentence   text;
+  person     record;
+begin
+  if tg_table_name = 'posts' then
+    words := coalesce(row_data ->> 'title', '') || ' ' || coalesce(row_data ->> 'content', '');
+    post_id := new.id;
+    post_title := row_data ->> 'title';
+    sentence := 'mentioned you in a post: "' || coalesce(post_title, '') || '"';
+  else
+    words := coalesce(row_data ->> 'content', '');
+    post_id := (row_data ->> 'post_id')::uuid;
+    select title into post_title from public.posts where id = post_id;
+    sentence := 'mentioned you in a reply on "' || coalesce(post_title, 'a post') || '"';
+  end if;
+
+  if position('@' in words) = 0 then
+    return null;
+  end if;
+
+  for person in
+    select distinct p.id
+      from regexp_matches(words, '@([A-Za-z0-9_.]+)', 'g') as m (handle)
+      join public.profiles p
+        on lower(regexp_replace(p.display_name, '\s', '', 'g')) = lower(m.handle[1])
+      where p.id is distinct from new.user_id
+  loop
+    if public.notification_enabled(person.id, 'mentions') then
+      insert into public.notifications (user_id, type, actor_name, body, link, dedupe_key, created_at)
+      values (person.id, 'mention', new.username, sentence, '/forum/post/' || post_id,
+              'mention:' || tg_table_name || ':' || new.id, (row_data ->> 'created_at')::timestamptz)
+      on conflict (user_id, dedupe_key) do nothing;
+    end if;
+  end loop;
+
+  return null;
+end;
+$$;
+
+create trigger posts_notify_mentions
+after insert on public.posts
+for each row execute function public.notify_mentions();
+
+create trigger replies_notify_mentions
+after insert on public.replies
+for each row execute function public.notify_mentions();
+
+-- Votes: tells a post's author when someone upvotes or downvotes it.
+-- Taking a vote back (or switching it) removes the notification for the old vote.
+create or replace function public.notify_on_post_vote()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  recipient  uuid;
+  post_title text;
+  voter_name text;
+  kind       text;
+begin
+  if tg_op = 'UPDATE' and old.vote = new.vote then
+    return null;
+  end if;
+
+  if tg_op in ('UPDATE', 'DELETE') then
+    delete from public.notifications
+     where dedupe_key = (case when old.vote = 1 then 'upvote' else 'downvote' end) || ':' || old.post_id || ':' || old.user_id;
+  end if;
+
+  if tg_op in ('INSERT', 'UPDATE') then
+    kind := case when new.vote = 1 then 'upvote' else 'downvote' end;
+    select user_id, title into recipient, post_title from public.posts where id = new.post_id;
+    select display_name into voter_name from public.profiles where id = new.user_id;
+
+    if recipient is not null
+       and recipient is distinct from new.user_id
+       and public.notification_enabled(recipient, 'post_votes') then
+      insert into public.notifications (user_id, type, actor_name, body, link, dedupe_key)
+      values (recipient, kind, coalesce(nullif(trim(voter_name), ''), 'Someone'),
+              kind || 'd your post "' || coalesce(post_title, 'a post') || '"',
+              '/forum/post/' || new.post_id,
+              kind || ':' || new.post_id || ':' || new.user_id)
+      on conflict (user_id, dedupe_key) do nothing;
+    end if;
+  end if;
+
+  return null;
+end;
+$$;
+
+create trigger post_votes_notify
+after insert or update or delete on public.post_votes
+for each row execute function public.notify_on_post_vote();
+
+-- =========================================================================
+-- 6. Access rules (Row Level Security)
 -- =========================================================================
 
 alter table public.genres              enable row level security;
@@ -214,6 +410,8 @@ alter table public.saved_posts         enable row level security;
 alter table public.matchmaking_actions enable row level security;
 alter table public.saved_artists       enable row level security;
 alter table public.followed_artists    enable row level security;
+alter table public.notification_settings enable row level security;
+alter table public.notifications       enable row level security;
 
 -- Catalogue and forum: anyone (even logged out) can read
 create policy "Anyone can read genres"        on public.genres        for select using (true);
@@ -248,6 +446,19 @@ create policy "Users manage their own matchmaking" on public.matchmaking_actions
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "Users manage their own saved artists" on public.saved_artists
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "Users manage their own notification settings" on public.notification_settings
+  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Notifications
+create policy "Users read their own notifications" on public.notifications
+  for select to authenticated using (user_id = auth.uid());
+create policy "Users mark their own notifications as read" on public.notifications
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "Users delete their own notifications" on public.notifications
+  for delete to authenticated using (user_id = auth.uid());
+create policy "Users add their own gig notifications" on public.notifications
+  for insert to authenticated with check (user_id = auth.uid() and type = 'event');
+
 create policy "Users manage their own followed artists" on public.followed_artists
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -259,11 +470,13 @@ grant select on public.genres, public.venues, public.artists, public.events, pub
 grant insert, update, delete on public.posts, public.replies to authenticated;
 grant select, insert, update, delete on public.profiles, public.post_votes, public.reply_votes,
                 public.saved_posts, public.matchmaking_actions, public.saved_artists,
-                public.followed_artists
+                public.followed_artists, public.notification_settings
   to authenticated;
+grant select, insert, delete on public.notifications to authenticated;
+grant update (read_at) on public.notifications to authenticated; -- only the read state can be changed
 
 -- =========================================================================
--- 6. Storage: photos attached to forum posts
+-- 7. Storage: photos attached to forum posts
 -- =========================================================================
 
 insert into storage.buckets (id, name, public)
@@ -278,3 +491,9 @@ create policy "Users upload their own post images" on storage.objects
 create policy "Users delete their own post images" on storage.objects
   for delete to authenticated
   using (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =========================================================================
+-- 8. Live updates: the navbar dot appears as soon as a notification arrives
+-- =========================================================================
+
+alter publication supabase_realtime add table public.notifications;

@@ -197,6 +197,20 @@ const emptyMessage = computed(() => {
         <p class="profile-kicker"><i class="dot"></i>{{ artist.genre.name }}</p>
         <h1 class="profile-name">{{ artist.name }}</h1>
 
+        <div v-if="socialLinks.length > 0" class="socials">
+          <a
+            v-for="link in socialLinks"
+            :key="link.network"
+            :href="link.url"
+            class="socials__btn"
+            target="_blank"
+            rel="noopener"
+            :aria-label="link.network"
+          >
+            <i class="bi" :class="link.icon"></i>
+          </a>
+        </div>
+
         <div class="profile-actions">
           <button type="button" class="profile-pill" :aria-pressed="isFavourite" @click="onFavourite">
             <i class="bi" :class="isFavourite ? 'bi-heart-fill' : 'bi-heart'"></i>
@@ -219,27 +233,10 @@ const emptyMessage = computed(() => {
           <span v-if="artist.tag" class="meta-chip">#{{ artist.tag }}</span>
         </div>
 
-
         <div class="profile-divider"></div>
 
         <p v-if="profile.bio" class="profile-about">{{ profile.bio }}</p>
         <p v-else class="profile-about text-secondary">No biography has been added yet.</p>
-
-
-        <div v-if="socialLinks.length > 0" class="profile-divider"></div>
-        <div v-if="socialLinks.length > 0" class="socials">
-          <a
-            v-for="link in socialLinks"
-            :key="link.network"
-            :href="link.url"
-            class="socials__btn"
-            target="_blank"
-            rel="noopener"
-            :aria-label="link.network"
-          >
-            <i class="bi" :class="link.icon"></i>
-          </a>
-        </div>
       </aside>
 
       <main class="profile-main">
@@ -461,6 +458,7 @@ const emptyMessage = computed(() => {
   display: flex;
   justify-content: center;
   gap: 0.6rem;
+  margin-top: 0.9rem;
 }
 .socials__btn {
   width: 40px;

@@ -486,10 +486,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .discover {
-  --web-bg: #f7f5fc;
-  --web-grid: #e2dcf2;
-  --web-glow-a: rgba(255, 170, 210, 0.45);
-  --web-glow-b: rgba(170, 200, 255, 0.5);
+  --web-bg: #fbfaf8;
+  --web-grid: #e6e3ee;
+  --web-glow-a: transparent;
+  --web-glow-b: transparent;
   --web-edge: #666a82;
   --web-halo: #fff;
   --web-hover: rgba(124, 77, 255, 0.07);
@@ -735,7 +735,7 @@ onBeforeUnmount(() => {
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
 }
 .genre-pill:hover {
-  background: #f4f6fc;
+  background: var(--riffle-surface-soft);
   transform: translateX(2px);
 }
 .genre-pill__dot {

@@ -60,7 +60,6 @@ Riffle works on **smartphones, laptops and desktops**, with a responsive layout 
 ### 🎤 Artists
 - Browse all local artists with search, genre and venue filters and sorting.
 - Artist profiles with their genres, upcoming events and **Follow** / **Save** buttons.
-- **"I'm feeling lucky"** jumps straight into matchmaking.
 
 ### 💘 Artist matchmaking
 - A daily batch of artist cards to **Like** or **Skip**, swipe style.
@@ -77,7 +76,13 @@ Riffle works on **smartphones, laptops and desktops**, with a responsive layout 
 ### 👤 Profile and social
 - Sign up / log in, with **onboarding** that imports your music taste (optional Spotify connect).
 - Profile tabs for followed artists, liked artists, saved artists and match history.
-- Direct **messages** and **notifications**.
+- Direct **messages**.
+- **Notifications**, saved per person in Supabase and updated live, for:
+  - replies to your forum posts and comments,
+  - `@mentions` (an @ followed by your display name without spaces),
+  - new gigs within 10 km of you.
+
+  Each type can be switched off in the notification settings. You can mark notifications read, remove them one at a time or clear all the read ones.
 
 ---
 
@@ -145,7 +150,7 @@ wad2project/
 │   ├── composables/        # Shared logic (useTheme, useSavedArtists, event filters, ...)
 │   ├── data/               # Local data files (events, artist profiles, Discover)
 │   ├── router/             # Routes and route guards
-│   ├── services/           # Supabase, matchmaking, Spotify, Apple preview and Last.fm calls
+│   ├── services/           # Supabase, matchmaking, notifications, Spotify, Apple preview and Last.fm calls
 │   ├── stores/             # Pinia stores (user, events, messages, notifications)
 │   ├── test/               # Shared test setup and fixtures
 │   ├── utils/              # Small helper functions
@@ -153,7 +158,7 @@ wad2project/
 │   ├── App.vue
 │   └── main.js
 ├── supabase/
-│   ├── schema.sql          # Database tables, access rules, vote trigger and storage bucket (for reference)
+│   ├── schema.sql          # Database tables, access rules, vote and notification triggers, storage bucket (for reference)
 │   └── seed.sql            # Starter data: genres, venues, artists, events, forum posts (for reference)
 ├── .env-example            # Copy to .env: points to the Riffle Supabase project
 ├── playwright.config.js

@@ -276,9 +276,7 @@ function startEditing() {
             </div>
 
             <div class="hero-actions">
-              <button class="profile-button" type="button" @click="startEditing"><i class="bi bi-pencil me-1"></i> Edit profile</button>
-              <RouterLink to="/notifications" class="cancel-button"><i class="bi bi-gear me-1"></i> Settings</RouterLink>
-            </div>
+              <button class="profile-button" type="button" @click="startEditing"><i class="bi bi-pencil me-1"></i> Edit profile</button>            </div>
           </div>
         </section>
 
@@ -440,6 +438,7 @@ function startEditing() {
             <section class="side-card">
               <h2>Recent activity</h2>
               <ul class="list-unstyled">
+                <li v-if="!recentActivity.length" class="text-body-secondary small py-2">No activity yet.</li>
                 <li v-for="item in recentActivity" :key="item.id">
                   <RouterLink :to="item.to" class="activity-row">
                     <ArtistAvatar v-if="item.who" :name="item.who" :hue="hueFor(item.who)" :size="34" />
