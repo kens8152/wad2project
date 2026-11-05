@@ -213,6 +213,13 @@ button {
   background: var(--riffle-glow);
 }
 
+/* page side space: 16px on phones, growing to 40px on laptops (big screens keep Bootstrap's) */
+@media (max-width: 1399.98px) {
+  .container-xxl:not(.riffle-nav__inner) {
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
+  }
+}
+
 /* White card surface used across the events screens */
 .riffle-card {
   background: var(--riffle-surface);

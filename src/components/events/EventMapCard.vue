@@ -71,7 +71,7 @@ const friendsLabel = computed(() => {
 .map-card.is-active {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 12%, #fff), #fff 70%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genre) 12%, var(--riffle-surface)), var(--riffle-surface) 70%);
   border-left-width: 6px;
   transform: translateY(-6px) scale(1.04);
   box-shadow:
@@ -164,7 +164,7 @@ const friendsLabel = computed(() => {
   font-size: 0.78rem;
   font-weight: 800;
   color: var(--genre);
-  background: color-mix(in srgb, var(--genre) 14%, #fff);
+  background: color-mix(in srgb, var(--genre) 14%, var(--riffle-surface));
 }
 .map-card__title {
   margin: 0;
@@ -185,5 +185,10 @@ const friendsLabel = computed(() => {
 }
 .map-card__meta {
   color: var(--riffle-faint);
+}
+
+/* Dark mode: softer shine on the selected card */
+:root[data-theme='dark'] .map-card.is-active::after {
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
 </style>
