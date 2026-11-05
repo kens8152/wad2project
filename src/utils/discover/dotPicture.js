@@ -1,14 +1,22 @@
 // Profile pictures for the dots on the Discover page.
-// Every dot has its own portrait photo: no two artists ever share a picture. The photos are in public/images/Artists/profile/,
-// named "<genre id>-<number>.jpg" (indie-rock-1.jpg, indie-rock-2.jpg, ...), as many as the genre has dots.
-// (They were made with an AI image generator, since the artists in the web are sample artists.)
-// Inside a genre the dots take the numbers in turn, the artists with a real artist page first.
+// Real artists use their image_url stored in Supabase (set via setArtistImages after the store loads).
+// Made-up dots use the AI-generated profile photos from /images/Artists/profile/<genre>-<n>.jpg.
 
 import { getGraph } from '@/data/discover/discoverGraph'
 
 let slots = null
+let artistImageMap = {} // artistId -> image_url, populated by setArtistImages()
 
-// the number of the photo of every dot: { dot id: number }
+// Call this once after the artists store loads so real dots show the same image as the artist page
+export function setArtistImages(artists) {
+  for (const a of artists) {
+    if (a.id && a.image) {
+      artistImageMap[a.id] = a.image
+    }
+  }
+}
+
+// photo slot numbers for every dot (real artists first within each genre)
 function buildSlots() {
   const result = {}
   const graph = getGraph()
@@ -25,6 +33,11 @@ function buildSlots() {
 
 // the picture of a dot, as an address an <img> or an SVG <image> can show
 export function pictureOf(node) {
+  // real artists: use the image from Supabase if available
+  if (node.real && node.artistId && artistImageMap[node.artistId]) {
+    return artistImageMap[node.artistId]
+  }
+  // fallback: profile jpg for fake dots (and real artists before the store loads)
   if (slots === null) slots = buildSlots()
   return '/images/Artists/profile/' + node.genre + '-' + slots[node.id] + '.jpg'
 }

@@ -9,7 +9,7 @@ const SETTINGS_KEY = 'riffle.notifications.settings'
 // type is one of: Mentions, Follows, Events, Replies, System
 const items = [
   { id: 1, who: 'Rosa Park', text: 'liked your comment on “Playing the full synth set at BattleBox”', time: '2h ago', type: 'Replies', to: '/forum' },
-  { id: 2, who: 'Joel Tan', text: 'started following you', time: '4h ago', type: 'Follows', to: '/messages?c=joel-tan' },
+  { id: 2, who: 'Joel Tan', text: 'started following you', time: '4h ago', type: 'Follows', to: '/profile' },
   { id: 3, who: 'Mei Xuan', text: 'mentioned you in a post: “@you check out this new track!”', time: '1d ago', type: 'Mentions', to: '/forum' },
   { id: 4, who: '', text: 'New event added near you: “Sherman Zhuo: Midnight Letters” at Esplanade Annexe Studio', time: '1d ago', type: 'Events', to: '/events/sherman-zhuo-esplanade' },
   { id: 5, who: 'FallingIslands', text: 'replied to your comment: “Thanks for the support!”', time: '2d ago', type: 'Replies', to: '/forum' },

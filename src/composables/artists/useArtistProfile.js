@@ -29,7 +29,7 @@ export function useArtistProfile(artistId) {
         id: data.id,
         name: data.name,
         tag: data.tag || '',
-        image: data.image_url || '',
+        image: data.image_url || '/images/Artists/' + data.id + '.svg',
         bio: data.bio || '',
         hometown: data.hometown || '',
         formed: data.formed || '',
