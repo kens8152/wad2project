@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 
 import { useRouter, useRoute } from 'vue-router'
 
@@ -72,19 +72,63 @@ const shownTags = computed(() => (showAllTags.value ? genreTags.value : genreTag
 const handle = computed(() => '@' + userStore.user.name.toLowerCase().replace(/[^a-z0-9]/g, ''))
 
 const stats = computed(() => [
-  { value: followedArtists.value.length, label: 'Following', icon: 'bi-person-heart' },
-  { value: savedEvents.value.length, label: 'Saved events', icon: 'bi-calendar-heart' },
-  { value: songList.value.length, label: 'Favourite songs', icon: 'bi-music-note-list' },
-  { value: profile.value ? profile.value.genres.length : 0, label: 'Genres', icon: 'bi-vinyl' }
+  { value: followedArtists.value.length, label: 'Following', icon: 'bi-person-heart', color: '#ff4d8d' },
+  { value: savedEvents.value.length, label: 'Saved events', icon: 'bi-calendar-heart', color: '#1f6feb' },
+  { value: songList.value.length, label: 'Favourite songs', icon: 'bi-music-note-list', color: '#0f9d8a' },
+  { value: profile.value ? profile.value.genres.length : 0, label: 'Genres', icon: 'bi-vinyl', color: '#9b2fd6' }
 ])
 
 const tabs = computed(() => [
-  { key: 'artists', label: 'Artists', count: followedArtists.value.length },
-  { key: 'liked', label: 'Liked', count: likedArtists.value.length },
-  { key: 'events', label: 'Events', count: savedEvents.value.length },
-  { key: 'songs', label: 'Songs', count: songList.value.length },
-  { key: 'taste', label: 'Taste', count: profile.value ? profile.value.genres.length : 0 }
+  { key: 'artists', label: 'Artists', count: followedArtists.value.length, color: '#f0452f' },
+  { key: 'liked', label: 'Liked', count: likedArtists.value.length, color: '#f0529c' },
+  { key: 'events', label: 'Events', count: savedEvents.value.length, color: '#1f6feb' },
+  { key: 'songs', label: 'Songs', count: songList.value.length, color: '#0f9d8a' },
+  { key: 'taste', label: 'Taste', count: profile.value ? profile.value.genres.length : 0, color: '#9b2fd6' }
 ])
+
+// the colour of the currently selected tab, used to tint the active pill
+const activeTabColor = computed(() => {
+  const found = tabs.value.find(tab => tab.key === activeTab.value)
+  return found ? found.color : 'var(--riffle-coral)'
+})
+
+// ---- flowing tab slider ------------------------------------------------
+// A single pill sits behind the tabs and glides to the active one. We measure
+// the active button and move the pill with a transform, so the browser can
+// animate it smoothly (and it stays interruptible if you click fast).
+const tabBar = ref(null)
+const tabButtons = ref([])
+const sliderRect = ref({ x: 0, w: 0, ready: false })
+
+const sliderStyle = computed(() => {
+  if (!sliderRect.value.ready) return { opacity: 0 }
+  return {
+    opacity: 1,
+    width: sliderRect.value.w + 'px',
+    transform: 'translateX(' + sliderRect.value.x + 'px)',
+  }
+})
+
+function measureSlider() {
+  const index = tabs.value.findIndex(tab => tab.key === activeTab.value)
+  const el = tabButtons.value[index]
+  if (!el || !tabBar.value) return
+  sliderRect.value = { x: el.offsetLeft, w: el.offsetWidth, ready: true }
+}
+
+// re-measure when the active tab changes, after the DOM updates
+watch(activeTab, () => nextTick(measureSlider))
+// counts can change the label width (e.g. "Artists 0" -> "Artists 3")
+watch(tabs, () => nextTick(measureSlider), { deep: true })
+
+function onResize() {
+  measureSlider()
+}
+onMounted(() => {
+  nextTick(measureSlider)
+  window.addEventListener('resize', onResize)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 
 // the latest few notifications
 const recentActivity = computed(() => notifications.list.slice(0, 4))
@@ -252,50 +296,45 @@ function startEditing() {
     <template v-else>
       <!-- ============ view your profile ============ -->
       <div class="profile-content">
-        <section class="hero-card">
-          <div class="hero-banner" aria-hidden="true">
-            <span class="note note--1"><i class="bi bi-music-note-beamed"></i></span>
-            <span class="note note--2"><i class="bi bi-music-note"></i></span>
-            <span class="note note--3"><i class="bi bi-music-note-beamed"></i></span>
-          </div>
+        <section class="masthead">
+          <span class="masthead__eyebrow"><i class="dot"></i> Your profile</span>
 
-          <div class="hero-body">
-            <span class="hero-avatar">{{ userStore.user.initials }}</span>
-
-            <div class="hero-info">
-              <h1>{{ profile.displayName }}</h1>
-              <p class="hero-meta">
-                {{ handle }} · {{ userStore.user.location.label }}<template v-if="joinedLabel"> · {{ joinedLabel }}</template>
+          <div class="masthead__top">
+            <span class="masthead__avatar">{{ userStore.user.initials }}</span>
+            <div class="masthead__id">
+              <h1 class="masthead__name">{{ profile.displayName }}</h1>
+              <p class="masthead__meta">
+                <span class="masthead__handle">{{ handle }}</span>
+                <span class="masthead__sep">/</span>{{ userStore.user.location.label }}<template v-if="joinedLabel"><span class="masthead__sep">/</span>{{ joinedLabel }}</template>
               </p>
-              <div class="hero-tags">
-                <span v-for="tag in shownTags" :key="tag" class="tag">{{ tag }}</span>
-                <button v-if="genreTags.length > 3" type="button" class="tag tag--button" @click="showAllTags = !showAllTags">
+              <div class="masthead__tags">
+                <span v-for="tag in shownTags" :key="tag" class="chip">{{ tag }}</span>
+                <button v-if="genreTags.length > 3" type="button" class="chip chip--button" @click="showAllTags = !showAllTags">
                   {{ showAllTags ? 'Show less' : '+' + (genreTags.length - 3) + ' more' }}
                 </button>
               </div>
             </div>
-
-            <div class="hero-actions">
-              <button class="profile-button" type="button" @click="startEditing"><i class="bi bi-pencil me-1"></i> Edit profile</button>            </div>
+            <button class="masthead__edit" type="button" @click="startEditing"><i class="bi bi-pencil"></i> Edit profile</button>
           </div>
-        </section>
 
-        <section class="stats-row">
-          <div v-for="stat in stats" :key="stat.label" class="stat-card">
-            <i class="bi" :class="stat.icon"></i>
-            <div>
-              <strong>{{ stat.value }}</strong>
-              <span>{{ stat.label }}</span>
+          <!-- stats folded in as a liner-notes spec strip -->
+          <dl class="spec-strip">
+            <div v-for="stat in stats" :key="stat.label" class="spec" :style="{ '--accent': stat.color }">
+              <dt>{{ stat.label }}</dt>
+              <dd><i class="bi" :class="stat.icon"></i>{{ stat.value }}</dd>
             </div>
-          </div>
+          </dl>
         </section>
 
         <div class="row g-4">
           <section class="col-12 col-lg-8">
-            <nav class="tab-bar" role="tablist" aria-label="Your profile">
+            <nav ref="tabBar" class="tab-bar" role="tablist" aria-label="Your profile" :style="{ '--tab': activeTabColor }">
+              <!-- the flowing pill that glides behind the active tab -->
+              <span class="tab-slider" :style="sliderStyle" aria-hidden="true"></span>
               <button
                 v-for="tab in tabs"
                 :key="tab.key"
+                ref="tabButtons"
                 type="button"
                 role="tab"
                 class="tab-button"
@@ -512,99 +551,186 @@ function startEditing() {
   color: var(--riffle-ink);
 }
 
-/* ---- hero ---- */
-.hero-card {
-  margin-bottom: 1.25rem;
+/* ---- masthead: an editorial header on a graph-paper field ---- */
+.masthead {
+  position: relative;
+  margin-bottom: 1.5rem;
+  padding: 1.6rem 1.8rem 1.4rem;
   overflow: hidden;
   border: 1px solid var(--riffle-border);
-  border-radius: 20px;
-  background: var(--riffle-surface);
+  border-radius: 22px;
+  background:
+    radial-gradient(var(--riffle-dots) 1.1px, transparent 1.1px) 0 0 / 22px 22px,
+    radial-gradient(120% 140% at 100% 0%, rgba(255, 77, 141, 0.1), transparent 55%),
+    radial-gradient(120% 140% at 0% 100%, rgba(124, 77, 255, 0.1), transparent 55%),
+    var(--riffle-surface);
   box-shadow: var(--riffle-shadow-sm);
 }
-.hero-banner {
-  position: relative;
-  height: 120px;
-  overflow: hidden;
-  background: linear-gradient(120deg, #ffd1e3 0%, #d9d3fb 45%, #cfe4fb 100%);
+.masthead__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--riffle-muted);
 }
-.note {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 2rem;
-  animation: drift 6s ease-in-out infinite;
+.masthead__eyebrow .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff4d8d, #7c4dff);
 }
-.note--1 {
-  left: 12%;
-  top: 28px;
-}
-.note--2 {
-  left: 46%;
-  top: 56px;
-  font-size: 1.5rem;
-  animation-delay: -2s;
-}
-.note--3 {
-  right: 14%;
-  top: 22px;
-  font-size: 2.4rem;
-  animation-delay: -4s;
-}
-@keyframes drift {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-6deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(6deg);
-  }
-}
-
-.hero-body {
+.masthead__top {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 1.25rem;
-  padding: 0 1.75rem 1.5rem;
 }
-.hero-avatar {
-  position: relative;
-  z-index: 1; /* above the banner it overlaps */
+.masthead__avatar {
   display: grid;
   place-items: center;
   flex: none;
-  width: 104px;
-  height: 104px;
-  margin-top: -52px;
-  border: 5px solid #fff;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ffc9dc, #d9d3fb);
-  color: var(--riffle-ink);
-  font-size: 2.2rem;
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  transform: rotate(-3deg);
+  background: linear-gradient(135deg, #ff4d8d, #7c4dff);
+  color: #fff;
+  font-size: 2.1rem;
   font-weight: 800;
-  box-shadow: var(--riffle-shadow);
+  letter-spacing: -0.02em;
+  box-shadow: 0 12px 28px rgba(124, 77, 255, 0.35);
 }
-.hero-info {
+.masthead__id {
   flex: 1;
   min-width: 220px;
-  padding-top: 0.75rem;
 }
-.hero-info h1 {
+.masthead__name {
   margin: 0;
-  font-size: 1.7rem;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--riffle-ink);
 }
-.hero-meta {
-  margin: 0.15rem 0 0.6rem;
+.masthead__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--riffle-muted);
 }
-.hero-tags {
+.masthead__handle {
+  color: var(--riffle-blue);
+  font-weight: 800;
+}
+.masthead__sep {
+  color: var(--riffle-faint);
+}
+.masthead__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+  margin-top: 0.9rem;
 }
-.hero-actions {
+.masthead__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border: 1.5px solid var(--riffle-border);
+  border-radius: 999px;
+  background: var(--riffle-surface);
+  color: var(--riffle-ink);
+  font-weight: 800;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
+}
+.masthead__edit:hover {
+  transform: translateY(-2px);
+  border-color: #7c4dff;
+  box-shadow: 0 10px 22px rgba(124, 77, 255, 0.25);
+}
+
+/* chips (genre tags in the masthead) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 999px;
+  background: var(--riffle-surface);
+  color: var(--riffle-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.chip--button {
+  cursor: pointer;
+  color: var(--riffle-blue);
+  border-color: color-mix(in srgb, var(--riffle-blue) 40%, var(--riffle-border));
+}
+
+/* ---- spec strip: the four stats as a liner-notes credit line ---- */
+.spec-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  border: 1px solid var(--riffle-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--riffle-surface);
+}
+.spec {
+  position: relative;
+  padding: 0.95rem 1.1rem;
+  border-left: 1px solid var(--riffle-border);
+}
+.spec:first-child {
+  border-left: 0;
+}
+.spec dt {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--riffle-muted);
+}
+.spec dd {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.3rem 0 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--riffle-ink);
+}
+.spec dd .bi {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+@media (max-width: 575.98px) {
+  .spec-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .spec:nth-child(3) {
+    border-left: 0;
+  }
+  .spec:nth-child(n + 3) {
+    border-top: 1px solid var(--riffle-border);
+  }
 }
 
 .tag {
@@ -626,85 +752,87 @@ function startEditing() {
   color: var(--riffle-ink);
 }
 
-/* ---- stats ---- */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 1rem 1.2rem;
-  border: 1px solid var(--riffle-border);
-  border-radius: var(--riffle-radius);
-  background: var(--riffle-surface);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--riffle-shadow);
-}
-.stat-card > i {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #ece9ff;
-  color: #5b45c9;
-  font-size: 1.25rem;
-}
-.stat-card strong {
-  display: block;
-  font-size: 1.5rem;
-  line-height: 1.1;
-}
-.stat-card span {
-  color: var(--riffle-muted);
-  font-size: 0.85rem;
-}
-
-/* ---- tabs ---- */
+/* ---- tabs: a segmented pill control ---- */
 .tab-bar {
+  position: relative;
   display: flex;
-  gap: 1.5rem;
+  gap: 0.3rem;
+  padding: 0.3rem;
   overflow-x: auto;
   overflow-y: hidden;
-  border-bottom: 1px solid var(--riffle-border);
+  scrollbar-width: none;
+  border: 1px solid var(--riffle-border);
+  border-radius: 999px;
+  background: var(--riffle-surface);
+}
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 .tab-button {
   position: relative;
-  padding: 0.6rem 0.1rem 0.8rem;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--riffle-muted);
   font-weight: 700;
+  font-size: 0.9rem;
   white-space: nowrap;
-  transition: color 0.15s;
+  transition: color 0.2s, background 0.3s, box-shadow 0.3s;
 }
 .tab-button:hover {
   color: var(--riffle-ink);
 }
 .tab-button.is-active {
-  color: var(--riffle-ink);
+  color: #fff;
 }
-.tab-button.is-active::after {
-  content: '';
+/* the flowing pill behind the active tab */
+.tab-slider {
   position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
   left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--riffle-coral), var(--riffle-coral-soft));
+  z-index: 0;
+  border-radius: 999px;
+  /* --tab is set on the bar and changes with the selected tab */
+  background: linear-gradient(90deg, var(--tab, var(--riffle-coral)), color-mix(in srgb, var(--tab, var(--riffle-coral)) 70%, #fff));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--tab, var(--riffle-coral)) 38%, transparent);
+  /* spring-like glide for position + width, plus a colour cross-fade */
+  transition:
+    transform 0.45s cubic-bezier(0.34, 1.4, 0.5, 1),
+    width 0.45s cubic-bezier(0.34, 1.4, 0.5, 1),
+    background 0.35s ease,
+    box-shadow 0.35s ease,
+    opacity 0.2s ease;
+}
+/* keep the label + count above the sliding pill */
+.tab-button {
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-slider {
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
 }
 .tab-count {
-  margin-left: 0.2rem;
-  color: var(--riffle-faint);
-  font-weight: 600;
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--riffle-surface-soft);
+  color: var(--riffle-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.tab-button.is-active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
 }
 .tab-panel {
   padding-top: 1.25rem;
@@ -731,16 +859,43 @@ function startEditing() {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 1.2rem;
+  overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
   background: var(--riffle-surface);
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
+}
+/* left accent bar that grows on hover */
+.artist-tile::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+  transform: scaleY(0.35);
+  transform-origin: center;
+  opacity: 0.55;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s;
 }
 .artist-tile:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow: var(--riffle-shadow);
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--riffle-border));
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.artist-tile:hover::before {
+  transform: scaleY(1);
+  opacity: 1;
+}
+/* accent ring around the avatar */
+.artist-tile .artist-link :deep(.artist-avatar) {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: box-shadow 0.25s;
+}
+.artist-tile:hover .artist-link :deep(.artist-avatar) {
+  box-shadow: 0 0 0 3px var(--accent);
 }
 .artist-link {
   display: flex;
@@ -883,17 +1038,39 @@ function startEditing() {
   margin: 0;
 }
 .event-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.8rem 0.4rem;
-  border-bottom: 1px solid var(--riffle-border);
+  padding: 0.85rem 0.9rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--riffle-border);
+  border-radius: 14px;
+  background: var(--riffle-surface);
   color: inherit;
   text-decoration: none;
-  transition: background 0.15s;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
+}
+.event-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .event-row:hover {
-  background: var(--riffle-surface-soft);
+  transform: translateX(4px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--riffle-border));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.event-row:hover::before {
+  transform: scaleY(1);
 }
 .date-box {
   display: flex;
@@ -901,9 +1078,10 @@ function startEditing() {
   flex-direction: column;
   align-items: center;
   width: 54px;
-  padding: 0.3rem 0;
-  border: 2px solid var(--accent);
-  border-radius: 10px;
+  padding: 0.35rem 0;
+  border: 0;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--riffle-surface));
   color: var(--accent);
   font-size: 0.66rem;
   font-weight: 800;
@@ -939,20 +1117,36 @@ function startEditing() {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 0.4rem;
-  border-bottom: 1px solid var(--riffle-border);
+  padding: 0.7rem 0.6rem;
+  border-radius: 12px;
+  transition: background 0.18s;
+}
+.song-rows li:hover {
+  background: var(--riffle-surface-soft);
 }
 .song-number {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #ece9ff;
-  color: #5b45c9;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #ff4d8d, #7c4dff);
+  color: #fff;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
+}
+/* top 3 get a brighter badge */
+.song-rows li:nth-child(1) .song-number {
+  background: linear-gradient(135deg, #ffd34d, #ff8a3d);
+  box-shadow: 0 4px 12px rgba(255, 138, 61, 0.4);
+}
+.song-rows li:nth-child(2) .song-number {
+  background: linear-gradient(135deg, #ff6b9d, #ff4d8d);
+}
+.song-rows li:nth-child(3) .song-number {
+  background: linear-gradient(135deg, #8a6bff, #7c4dff);
 }
 
 .panel-title {
@@ -987,15 +1181,32 @@ function startEditing() {
 
 /* ---- side cards ---- */
 .side-card {
+  position: relative;
   margin-bottom: 1rem;
-  padding: 1.2rem 1.3rem;
+  padding: 1.3rem 1.3rem 1.2rem;
+  overflow: hidden;
   border: 1px solid var(--riffle-border);
   border-radius: var(--riffle-radius);
-  background: var(--riffle-surface);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(124, 77, 255, 0.07), transparent 55%),
+    var(--riffle-surface);
 }
 .side-card h2 {
-  margin: 0 0 0.5rem;
+  position: relative;
+  margin: 0 0 0.8rem;
+  padding-left: 0.7rem;
   font-size: 1.05rem;
+}
+/* accent tick before each side-card heading */
+.side-card h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ff4d8d, #7c4dff);
 }
 .side-card ul {
   margin: 0;
@@ -1016,11 +1227,12 @@ function startEditing() {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #ece9ff;
-  color: #5b45c9;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #ff4d8d, #7c4dff);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(124, 77, 255, 0.28);
 }
 .activity-text {
   flex: 1;
@@ -1274,23 +1486,21 @@ function startEditing() {
   color: #18754a;
 }
 
-@media (max-width: 991.98px) {
-  .stats-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 @media (max-width: 575.98px) {
-  .hero-body {
-    padding: 0 1.1rem 1.25rem;
+  .masthead {
+    padding: 1.3rem 1.2rem 1.2rem;
   }
-  .hero-avatar {
-    width: 84px;
-    height: 84px;
-    margin-top: -42px;
-    font-size: 1.8rem;
+  .masthead__avatar {
+    width: 76px;
+    height: 76px;
+    font-size: 1.7rem;
+    border-radius: 20px;
   }
-  .stat-card {
-    padding: 0.8rem;
+  .masthead__edit {
+    order: 3;
+  }
+  .spec dd {
+    font-size: 1.5rem;
   }
 }
 
@@ -1606,13 +1816,8 @@ a:focus-visible {
   opacity: 0;
 }
 
-/* Dark mode: the light boxes become dark, so their text stays readable */
-:root[data-theme='dark'] .stat-card > i,
-:root[data-theme='dark'] .song-number,
-:root[data-theme='dark'] .activity-icon {
-  background: rgba(124, 77, 255, 0.2);
-  color: #cdbfff;
-}
+/* Dark mode: the stat icon chip blends its accent into the dark surface;
+   the gradient song/activity badges already read well on dark */
 :root[data-theme='dark'] .genre-tag,
 :root[data-theme='dark'] .genre-option.selected,
 :root[data-theme='dark'] .selected-song-icon {
@@ -1643,5 +1848,14 @@ a:focus-visible {
 }
 :root[data-theme='dark'] .reset-confirm:disabled {
   background: rgba(214, 38, 79, 0.35);
+}
+
+/* Dark mode: soften the masthead corner glows so they don't blow out */
+:root[data-theme='dark'] .masthead {
+  background:
+    radial-gradient(var(--riffle-dots) 1.1px, transparent 1.1px) 0 0 / 22px 22px,
+    radial-gradient(120% 140% at 100% 0%, rgba(255, 77, 141, 0.14), transparent 55%),
+    radial-gradient(120% 140% at 0% 100%, rgba(124, 77, 255, 0.16), transparent 55%),
+    var(--riffle-surface);
 }
 </style>
