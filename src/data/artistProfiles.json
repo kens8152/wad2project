@@ -145,5 +145,17 @@
       "youtube": "https://youtube.com",
       "facebook": "https://facebook.com"
     }
+  },
+  "moon-carrot": {
+    "bio": "Moon Carrot is a lo-fi indie rock band from Haji Lane, with hazy guitars, drum machines and bedroom-recorded melodies. They started out playing small rooms around Kampong Glam and have grown into a regular at the neighbourhood's late-night shows. Expect slow, warm sets that feel like a quiet walk home.",
+    "hometown": "Kampong Glam",
+    "formed": "2018",
+    "socials": {
+      "instagram": "https://instagram.com",
+      "spotify": "https://open.spotify.com",
+      "youtube": "https://youtube.com",
+      "x": "https://x.com",
+      "facebook": "https://facebook.com"
+    }
   }
 }
