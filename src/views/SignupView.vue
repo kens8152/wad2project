@@ -175,7 +175,8 @@ async function createAccount() {
   background:
     radial-gradient(ellipse at 15% 15%, rgba(238, 214, 246, 0.55), transparent 50%),
     radial-gradient(ellipse at 90% 85%, rgba(207, 228, 251, 0.55), transparent 50%);
-  color: #14234b;
+  /* Use the current theme's text colour. */
+  color: var(--riffle-ink);
 }
 
 /* Apply border-box to all elements inside the signup page, including their before and after pseudo-elements, so padding and borders are included in their widths. */
@@ -256,9 +257,11 @@ async function createAccount() {
   margin-bottom: 20px;
 }
 
+/* Keep form labels readable in both light and dark mode. */
 .signup-field label {
   display: block;
   margin-bottom: 8px;
+  color: var(--riffle-ink);
   font-size: 13px;
   font-weight: 700;
 }
@@ -524,11 +527,13 @@ async function createAccount() {
 }
 
 /* Style the Riffle brand name using the page's text colour. */
+/* Match the Riffle name to the current theme's text colour. */
 .auth-brand-name {
-  color: inherit;
+  color: var(--riffle-ink);
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -1px;
 }
+
 
 </style>
