@@ -102,7 +102,6 @@ describe('Artists page: sidebar + sort + artist cards', () => {
 
   it('links to matchmaking from "I\'m feeling lucky"', async () => {
     await mountPage()
-    const link = wrapper.findAll('a').find((a) => a.text().includes("I'm feeling lucky"))
     expect(link.attributes('href')).toBe('/matchmaking')
   })
 

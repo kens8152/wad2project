@@ -202,9 +202,11 @@ create table public.followed_artists (
 -- 5. Notifications
 -- =========================================================================
 -- type (and the setting that turns it off):
---   reply   -> forum_replies  someone replies to your post or to your comment   (trigger below)
---   mention -> mentions       someone writes @yourname in a post or reply       (trigger below)
---   event   -> gigs_near_me   a new gig within 10 km of you                     (added by the app, which knows your location)
+--   reply    -> forum_replies   someone replies to your post or to your comment   (trigger below)
+--   mention  -> mentions        someone writes @yourname in a post or reply       (trigger below)
+--   upvote   -> post_votes      someone upvotes your post                         (trigger below)
+--   downvote -> post_votes      someone downvotes your post                       (trigger below)
+--   event    -> gigs_near_me    a new gig within 10 km of you                     (added by the app, which knows your location)
 
 -- One row per person. No row means every setting is on.
 create table public.notification_settings (
@@ -212,13 +214,14 @@ create table public.notification_settings (
   gigs_near_me      boolean not null default true,
   forum_replies     boolean not null default true,
   mentions          boolean not null default true,
+  post_votes        boolean not null default true,
   last_events_check timestamptz -- the last time the app looked for new gigs for this person
 );
 
 create table public.notifications (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  type       text not null check (type in ('reply', 'mention', 'event')),
+  type       text not null check (type in ('reply', 'mention', 'upvote', 'downvote', 'event')),
   actor_name text,          -- who did it (null for gigs)
   body       text not null, -- the sentence shown after the name
   link       text,          -- where clicking it goes, e.g. /forum/post/<id>
@@ -230,7 +233,7 @@ create table public.notifications (
 
 create index notifications_user_created on public.notifications (user_id, created_at desc);
 
--- true when the person has this setting on (or has never changed their settings)
+-- true when the person still has an account and has this setting on (no settings row = on)
 create or replace function public.notification_enabled(person uuid, setting text)
 returns boolean
 language sql
@@ -238,7 +241,8 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce((select (to_jsonb(s) ->> setting)::boolean
+  select exists (select 1 from auth.users u where u.id = person)
+     and coalesce((select (to_jsonb(s) ->> setting)::boolean
                      from public.notification_settings s
                     where s.user_id = person), true);
 $$;
@@ -338,6 +342,54 @@ for each row execute function public.notify_mentions();
 create trigger replies_notify_mentions
 after insert on public.replies
 for each row execute function public.notify_mentions();
+
+-- Votes: tells a post's author when someone upvotes or downvotes it.
+-- Taking a vote back (or switching it) removes the notification for the old vote.
+create or replace function public.notify_on_post_vote()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  recipient  uuid;
+  post_title text;
+  voter_name text;
+  kind       text;
+begin
+  if tg_op = 'UPDATE' and old.vote = new.vote then
+    return null;
+  end if;
+
+  if tg_op in ('UPDATE', 'DELETE') then
+    delete from public.notifications
+     where dedupe_key = (case when old.vote = 1 then 'upvote' else 'downvote' end) || ':' || old.post_id || ':' || old.user_id;
+  end if;
+
+  if tg_op in ('INSERT', 'UPDATE') then
+    kind := case when new.vote = 1 then 'upvote' else 'downvote' end;
+    select user_id, title into recipient, post_title from public.posts where id = new.post_id;
+    select display_name into voter_name from public.profiles where id = new.user_id;
+
+    if recipient is not null
+       and recipient is distinct from new.user_id
+       and public.notification_enabled(recipient, 'post_votes') then
+      insert into public.notifications (user_id, type, actor_name, body, link, dedupe_key)
+      values (recipient, kind, coalesce(nullif(trim(voter_name), ''), 'Someone'),
+              kind || 'd your post "' || coalesce(post_title, 'a post') || '"',
+              '/forum/post/' || new.post_id,
+              kind || ':' || new.post_id || ':' || new.user_id)
+      on conflict (user_id, dedupe_key) do nothing;
+    end if;
+  end if;
+
+  return null;
+end;
+$$;
+
+create trigger post_votes_notify
+after insert or update or delete on public.post_votes
+for each row execute function public.notify_on_post_vote();
 
 -- =========================================================================
 -- 6. Access rules (Row Level Security)

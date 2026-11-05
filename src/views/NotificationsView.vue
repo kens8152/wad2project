@@ -11,7 +11,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const notifications = useNotificationsStore()
 
-const tabs = ['All', 'Unread', 'Mentions', 'Events', 'Replies']
+const tabs = ['All', 'Unread', 'Mentions', 'Replies', 'Votes', 'Events']
 const activeTab = ref('All')
 
 // the rows that match the chosen tab
@@ -79,11 +79,12 @@ async function toggle(name) {
   }
 }
 
-// a short line under each setting, so it is clear what turns on what
+// Setting hints
 const settingHints = {
   'New gigs near me': 'Gigs added within 10 km of you (uses your location if you allow it)',
   'Forum replies': 'Replies to your posts and comments',
   Mentions: 'When someone tags you with @ and your name, no spaces',
+  'Post votes': 'When someone upvotes or downvotes your post',
 }
 </script>
 
@@ -139,7 +140,11 @@ const settingHints = {
 
               <span class="notification-text">
                 <span class="notification-line"><b v-if="item.who">{{ item.who }}</b> {{ item.text }}</span>
-                <span class="notification-meta">{{ item.time }} · {{ item.type }}</span>
+                <span class="notification-meta">
+                  <i v-if="item.kind === 'upvote'" class="bi bi-arrow-up-circle-fill vote-icon is-up" aria-hidden="true"></i>
+                  <i v-else-if="item.kind === 'downvote'" class="bi bi-arrow-down-circle-fill vote-icon is-down" aria-hidden="true"></i>
+                  {{ item.time }} · {{ item.type }}
+                </span>
               </span>
 
               <span v-if="item.unread" class="unread-dot" aria-label="Unread"></span>
@@ -356,6 +361,16 @@ const settingHints = {
   font-size: 0.8rem;
 }
 
+.vote-icon {
+  margin-right: 0.15rem;
+}
+.vote-icon.is-up {
+  color: #16a34a;
+}
+.vote-icon.is-down {
+  color: #dc2626;
+}
+
 .unread-dot {
   flex: none;
   width: 10px;
@@ -368,7 +383,7 @@ const settingHints = {
   color: var(--riffle-faint);
 }
 
-/* the small × to remove a notification, in the top right corner of its row */
+/* remove button */
 .notification-row {
   padding-right: 3rem;
 }

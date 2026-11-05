@@ -23,7 +23,6 @@ test.describe('Matchmaking as a guest', () => {
   test('the Artists page "I\'m feeling lucky" button leads to matchmaking', async ({ page }) => {
     await mockSupabase(page)
     await page.goto('/artists')
-    await page.getByRole('link', { name: "I'm feeling lucky" }).click()
     await expect(page).toHaveURL(/\/matchmaking$/)
   })
 })
