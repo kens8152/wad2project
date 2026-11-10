@@ -3,6 +3,8 @@
 // the real API later. Dates are expressed as `dayOffset` (days from today) and
 // an "HH:mm" time so the demo always shows a live "upcoming week".
 
+// color is a CSS variable, used in cards and chips. hex is a plain colour, used where CSS variables don’t work (the map pins)
+
 export const genres = [
   { id: 'indie-rock', label: 'Indie Rock', color: 'var(--genre-indie-rock)', hex: '#f0452f' },
   { id: 'pop', label: 'Pop Music', color: 'var(--genre-pop)', hex: '#1f6feb' },
@@ -12,11 +14,12 @@ export const genres = [
   { id: 'traditional', label: 'Traditional Ethnic Music', color: 'var(--genre-traditional)', hex: '#f59e0b' },
 ]
 
+// hue is a position on the colour wheel, from 0 to 360 degrees: 0 is red, 120 green, 240 blue, 300 purple, and it wraps back to red at 360
 export const artists = [
-  { id: 'fallingislands', name: 'FallingIslands', genreId: 'electronic', tags: ['synthwave'], hue: 215 },
+  { id: 'fallingislands', name: 'FallingIslands', genreId: 'electronic', tags: ['synthwave'], hue: 215 }, // 215 = blue
   { id: 'evanturetime', name: 'Evanturetime', genreId: 'electronic', tags: ['edm'], hue: 195 },
   { id: 'sherman-zhuo', name: 'Sherman Zhuo', genreId: 'mandopop', tags: ['mandopop'], hue: 330 },
-  { id: 'cloudy-yan', name: 'Cloudy Yan', genreId: 'mandopop', tags: ['mandopop', 'ballad'], hue: 345 },
+  { id: 'cloudy-yan', name: 'Cloudy Yan', genreId: 'mandopop', tags: ['mandopop', 'ballad'], hue: 345 },  // 345 = pink-red
   { id: 'krunkle', name: 'Krunkle', genreId: 'indie-rock', tags: ['funk'], hue: 12 },
   { id: 'forest-bloom', name: 'Forest Bloom', genreId: 'indie-rock', tags: ['dream-pop'], hue: 140 },
   { id: 'moon-carrot', name: 'Moon Carrot', genreId: 'indie-rock', tags: ['lo-fi'], hue: 28 },
@@ -157,13 +160,13 @@ export const friends = [
 export const coverPalettes = ['purple', 'blue', 'orange', 'teal']
 
 // Helper to keep the table below readable.
-const ev = (id, o) => ({
+const ev = (id, o) => ({    // ev holds the defaults, so each event only writes what is different
   name: null,
   supports: [],
   friendIds: [],
   free: false,
   entry: '18+ with photo ID · Standing room',
-  ...o,
+  ...o,   // ...o means copy every key and value from o (an event from events) into this object here
   id,
 })
 
@@ -173,7 +176,7 @@ export const events = [
     genreId: 'electronic',
     headliner: 'fallingislands',
     venueId: 'tinbox',
-    dayOffset: 0,
+    dayOffset: 0,   // 0 = today, 1 = tomorrow, 3 = in three days
     time: '21:00',
     doors: '20:30',
     price: 25,
