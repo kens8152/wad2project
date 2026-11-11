@@ -13,25 +13,31 @@ import { dayLabel, dayLabelYear } from '../../utils/events/date'
 import { formatDistance, mapsDirectionsUrl, mapsSearchUrl } from '../../utils/events/geo'
 import { toast } from '@/composables/useToast'
 
+// The page for one event (/events/:id). The id comes from the URL.
 const props = defineProps({ id: { type: String, required: true } })
 
 const router = useRouter()
 const data = useEventsData()
 const { isSaved, toggle } = useSavedEvents()
 
-const tab = ref('details')
+const tab = ref('details') // which tab is open: 'details' or 'discussions'
 
+// Someone can open an event link directly (or refresh the page), so the events may not be loaded yet.
+// load() does nothing if they already are (it reuses the same request).
 onMounted(() => data.load())
 
+// the event for this id, or null if there is none (the template then shows "We couldn't find that event")
 const event = computed(() => data.getEvent(props.id))
 const saved = computed(() => (event.value ? isSaved(event.value.id) : false))
 
 // Reset UI state when navigating between events (e.g. via "More at …").
+// The page component is reused for the new id, so it has to reset itself.
 watch(() => props.id, () => {
   tab.value = 'details'
   window.scrollTo({ top: 0 })
 })
 
+// up to three other upcoming events at the same venue, soonest first (for the "More at this venue" box)
 const moreAtVenue = computed(() =>
   event.value
     ? data.events.value
@@ -41,6 +47,9 @@ const moreAtVenue = computed(() =>
     : [],
 )
 
+// The six boxes under "Event details". Each is data (icon, colour, label, text and an optional link), so the template
+// draws all six with one v-for instead of six copies of the same HTML. `lines` is used when there are several lines
+// of text (the set times).
 const detailTiles = computed(() => {
   const e = event.value
   return [
@@ -74,8 +83,10 @@ const detailTiles = computed(() => {
 // Like the Discover guide: the page goes dark and one or two parts are lit up while a card explains them.
 // When a step needs the page to scroll, or to switch between Details and Discussions, the spotlight fades out first and
 // comes back once the page has stopped moving, so it never flashes or slides across the screen.
+// (The spotlight itself is the DiscoverTour component, reused from the Discover page. This page only says what each step is.)
 const tourOpen = ref(false)
 
+// the steps: a title, the text, and CSS selectors for the parts to light up. `tab` is the tab that must be open.
 const tourPlan = [
   {
     title: 'The event at a glance',
@@ -125,6 +136,8 @@ const tourPlan = [
   },
 ]
 
+// turn each step into the shape DiscoverTour expects: title, text, `target` (what to light up),
+// `changes` (does reaching this step move the page?) and `ready` (is the page still, so the light can come back?)
 const tourSteps = tourPlan.map((step) => ({
   title: step.title,
   text: step.text,
@@ -138,6 +151,7 @@ const tourSteps = tourPlan.map((step) => ({
   },
 }))
 
+// the Guide button: go back to the top of the Details tab and open the tour
 function startTour() {
   tab.value = 'details'
   forgetSeen()
@@ -146,23 +160,28 @@ function startTour() {
   tourOpen.value = true
 }
 
+// a new step started: show the right tab, then scroll that step's parts onto the screen
 function onTourStep(number) {
   const step = tourPlan[number]
   tab.value = step.tab || 'details'
-  // wait for the tab to be drawn, then scroll its part onto the screen
+  // wait for the tab to be drawn (two animation frames), then scroll its part onto the screen
   requestAnimationFrame(() => requestAnimationFrame(() => step.targets.forEach(bringOnScreen)))
 }
 
+// the tour was finished or skipped
 function endTour() {
   tourOpen.value = false
   tab.value = 'details'
 }
 
+// "Back to Events": go to wherever the user came from. If the page was opened directly there is no
+// previous page in the history, so go to the map instead.
 function back() {
   if (window.history.state?.back) router.back()
   else router.push({ name: 'events-map' })
 }
 
+// the Save button (the same saved list as the heart on the cards)
 function onSave() {
   const wasSaved = saved.value
   const nowSaved = toggle(event.value.id)
@@ -170,6 +189,8 @@ function onSave() {
   toast(nowSaved ? 'Event saved' : 'Removed from saved events')
 }
 
+// the Share button. `navigator.share` is the phone's own share sheet (not on every browser);
+// where it is missing, the link is copied to the clipboard instead.
 async function onShare() {
   const e = event.value
   const url = window.location.href
@@ -181,6 +202,7 @@ async function onShare() {
     await navigator.clipboard.writeText(url)
     toast('Link copied to clipboard')
   } catch (err) {
+    // closing the share sheet without choosing throws an AbortError: that is not a failure, so no message
     if (err?.name !== 'AbortError') toast('Could not share this event')
   }
 }
@@ -189,6 +211,7 @@ async function onShare() {
 <template>
   <div class="events-detail-page">
   <div class="container-xxl event-page">
+    <!-- Three states: loading → not found → the event itself (v-if / v-else-if / v-else) -->
     <!-- loading -->
     <div v-if="data.loading.value && !event" class="event-page__state">
       <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading event…</span></div>
@@ -203,7 +226,8 @@ async function onShare() {
     </div>
 
     <template v-else>
-      <!-- Hero -->
+      <!-- Hero: the cover art as a banner, with the title, the Back and Guide buttons, and Tickets / Save / Share.
+           `--genre` lets the CSS colour the banner by the event's genre. -->
       <section class="hero" :style="{ '--genre': event.genre.color }">
         <EventCover class="hero__cover" :palette="event.palette" :seed="event.id" />
         <div class="hero__scrim"></div>
@@ -241,7 +265,7 @@ async function onShare() {
         </div>
       </section>
 
-      <!-- Tabs -->
+      <!-- Tabs: the two buttons come from a small array with v-for; clicking one sets `tab`, which switches the content below -->
       <div class="event-tabs" role="tablist">
         <button
           v-for="t in [{ id: 'details', label: 'Details' }, { id: 'discussions', label: 'Discussions' }]"
@@ -260,6 +284,7 @@ async function onShare() {
       <div class="event-layout">
         <!-- Main column -->
         <div class="event-layout__main">
+          <!-- the Details tab, or (v-else, below) the Discussions tab -->
           <template v-if="tab === 'details'">
             <section class="riffle-card event-section">
               <h2 class="event-section__title">About this event</h2>
@@ -279,6 +304,7 @@ async function onShare() {
               </ul>
 
               <h2 class="event-section__title mt-4">Event details</h2>
+              <!-- one tile per entry of `detailTiles` (see the script) -->
               <div class="tiles">
                 <div v-for="t in detailTiles" :key="t.label" class="tile">
                   <span class="tile__icon" :class="`tone-${t.tone}`"><i class="bi" :class="t.icon"></i></span>

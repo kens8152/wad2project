@@ -58,6 +58,31 @@ onBeforeUnmount(() => {
   subscription.unsubscribe()
   stopRestore?.()
 })
+
+// Changing page: the old page fades out, then the new one fades in.
+// This is done with timers on purpose. Vue's own <Transition> classes only switch on a browser animation frame,
+// and if a frame never comes (a background or throttled tab, a busy page) the change never finishes: the old page
+// stays faded out and the new one is never shown, so the screen stays blank until you refresh.
+// With timers the new page always appears, whatever the browser does with its frames.
+const FADE_MS = 150
+function fadeOut(el, done) {
+  if (!el.style) return done() // not a normal element (nothing to fade)
+  el.style.transition = `opacity ${FADE_MS}ms ease`
+  el.style.opacity = '0'
+  setTimeout(done, FADE_MS)
+}
+function fadeIn(el, done) {
+  if (!el.style) return done()
+  el.style.opacity = '0'
+  el.getBoundingClientRect() // make the browser notice 0 first, so the fade starts from there
+  el.style.transition = `opacity ${FADE_MS}ms ease`
+  el.style.opacity = '1'
+  setTimeout(() => {
+    el.style.transition = '' // hand the page back to its own CSS
+    el.style.opacity = ''
+    done()
+  }, FADE_MS)
+}
 </script>
 
 <template>
@@ -65,7 +90,8 @@ onBeforeUnmount(() => {
     <AppNavbar />
     <main class="app-main d-flex flex-column">
       <RouterView v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
+        <!-- :css="false" = no Vue transition classes; the fade is done by fadeOut / fadeIn above -->
+        <Transition :css="false" mode="out-in" @leave="fadeOut" @enter="fadeIn">
           <component :is="Component" :key="userStore.user?.id" />
         </Transition>
       </RouterView>
@@ -102,13 +128,5 @@ body {
   background:
     radial-gradient(var(--riffle-dots) 1.2px, transparent 1.2px) 0 0 / 30px 30px local,
     var(--riffle-glow);
-}
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.15s ease;
-}
-.page-enter-from,
-.page-leave-to {
-  opacity: 0;
 }
 </style>

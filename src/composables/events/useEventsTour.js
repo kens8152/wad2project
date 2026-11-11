@@ -7,6 +7,8 @@ import { ref } from 'vue'
 //   command:  what the guide asks the map to do: { type: 'select' | 'zoom' | 'fit' | 'clear', id, n }
 //             (n goes up every time, so asking for the same thing twice still counts)
 
+// Module-level, so the tour host, the map and the map page all share them. The map page and EventMap
+// `watch` `command` and react to it: this is how the tour "remote controls" the map without owning it.
 const open = ref(false)
 const command = ref({ type: '', id: null, n: 0 })
 
@@ -14,11 +16,13 @@ export function useEventsTour() {
   function start() {
     open.value = true
   }
+  // closing the tour puts the map back: un-select the pin, then zoom out to show every event
   function stop() {
     open.value = false
     send('clear')
     send('fit')
   }
+  // always a NEW object with n + 1, so a watcher fires even when the same command is sent twice in a row
   function send(type, id = null) {
     command.value = { type, id, n: command.value.n + 1 }
   }

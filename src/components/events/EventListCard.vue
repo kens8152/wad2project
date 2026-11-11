@@ -7,26 +7,31 @@ import { formatDistance } from '../../utils/events/geo'
 import { useSavedEvents } from '../../composables/events/useSavedEvents'
 import { toast } from '@/composables/useToast'
 
+// One hydrated event (the object from eventsService), drawn as a card on the List page.
 const props = defineProps({ event: { type: Object, required: true } })
 
+// the saved (heart) events are shared across the app and remembered in localStorage per user
 const { isSaved, toggle } = useSavedEvents()
-const saved = computed(() => isSaved(props.event.id))
+const saved = computed(() => isSaved(props.event.id)) // true when this event is saved, so the heart fills in
 
 const priceLabel = computed(() => (props.event.free ? 'Free' : `$${props.event.price}`))
 const friendCount = computed(() => props.event.friends.length)
-const mainTag = computed(() => props.event.tags[0])
+const mainTag = computed(() => props.event.tags[0]) // only the first tag fits on the card
 
+// the heart button
 function onHeart() {
   const wasSaved = saved.value
-  const nowSaved = toggle(props.event.id)
-  if (nowSaved === wasSaved) return
+  const nowSaved = toggle(props.event.id) // gives the new state; stays unchanged (and shows a toast) when logged out
+  if (nowSaved === wasSaved) return // nothing changed, so no "saved" message
   toast(nowSaved ? 'Saved to your events' : 'Removed from saved events')
 }
 </script>
 
 <template>
   <article class="list-card riffle-card" :style="{ '--genre': event.genre.color }">
+    <!-- `--genre` (set on the <article>) is a CSS variable from the event's genre, so the card's colours follow the genre -->
     <div class="list-card__media">
+      <!-- the generated cover art; the date and genre badge go into its slot, on top of the picture -->
       <EventCover :palette="event.palette" :seed="event.id" :label="event.headliner.name">
         <div class="list-card__date" aria-hidden="true">
           <span class="list-card__dow">{{ dowUpper(event.startsAt) }}</span>
@@ -49,6 +54,7 @@ function onHeart() {
 
     <div class="list-card__body">
       <h3 class="list-card__title">
+        <!-- Bootstrap's `stretched-link` stretches this one link over the whole card, so the entire card is clickable -->
         <RouterLink :to="{ name: 'event-detail', params: { id: event.id } }" class="stretched-link">
           {{ event.title }}
         </RouterLink>

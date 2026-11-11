@@ -12,14 +12,16 @@ const props = defineProps({
   linkTo: { type: Object, required: true },
 })
 
-const START_ZOOM = 16
-const mapEl = ref(null)
-const zoomLevel = ref(START_ZOOM)
+const START_ZOOM = 16 // a street-level view of the venue
+const mapEl = ref(null) // the box Leaflet draws into
+const zoomLevel = ref(START_ZOOM) // kept so the + / - buttons can switch themselves off at the limits
 let map = null // the Leaflet map (kept out of Vue's reactivity on purpose)
-let pin = null
-let observer = null
+let pin = null // the one marker, on the venue
+let observer = null // the ResizeObserver (see onMounted)
 
 // the pin: the same teardrop as on the Events map, in the colour of the event's genre
+// (Unlike the big map, this one uses a real Leaflet marker, because there is only one pin and no cards to sync with.
+// `divIcon` lets the marker be our own HTML + CSS instead of Leaflet's default image.)
 function pinIcon() {
   return L.divIcon({
     className: 'mini-pin-holder',
@@ -28,8 +30,9 @@ function pinIcon() {
   })
 }
 
+// created once the box exists in the page. It uses the same OneMap tiles and settings as the big map (onemap.js).
 onMounted(() => {
-  const touchScreen = window.matchMedia('(pointer: coarse)').matches
+  const touchScreen = window.matchMedia('(pointer: coarse)').matches // true on phones and tablets
   map = L.map(mapEl.value, {
     zoomControl: false, // our own buttons are used instead
     scrollWheelZoom: false, // plain scrolling scrolls the page, not the map
@@ -53,6 +56,7 @@ onMounted(() => {
   observer.observe(mapEl.value)
 })
 
+// clean up when leaving the page
 onBeforeUnmount(() => {
   observer?.disconnect()
   map?.remove()
@@ -69,6 +73,7 @@ watch(
   },
 )
 
+// the + and - buttons (amount is 1 or -1)
 function zoomStep(amount) {
   map.setZoom(map.getZoom() + amount)
 }

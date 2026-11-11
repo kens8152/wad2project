@@ -6,6 +6,8 @@ import { useEventsTour } from '../../composables/events/useEventsTour'
 import { useEventFilters } from '../../composables/events/useEventFilters'
 import { bringOnScreen, forgetSeen, hasSettled, isOnScreen, isStill, scrollHasStopped } from '../../utils/tourChecks'
 
+// The spotlight and the explanation card are drawn by DiscoverTour (see the template); this file only supplies the steps.
+//
 // The guide for the Events pages. It lives outside the pages (in App.vue) because it starts on the map and ends on the
 // list, and a guide inside a page would be closed when the page changes.
 //
@@ -16,9 +18,10 @@ import { bringOnScreen, forgetSeen, hasSettled, isOnScreen, isStill, scrollHasSt
 
 const route = useRoute()
 const router = useRouter()
-const tour = useEventsTour()
+const tour = useEventsTour() // shared state: is the guide open, and the commands for the map
 const filters = useEventFilters()
 
+// the step's `page` name → the router route name
 const ROUTES = { map: 'events-map', list: 'events-list' }
 
 // the event the guide picks on the map: the first one in the row of cards
@@ -28,6 +31,7 @@ const pickedId = ref(null)
 // so the preferences step is left out there (it is inside the folded filters).
 const wide = ref(true)
 
+// CSS selectors (text that finds an element on the page) for the pin and the card of one event, so the spotlight can light them up
 function pinOf(id) {
   return `.event-map__marker[data-pin-id="${id}"] .event-map__pin` // the pin itself (its holder has no size)
 }
@@ -35,6 +39,9 @@ function cardOf(id) {
   return `.map-stage__card-wrap[data-event-id="${id}"] .map-card`
 }
 
+// The steps. It is a computed, so it rebuilds when the screen size (`wide`) or the picked event changes.
+// Each step: which page it is on, whether a pin is picked (`pick`) and zoomed in on (`zoom`), the text,
+// and the selectors of the parts to light up (`targets`).
 const steps = computed(() => {
   const id = pickedId.value
   const list = [
@@ -97,8 +104,9 @@ const steps = computed(() => {
       text: 'Reopen this guide anytime with the Guide button. Every event page has a guide of its own too.',
       targets: ['.events-guide-btn'],
     },
-  ].filter(Boolean)
+  ].filter(Boolean) // `wide.value && {...}` gives `false` on a small screen: filter(Boolean) drops it, so that step is skipped
 
+  // turn each step into the shape DiscoverTour expects (the same component the Discover and Event pages use)
   return list.map((step, number) => ({
     title: step.title,
     text: step.text,
@@ -125,10 +133,12 @@ const steps = computed(() => {
   }))
 })
 
-// what the map is showing right now
+// what the map is showing right now (so the next step only sends the commands it needs to)
 let mapPicked = false
 let mapZoomed = false
 
+// A step has started: go to the right page, and tell the map what to do through the tour's commands
+// (EventsMapView and EventMap watch `tour.command`: select a pin, zoom in, clear, or fit every event).
 function onStep(number) {
   const { step } = steps.value[number]
 
@@ -160,7 +170,8 @@ function onStep(number) {
   requestAnimationFrame(() => step.targets.forEach((target) => target && bringOnScreen(target)))
 }
 
-const shown = ref(false)
+const shown = ref(false) // whether the tour is drawn at all
+// when the tour is opened (the Guide button), get everything ready: screen size, the event to pick, scroll to the top
 watch(
   () => tour.open.value,
   (open) => {
@@ -177,6 +188,7 @@ watch(
   },
 )
 
+// finished or skipped: tour.stop() closes it and puts the map back (nothing picked, every event in view)
 function finish() {
   tour.stop()
 }

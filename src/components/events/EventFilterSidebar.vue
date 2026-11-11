@@ -5,23 +5,26 @@ import ArtistAvatar from './ArtistAvatar.vue'
 import { useEventFilters, MAX_DISTANCE_KM, WEEK_DAYS } from '../../composables/events/useEventFilters'
 import { toast } from '@/composables/useToast'
 
-const emit = defineEmits(['applied'])
+const emit = defineEmits(['applied']) // tells the shell the user pressed Apply (so it can close the mobile drawer)
 
+// The sidebar edits `draft` (the controls change it as you click); nothing is filtered until Apply copies it to `applied`.
 const filters = useEventFilters()
 const { draft, genres, artists, genreCounts, days } = filters
 
 // ---- artists list -----------------------------------------------------------
-const COLLAPSED_ARTISTS = 2
+const COLLAPSED_ARTISTS = 2 // only the first two artists show until "Show more"
 const showAllArtists = ref(false)
 const visibleArtists = computed(() =>
   showAllArtists.value ? artists.value : artists.value.slice(0, COLLAPSED_ARTISTS),
 )
-const hiddenArtistCount = computed(() => Math.max(0, artists.value.length - COLLAPSED_ARTISTS))
+const hiddenArtistCount = computed(() => Math.max(0, artists.value.length - COLLAPSED_ARTISTS)) // 0 hides the button
 
 // ---- sliders ------------------------------------------------------------------
+// the text next to the slider: "Within 8 km", or "20+ km" at the max (which means no limit)
 const distanceLabel = computed(() =>
   draft.distance >= MAX_DISTANCE_KM ? `${MAX_DISTANCE_KM}+ km` : `Within ${draft.distance} km`,
 )
+// the labels printed under the sliders (`top` is the main label, `bottom` an optional second line)
 const distanceTicks = [
   { value: 0, top: '0' },
   { value: 5, top: '5' },
@@ -29,12 +32,14 @@ const distanceTicks = [
   { value: 15, top: '15' },
   { value: MAX_DISTANCE_KM, top: '20+ km' },
 ]
+// the seven day labels from the filter composable: "Today", "Fri", ... with the date number under each
 const dateTicks = computed(() => days.value.map((d) => ({ value: d.index, top: d.dow, bottom: d.num })))
 
 // a short burst of music notes from the heart when preferences are saved
-const heartBurst = ref(false)
+const heartBurst = ref(false) // true for about 2 seconds, which shows the notes
 let burstTimer = null
 
+// the heart button has three outcomes, depending on the state
 function onHeartClick() {
   if (filters.canSavePreferences.value) {
     filters.savePreferences()
@@ -49,6 +54,7 @@ function onHeartClick() {
   }
 }
 
+// "Apply filters": copy draft → applied (the results recalculate), then tell the shell
 function apply() {
   filters.apply()
   emit('applied')
@@ -99,7 +105,7 @@ function apply() {
       </div>
     </div>
 
-    <!-- Genre -->
+    <!-- Genre: a checkbox per genre. `:checked` + `@change` toggle the id in draft.genres, and the number is how many events it has -->
     <section class="filters__group">
       <h2 class="filters__heading">Genre</h2>
       <label v-for="g in genres" :key="g.id" class="filters__option">
@@ -141,7 +147,7 @@ function apply() {
       </button>
     </section>
 
-    <!-- Distance -->
+    <!-- Distance: our RangeSlider component with v-model, so moving it updates draft.distance directly -->
     <section class="filters__group">
       <div class="filters__slider-head">
         <h2 class="filters__heading">Distance</h2>

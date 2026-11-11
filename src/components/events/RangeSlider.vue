@@ -2,23 +2,29 @@
 import { computed } from 'vue'
 
 // Single-handle range with tick labels aligned to the thumb centre.
+// It works with v-model: the parent passes `modelValue` in and listens for `update:modelValue`.
+// So  <RangeSlider v-model="draft.distance" />  is short for
+//     <RangeSlider :modelValue="draft.distance" @update:modelValue="draft.distance = $event" />
 const props = defineProps({
-  modelValue: { type: Number, required: true },
+  modelValue: { type: Number, required: true }, // the current value (v-model)
   min: { type: Number, default: 0 },
   max: { type: Number, required: true },
   step: { type: Number, default: 1 },
   ticks: { type: Array, default: () => [] }, // [{ value, top, bottom? }]
   label: { type: String, required: true }, // accessible name
-  valueText: { type: String, default: '' },
+  valueText: { type: String, default: '' }, // what a screen reader says, e.g. "Within 8 km"
 })
 const emit = defineEmits(['update:modelValue'])
 
+// where the thumb is, as 0 to 1 (the CSS uses it as --p to colour the filled part of the track)
 const ratio = computed(() => (props.modelValue - props.min) / (props.max - props.min))
+// where a value sits along the track, as a percentage (used to place each tick label)
 const pos = (v) => `${((v - props.min) / (props.max - props.min)) * 100}%`
 </script>
 
 <template>
   <div class="range-slider">
+    <!-- a native range input. On every move it emits the new value (as a Number: an input gives text) so v-model updates the parent -->
     <input
       class="range-slider__input"
       type="range"

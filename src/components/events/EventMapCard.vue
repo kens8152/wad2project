@@ -4,14 +4,17 @@ import EventCover from './EventCover.vue'
 import { cardStamp } from '../../utils/events/date'
 import { formatDistance } from '../../utils/events/geo'
 
+// A compact card for the strip under the map.
 const props = defineProps({
   event: { type: Object, required: true },
-  active: { type: Boolean, default: false },
+  active: { type: Boolean, default: false }, // true when this event's pin is the selected one (the card pops up)
 })
+// `hover` tells the map page which card the mouse is over, so the matching pin lights up
 defineEmits(['open', 'hover', 'select'])
 
-const stamp = computed(() => cardStamp(props.event.startsAt))
+const stamp = computed(() => cardStamp(props.event.startsAt)) // e.g. "SAT 19 SEP · 8PM"
 const priceLabel = computed(() => (props.event.free ? 'Free' : `$${props.event.price}`))
+// "1 friend" / "3 friends"
 const friendsLabel = computed(() => {
   const n = props.event.friends.length
   return `${n} friend${n === 1 ? '' : 's'}`
@@ -26,6 +29,7 @@ const friendsLabel = computed(() => {
     @mouseenter="$emit('hover', event.id)"
     @mouseleave="$emit('hover', null)"
   >
+    <!-- `--genre` (set on the <article>) colours the border, glow and price; `is-active` turns on the pop-up animation -->
     <RouterLink
       :to="{ name: 'event-detail', params: { id: event.id } }"
       class="map-card__link"

@@ -8,26 +8,29 @@ import { useCurrentUser } from '@/composables/useCurrentUser'
 // The forum feature owns the real threads; this just makes the tab useful.
 defineProps({ eventId: { type: String, required: true } })
 
-const { user } = useCurrentUser()
-const comments = ref([])
-const draft = ref('')
-const voted = ref(new Set())
+const { user } = useCurrentUser() // the logged-in user: their name goes on the comments they post
+const comments = ref([]) // the list on screen
+const draft = ref('') // what is typed in the box
+const voted = ref(new Set()) // the ids of the comments this user has upvoted (so a second click takes the vote back)
 const loading = ref(true)
 
+// fetch the sample comments from the service (a fake async call, like the events)
 onMounted(async () => {
   comments.value = await fetchDiscussion()
   loading.value = false
 })
 
+// minutes → text: "just now", "32m ago", "2h ago"
 function ago(minutes) {
   if (minutes < 1) return 'just now'
   if (minutes < 60) return `${minutes}m ago`
   return `${Math.round(minutes / 60)}h ago`
 }
 
+// add the typed comment to the end of the list (it is only kept in memory for now, so a refresh clears it)
 function post() {
   const text = draft.value.trim()
-  if (!text) return
+  if (!text) return // ignore an empty or spaces-only comment
   comments.value.push({
     id: `local-${Date.now()}`,
     author: user.value.name,
@@ -40,6 +43,7 @@ function post() {
   draft.value = ''
 }
 
+// upvote a comment, or take the vote back if this user already voted (a toggle)
 function vote(c) {
   const next = new Set(voted.value)
   if (next.has(c.id)) {
@@ -57,6 +61,7 @@ function vote(c) {
   <section class="discussion riffle-card">
     <h2 class="discussion__title">Discussion · {{ comments.length }} comment{{ comments.length === 1 ? '' : 's' }}</h2>
 
+    <!-- `@submit.prevent` stops the browser reloading the page when the form is submitted (Enter or the button) and runs post() instead -->
     <form class="discussion__form" @submit.prevent="post">
       <ArtistAvatar :name="user.name" :hue="340" :size="40" />
       <input v-model="draft" type="text" class="form-control" placeholder="Join the conversation…" aria-label="Write a comment" />

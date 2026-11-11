@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import L from 'leaflet' // the map library (npm package); `L` is its usual name
+import 'leaflet/dist/leaflet.css' // Leaflet's own styles (how the tiles and the map box are laid out)
 import { ATTRIBUTION, MAX_ZOOM, MIN_ZOOM, SG_BOUNDS, TILE_URL } from '../../utils/events/onemap'
 import { useEventsTour } from '../../composables/events/useEventsTour'
 import { useLiveLocation } from '../../composables/events/useLiveLocation'
@@ -17,11 +17,11 @@ import { useLiveLocation } from '../../composables/events/useLiveLocation'
 // marker are normal Vue elements laid over the map; their pixel position is worked out from
 // their lat/lng every time the map moves or zooms.
 const props = defineProps({
-  events: { type: Array, required: true },
-  genres: { type: Array, required: true },
-  userLocation: { type: Object, required: true },
-  selectedId: { type: String, default: null },
-  hoverId: { type: String, default: null },
+  events: { type: Array, required: true }, // the events to put on the map (already filtered)
+  genres: { type: Array, required: true }, // used to colour each pin by its genre
+  userLocation: { type: Object, required: true }, // {lat, lng} of "you are here"
+  selectedId: { type: String, default: null }, // the pin that was clicked
+  hoverId: { type: String, default: null }, // the pin whose card the mouse is over
   focusId: { type: String, default: null }, // an event to show close up (a link from the event page)
 })
 const emit = defineEmits(['select', 'open'])
@@ -36,6 +36,7 @@ function onLocate() {
     location.toggle()
   }
 }
+// the button's tooltip, chosen by the location status (an object used as a lookup table; `||` is the default text)
 const locateTitle = computed(() => ({
   asking: 'Finding your location…',
   on: 'Go to my location',
@@ -43,13 +44,13 @@ const locateTitle = computed(() => ({
   outside: 'You are outside Singapore',
 }[location.status.value] || 'Use my location'))
 
-const root = ref(null)
-const mapEl = ref(null)
-const zoomLevel = ref(MIN_ZOOM)
-const keyOpen = ref(typeof window === 'undefined' || window.innerWidth >= 768)
+const root = ref(null) // the outer box (template ref), watched for size changes and used for the wheel zoom
+const mapEl = ref(null) // the inner box that Leaflet draws the map into
+const zoomLevel = ref(MIN_ZOOM) // the current zoom, kept for the template
+const keyOpen = ref(typeof window === 'undefined' || window.innerWidth >= 768) // the genre key starts open on wide screens only
 const zooming = ref(false) // true while a zoom animation runs, so the pins glide along with the tiles
 let map = null // the Leaflet map (kept out of Vue's reactivity on purpose)
-let zoomTimer = null
+let zoomTimer = null // switches `zooming` off again if a zoom ends without a `zoomend` event
 // Until you touch the map (drag, zoom or pick a pin), it keeps itself fitted to every event shown, whenever the
 // events or the size of the box change. So the first thing you see is the same view as "Show all events".
 let autoFit = true
@@ -57,9 +58,12 @@ let autoFit = true
 const FOCUS_ZOOM = 17 // a close-up of the venue: its street and the buildings around it
 
 // where each marker is on screen, in pixels from the top-left of the map box
-const pixel = ref({})
-const userPixel = ref(null)
+const pixel = ref({}) // { eventId: {x, y} } for every pin
+const userPixel = ref(null) // {x, y} of the "you are here" marker
 
+// lat/lng (a place on Earth) → x/y in pixels inside the map box, so a normal Vue element can sit on that place.
+// map.project() turns a lat/lng into a pixel position on the whole world map at that zoom; subtracting the
+// centre's position and adding half the box size gives the position inside the box we can see.
 function toPixel(lat, lng, center, zoom) {
   // centre and zoom can be the ones the map is about to have (during a zoom animation)
   const size = map.getSize()
@@ -68,6 +72,8 @@ function toPixel(lat, lng, center, zoom) {
   return { x: here.x - mid.x + size.x / 2, y: here.y - mid.y + size.y / 2 }
 }
 
+// Recalculate where every pin and the "you" marker are on screen. It runs on every map move and zoom,
+// and because `pixel` is a ref, the template then moves the pins by itself.
 function refresh(center = map.getCenter(), zoom = map.getZoom()) {
   if (!map) return
   const next = {}
@@ -81,6 +87,7 @@ function refresh(center = map.getCenter(), zoom = map.getZoom()) {
   zoomLevel.value = map.getZoom()
 }
 
+// the + and - buttons (amount is 1 or -1); the user has taken control, so stop auto-fitting
 function zoomStep(amount) {
   autoFit = false
   map.setZoom(map.getZoom() + amount)
@@ -89,19 +96,24 @@ function zoomStep(amount) {
 // "Show all events": zoom and move so that every pin is inside the box.
 // The map starts one zoom level closer than that (closer = true), centred on you.
 function fitAll(animate = true, closer = false) {
-  if (!pins.value.length) return
+  if (!pins.value.length) return // nothing to fit (every event was filtered out)
+  // `bounds` = the smallest rectangle that contains every pin (and you)
   const bounds = L.latLngBounds(pins.value.map((p) => [p.lat, p.lng]))
   bounds.extend([props.userLocation.lat, props.userLocation.lng]) // you are in the view as well
-  const padding = [80, 80]
+  const padding = [80, 80] // keep pins 80 px away from the edges of the box
   if (closer) {
     // you are in the middle: the view is centred on your location, wide enough for the events around you
     const me = L.latLng(props.userLocation.lat, props.userLocation.lng)
+    // the furthest any pin is from you, north-south and east-west
     const north = Math.max(bounds.getNorth() - me.lat, me.lat - bounds.getSouth())
     const east = Math.max(bounds.getEast() - me.lng, me.lng - bounds.getWest())
+    // a rectangle centred on you that is just big enough to hold all of them
     const around = L.latLngBounds([me.lat - north, me.lng - east], [me.lat + north, me.lng + east])
+    // the zoom that fits that rectangle, plus one level closer, but never past MAX_ZOOM
     const zoom = Math.min(MAX_ZOOM, map.getBoundsZoom(around, false, L.point(padding)) + 1)
     map.setView(me, zoom, { animate: animate })
   } else {
+    // simply fit the rectangle (never closer than zoom 16)
     map.fitBounds(bounds, { padding: padding, maxZoom: 16, animate: animate })
   }
 }
@@ -114,18 +126,19 @@ function resetView() {
 
 // Plain scrolling scrolls the page as usual. The map only zooms with
 // Ctrl (or Cmd) + scroll, and shows a small reminder otherwise.
-const zoomHint = ref(false)
+const zoomHint = ref(false) // shows the "Ctrl + scroll to zoom" reminder
 let hintTimer = null
 let wheelLocked = false
 
 function onWheel(e) {
   if (!e.ctrlKey && !e.metaKey) {
+    // a plain scroll: do not touch it (the page scrolls), only show the reminder for a moment
     zoomHint.value = true
     clearTimeout(hintTimer)
     hintTimer = setTimeout(() => (zoomHint.value = false), 1200)
     return
   }
-  e.preventDefault()
+  e.preventDefault() // stop the browser zooming the whole page (Ctrl + scroll normally does that)
   autoFit = false
   if (wheelLocked) return
   const rect = root.value.getBoundingClientRect()
@@ -139,16 +152,17 @@ function onWheel(e) {
 
 // ---- set up / tear down ----------------------------------------------------------
 let observer
+// onMounted: the map box exists in the page now, so Leaflet can be created inside it
 onMounted(() => {
   map = L.map(mapEl.value, {
     zoomControl: false, // our own buttons are used instead
     scrollWheelZoom: false, // zoom is handled in onWheel (Ctrl / Cmd + scroll)
     zoomSnap: 1, // whole zoom levels only, so the map tiles are always drawn sharp (never stretched)
-    zoomDelta: 1,
+    zoomDelta: 1, // each + / - press changes the zoom by one level
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
-    maxBounds: SG_BOUNDS,
-    maxBoundsViscosity: 1,
+    maxBounds: SG_BOUNDS, // the map cannot be dragged outside Singapore
+    maxBoundsViscosity: 1, // 1 = a hard wall (less than 1 would let it stretch past the edge and spring back)
   })
   map.attributionControl.setPrefix('') // keep only the OneMap credit
   // detectRetina: on a sharp (retina) screen, ask OneMap for the next zoom level's tiles and draw them at half
@@ -156,6 +170,7 @@ onMounted(() => {
   L.tileLayer(TILE_URL, { detectRetina: true, attribution: ATTRIBUTION, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM + 1 }).addTo(map) // +1: a retina screen takes one off this
 
   map.setView([1.295, 103.8575], 14) // a first view; it is fitted to the pins once the box has a size
+  // Leaflet fires events as the map changes; each time it moves or zooms, put the pins back in the right place
   map.on('move zoom', () => refresh())
   map.on('zoomanim', (e) => {
     // the zoom animation is about to start: send the pins to where they will end up
@@ -166,11 +181,13 @@ onMounted(() => {
   })
   map.on('zoomend', () => (zooming.value = false))
 
-  map.on('dragstart', () => (autoFit = false))
+  map.on('dragstart', () => (autoFit = false)) // dragging the map = the user is in control now
 
   // a link asked for one event: start on it, instead of fitted to every event
   if (props.focusId) autoFit = false
 
+  // ResizeObserver (a browser API) calls this whenever the map box changes size, e.g. the window is resized
+  // or the sidebar opens. Leaflet has to be told, or it keeps drawing for the old size.
   observer = new ResizeObserver(() => {
     map.invalidateSize()
     if (autoFit && root.value.clientWidth > 0) fitAll(false, true)
@@ -180,6 +197,7 @@ onMounted(() => {
   showFocused()
   refresh()
 })
+// clean up when the user leaves the page: stop the observer and timers and remove the map (no memory leaks)
 onBeforeUnmount(() => {
   observer?.disconnect()
   clearTimeout(zoomTimer)
@@ -197,7 +215,9 @@ function genreColor(genreId) {
 
 // Several events can be at the same venue (so at the same place on the map). Without this their pins would
 // sit exactly on top of each other. Each pin gets a few pixels to the left or right of the venue instead.
-const PIN_GAP = 26
+const PIN_GAP = 26 // pixels between pins at the same venue
+// One entry per event: its place on the map, its colour and its label. It is a computed, so it
+// updates by itself when the filters change which events are shown.
 const pins = computed(() => {
   // how many events are at each venue
   const total = {}
@@ -205,10 +225,10 @@ const pins = computed(() => {
     total[e.venueId] = (total[e.venueId] || 0) + 1
   }
 
-  const placedSoFar = {}
+  const placedSoFar = {} // how many pins of each venue have been handled so far
   const list = []
   for (const e of props.events) {
-    const place = placedSoFar[e.venueId] || 0
+    const place = placedSoFar[e.venueId] || 0 // this pin is number 0, 1, 2... at its venue
     placedSoFar[e.venueId] = place + 1
 
     list.push({
@@ -231,6 +251,7 @@ watch(
     refresh()
   },
 )
+// the shown events changed (a filter was applied): re-fit if the user has not taken control of the map
 watch(pins, () => {
   if (autoFit && map) fitAll(false, true)
   refresh()
@@ -294,6 +315,7 @@ watch(
 )
 
 const pinHoverId = ref(null) // the pin the mouse is over
+// the pin to highlight: a hovered card, else a hovered pin, else the selected one (the first one that is set wins)
 const activeId = computed(() => props.hoverId || pinHoverId.value || props.selectedId)
 
 // Bring the selected pin into view (smoothly) when it is chosen from a pin or a card.
@@ -306,6 +328,7 @@ watch(
     const at = pixel.value[pin.id]
     const size = map.getSize()
     const margin = 90
+    // is the pin already well inside the box (at least 90 px from every edge)? then leave the map where it is
     const visible = at && at.x > margin && at.x < size.x - margin && at.y > margin && at.y < size.y - margin
     autoFit = false
     if (!visible) {

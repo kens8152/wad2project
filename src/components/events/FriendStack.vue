@@ -2,6 +2,7 @@
 import ArtistAvatar from './ArtistAvatar.vue'
 
 // Overlapping row of friend avatars (max 3 shown).
+// It reuses ArtistAvatar for each friend; the overlap is done in the CSS below with a negative left margin.
 defineProps({
   friends: { type: Array, required: true },
   size: { type: Number, default: 30 },

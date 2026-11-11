@@ -14,18 +14,20 @@ defineProps({
   view: { type: String, required: true }, // 'map' | 'list'
 })
 
-const route = useRoute()
-const filters = useEventFilters()
-const filtersOpen = ref(false) // mobile only
-const tour = useEventsTour()
+const route = useRoute() // gives access to the URL, including the ?artist= / ?venue= / ?q= deep links
+const filters = useEventFilters() // the shared filter state (the same object the Map and List pages use)
+const filtersOpen = ref(false) // mobile only: whether the filter drawer is open
+const tour = useEventsTour() // the guided tour (the Guide button starts it)
 
-const count = computed(() => filters.results.value.length)
+const count = computed(() => filters.results.value.length) // how many events match; 0 shows the "no events" message
 const location = useLiveLocation()
 
 onMounted(() => {
-  filters.init(route.query)
+  filters.init(route.query) // load the events (once) and apply any filters carried in the URL
   location.askOnce() // the browser asks for your location as soon as you arrive
 })
+// the URL changed while we are already on this page (e.g. a search from the navbar): apply the new filters.
+// `a && b()` only runs b() when a is true, so nothing happens before the data is ready.
 watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
 </script>
 
@@ -47,6 +49,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
 
     <div class="events-shell__body">
       <div id="events-filters" class="events-shell__sidebar" :class="{ 'is-open': filtersOpen }">
+        <!-- the sidebar waits for the data (ready); `applied` closes the mobile drawer after "Apply filters" -->
         <EventFilterSidebar v-if="filters.ready.value" @applied="filtersOpen = false" />
       </div>
 
@@ -54,6 +57,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
         <!-- search, sort and the Map / List switch sit above the results -->
         <div class="events-shell__toolbar">
           <EventSearchBar />
+          <!-- a named slot: each page (map or list) puts its own sort dropdown here -->
           <div class="events-shell__sort"><slot name="actions" /></div>
           <button type="button" class="events-tool-btn events-guide-btn" :class="{ 'is-on': tour.open.value }" @click="tour.start()">
             <i class="bi bi-compass"></i> Guide
@@ -68,10 +72,13 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
           </div>
         </div>
 
+        <!-- shown when a venue link (?venue=) is active; clicking it removes that filter -->
         <button v-if="filters.applied.venue" type="button" class="events-shell__chip" @click="filters.clearVenue()">
           At {{ filters.venueName.value }} <i class="bi bi-x-lg"></i>
         </button>
 
+        <!-- Exactly one of these shows: loading spinner → error (with a retry) → "no match" (with a reset) →
+             otherwise the real results, which the Map / List page draws through the default slot. -->
         <div v-if="filters.loading.value && !filters.ready.value" class="events-shell__state">
           <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading events…</span></div>
         </div>
@@ -89,6 +96,7 @@ watch(() => route.query, (q) => filters.ready.value && filters.applyQuery(q))
           <button class="btn btn-riffle" @click="filters.reset()">Reset filters</button>
         </div>
 
+        <!-- a "scoped slot": the filtered events are passed to the page as `events` (see `#default="{ events }"` there) -->
         <slot v-else :events="filters.results.value" />
       </section>
     </div>

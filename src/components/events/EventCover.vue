@@ -5,11 +5,12 @@ import { computed } from 'vue'
 // Swap for a real <img> when events get cover images; the slot lets cards
 // overlay badges either way.
 const props = defineProps({
-  palette: { type: String, default: 'purple' },
-  seed: { type: String, default: '' },
-  label: { type: String, default: '' },
+  palette: { type: String, default: 'purple' }, // which colour scheme to use (a key of `palettes`)
+  seed: { type: String, default: '' }, // text (the event id) that makes each event's crowd different but always the same
+  label: { type: String, default: '' }, // optional text on the picture (the headliner)
 })
 
+// four colours per scheme: [darkest, dark, bright, lightest]
 const palettes = {
   purple: ['#1b0a3a', '#7b2a9e', '#ff4f7b', '#ffb36b'],
   blue: ['#04122e', '#0b3a8c', '#2f8bff', '#8fd3ff'],
@@ -17,9 +18,11 @@ const palettes = {
   teal: ['#031d2a', '#0a5c6e', '#16c2b0', '#b7f5d8'],
 }
 
-const colors = computed(() => palettes[props.palette] || palettes.purple)
+const colors = computed(() => palettes[props.palette] || palettes.purple) // an unknown palette falls back to purple
 
 // Deterministic pseudo-random so each event has a stable crowd.
+// (Math.random() would give a different crowd on every render. This turns the text into a number and then
+// produces a repeatable series of numbers between 0 and 1, so the same event id always draws the same crowd.)
 function rng(str) {
   let h = 2166136261
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619)
@@ -32,14 +35,15 @@ function rng(str) {
 
 // One seamless-enough tile of crowd silhouette, repeated horizontally so the
 // heads keep a constant size whatever the cover's width is.
+// It is an SVG built as text (a circle per head, and sometimes a raised arm), turned into a CSS background image.
 const crowdTile = computed(() => {
   const r = rng(props.seed || props.palette)
   let shapes = ''
   for (let i = 0; i < 18; i++) {
-    const x = (i / 18) * 300 + r() * 10
+    const x = (i / 18) * 300 + r() * 10 // spread 18 heads across the tile, each moved a little at random
     const y = 44 + r() * 18
-    const rad = 9 + r() * 5
-    if (r() > 0.7) {
+    const rad = 9 + r() * 5 // head size
+    if (r() > 0.7) { // about 3 heads in 10 have an arm raised
       const dx = (r() - 0.5) * 14
       const h = 20 + r() * 18
       shapes += `<rect x="${(x + dx - 1.5).toFixed(1)}" y="${(y - h).toFixed(1)}" width="3" height="${h.toFixed(1)}" rx="1.5"/>`
@@ -50,8 +54,9 @@ const crowdTile = computed(() => {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
 })
 
+// the background: two soft "spotlight" glows (radial gradients) over a dark top-to-bottom gradient
 const style = computed(() => {
-  const [c0, c1, c2, c3] = colors.value
+  const [c0, c1, c2, c3] = colors.value // array destructuring: the four colours get four names
   return {
     background: [
       `radial-gradient(ellipse 60% 55% at 28% 18%, ${c2}cc, transparent 70%)`,

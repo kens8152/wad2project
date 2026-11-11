@@ -2,23 +2,27 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 // A small custom dropdown for choosing how events are sorted.
+// It uses v-model like RangeSlider: `modelValue` in (the chosen sort), `update:modelValue` out.
 const props = defineProps({
-  modelValue: { type: String, required: true },
+  modelValue: { type: String, required: true }, // the value of the chosen option, e.g. 'nearest'
   options: { type: Array, required: true }, // [{ value, label, icon }]
   prefix: { type: String, default: 'Sort by' },
 })
 const emit = defineEmits(['update:modelValue'])
 
-const open = ref(false)
-const root = ref(null)
+const open = ref(false) // is the menu showing?
+const root = ref(null) // the outer element, used to tell if a click was inside or outside
 
+// the option that is currently chosen (falls back to the first one)
 const current = () => props.options.find((o) => o.value === props.modelValue) || props.options[0]
 
+// the user picked an option: tell the parent (which updates filters.sort) and close the menu
 function choose(option) {
   emit('update:modelValue', option.value)
   open.value = false
 }
 
+// close the menu when the user clicks anywhere outside it, or presses Escape
 function closeOnOutsideClick(e) {
   if (root.value && !root.value.contains(e.target)) open.value = false
 }
@@ -26,6 +30,8 @@ function closeOnEscape(e) {
   if (e.key === 'Escape') open.value = false
 }
 
+// These listeners are on the whole `document`, so they are added when the component appears and
+// removed when it goes away. Otherwise they would stay behind (a memory leak) after leaving the page.
 onMounted(() => {
   document.addEventListener('click', closeOnOutsideClick)
   document.addEventListener('keydown', closeOnEscape)

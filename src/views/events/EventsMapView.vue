@@ -16,10 +16,11 @@ const data = useEventsData()
 
 const selectedId = ref(null) // the pin that was clicked
 const highlightId = ref(null) // its card, highlighted once the strip has stopped scrolling
-const hoverId = ref(null)
-const cardsEl = ref(null)
-let highlightTimer = null
+const hoverId = ref(null) // the card the mouse is over (the map lights up that pin too)
+const cardsEl = ref(null) // the scrolling strip of cards under the map (template ref)
+let highlightTimer = null // the 80 ms check inside select() that waits for the strip to stop scrolling
 
+// go to the event's own page
 function open(id) {
   router.push({ name: 'event-detail', params: { id } })
 }
@@ -106,9 +107,11 @@ function focusInResults(events) {
   return focusId.value && events.some((e) => e.id === focusId.value) ? focusId.value : null
 }
 
-let selectedFromLink = null
-let widenedFor = null
+let selectedFromLink = null // the event already selected from the link, so it only happens once
+let widenedFor = null // the event the filters were already widened for, so that also only happens once
 
+// Runs when the link, the results or `ready` change (and once straight away, `immediate: true`).
+// Once the data is ready: if the linked event is in the results, select it; otherwise show everything at its venue.
 watch([focusId, filters.results, filters.ready], ([id, list, ready]) => {
   if (!id || !ready || selectedFromLink === id) return
 
@@ -149,6 +152,8 @@ watch(filters.results, (list) => {
 
 <template>
   <EventsShell view="map">
+    <!-- Same layout as the List page: the shell does the filters and states, and this page fills its two slots.
+         (No comment above <EventsShell>: a page needs ONE root element for the page-change fade to work.) -->
     <template #actions>
       <SortDropdown v-model="filters.sort.value" :options="SORTS" />
     </template>
@@ -156,6 +161,8 @@ watch(filters.results, (list) => {
     <template #default="{ events }">
       <div class="map-stage">
         <div class="map-stage__map">
+        <!-- The map gets props down (events, genres, where you are, which pin is selected / hovered / focused)
+             and sends events up (@select when a pin is clicked, @open when it is double-clicked). -->
         <EventMap
           :events="events"
           :genres="filters.genres.value"
@@ -168,6 +175,8 @@ watch(filters.results, (list) => {
         />
         </div>
 
+        <!-- the sideways-scrolling row of cards under the map. `data-event-id` is how select() finds a card to scroll to,
+             and `@hover` tells this page which card the mouse is on (so the map can light up that pin). -->
         <div ref="cardsEl" class="map-stage__cards" aria-label="Events on the map">
           <div v-for="e in events" :key="e.id" :data-event-id="e.id" class="map-stage__card-wrap">
             <EventMapCard

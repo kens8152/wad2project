@@ -6,18 +6,22 @@ import { toast } from '@/composables/useToast'
 // The search box above the events (map and list). It types into the same filters as the sidebar.
 const filters = useEventFilters()
 const { draft } = filters
-const searchInput = ref(null)
+const searchInput = ref(null) // the <input>, so we can put the cursor back in it after clearing
 
+// the "x" button: empty the search and keep the cursor in the box
 function clearSearch() {
   filters.setQuery('')
   searchInput.value?.focus()
 }
 
 // ---- voice search (Web Speech API, where available) ------------------------------
+// The Web Speech API is built into the browser (it turns speech into text). Chrome and Safari name it
+// `webkitSpeechRecognition`, so we take whichever exists; if neither does, the button just shows a message.
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const listening = ref(false)
+const listening = ref(false) // true while the microphone is on (the button pulses)
 let recognition = null
 
+// the microphone button: starts listening, or stops if it is already listening
 function toggleVoice() {
   if (!SpeechRecognition) {
     toast('Voice search is not supported in this browser')
@@ -28,20 +32,22 @@ function toggleVoice() {
     return
   }
   recognition = new SpeechRecognition()
-  recognition.lang = 'en-SG'
-  recognition.interimResults = false
-  recognition.onresult = (e) => filters.setQuery(e.results[0][0].transcript)
+  recognition.lang = 'en-SG' // Singapore English
+  recognition.interimResults = false // only give the final text, not guesses while talking
+  recognition.onresult = (e) => filters.setQuery(e.results[0][0].transcript) // what was heard goes into the search
   recognition.onerror = () => toast('Could not hear that, try again')
-  recognition.onend = () => (listening.value = false)
+  recognition.onend = () => (listening.value = false) // fires when listening stops for any reason
   listening.value = true
   recognition.start()
 }
-onBeforeUnmount(() => recognition?.abort())
+onBeforeUnmount(() => recognition?.abort()) // leaving the page switches the microphone off
 </script>
 
 <template>
   <div class="events-search">
     <i class="bi bi-search" aria-hidden="true"></i>
+    <!-- one-way binding (:value + @input) instead of v-model: the text goes through setQuery(),
+         which waits 200 ms after the last key press before the list filters (debounce) -->
     <input
       ref="searchInput"
       :value="draft.q"
